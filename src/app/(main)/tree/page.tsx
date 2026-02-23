@@ -81,8 +81,9 @@ function TreeCanvas({ people }: { people: Person[] }) {
     const [selected, setSelected] = useState<Person | null>(null)
     const [search, setSearch] = useState('')
     const rawNodes = useRef<PersonNodeType[]>([])
-    rawNodes.current = nodes
-
+    useEffect(() => {
+        rawNodes.current = nodes
+    }, [nodes])
     useEffect(() => {
         const { nodes: n, edges: e } = buildTreeLayout(people)
         setNodes(n)

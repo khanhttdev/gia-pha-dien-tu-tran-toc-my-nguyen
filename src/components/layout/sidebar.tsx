@@ -56,7 +56,7 @@ export function Sidebar({ profile }: SidebarProps) {
         router.refresh()
     }
 
-    const NavContent = () => (
+    const navContent = (
         <div className="relative z-10 flex flex-col h-full text-amber-50">
             {/* Logo */}
             <div className="px-6 py-5 border-b border-white/10">
@@ -178,13 +178,13 @@ export function Sidebar({ profile }: SidebarProps) {
                 open ? 'translate-x-0' : '-translate-x-full'
             )}>
                 <HeritageOverlay />
-                <NavContent />
+                {navContent}
             </aside>
 
             {/* Desktop sidebar */}
             <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-background border-r border-border overflow-hidden">
                 <HeritageOverlay />
-                <NavContent />
+                {navContent}
             </aside>
         </>
     )
