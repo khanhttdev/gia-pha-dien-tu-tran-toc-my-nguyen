@@ -27,9 +27,9 @@ export async function middleware(request: NextRequest) {
 
     const { pathname } = request.nextUrl
 
-    // Protect /tree, /people routes — require login
-    const protectedRoutes = ['/tree', '/people', '/admin']
-    const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
+    // All main app routes require login
+    const protectedPrefixes = ['/tree', '/people', '/directory', '/book', '/events', '/media', '/admin']
+    const isProtected = protectedPrefixes.some(r => pathname.startsWith(r))
 
     if (isProtected && !user) {
         const loginUrl = new URL('/login', request.url)
