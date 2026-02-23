@@ -120,21 +120,23 @@ export default function AdminPage() {
                             <div className="space-y-2">
                                 {profiles.map(p => (
                                     <div key={p.id} className={cn(
-                                        'glass rounded-xl p-3 border border-border/60 flex items-center gap-3',
+                                        'glass rounded-xl p-3 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 transition-all duration-200',
                                         p.id === currentUserId && 'border-amber-400/30'
                                     )}>
-                                        <div className="w-9 h-9 rounded-full gold-gradient flex items-center justify-center text-sm font-bold text-amber-900 shrink-0">
-                                            {p.full_name?.[0]?.toUpperCase() ?? '?'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-sm font-medium truncate">{p.full_name ?? 'Chưa đặt tên'}</p>
-                                                {p.id === currentUserId && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bạn</Badge>}
+                                        <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+                                            <div className="w-9 h-9 rounded-full gold-gradient flex items-center justify-center text-sm font-bold text-amber-900 shrink-0">
+                                                {p.full_name?.[0]?.toUpperCase() ?? '?'}
                                             </div>
-                                            <p className="text-xs text-muted-foreground truncate">{p.email}</p>
-                                            <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('vi-VN')}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="text-sm font-medium truncate">{p.full_name ?? 'Chưa đặt tên'}</p>
+                                                    {p.id === currentUserId && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bạn</Badge>}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                                                <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('vi-VN')}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0 pt-2 sm:pt-0 mt-2 border-t border-border/40 sm:border-0 sm:mt-0">
                                             <Badge variant={p.role === 'admin' ? 'default' : 'secondary'} className={cn('text-[10px]', p.role === 'admin' && 'bg-amber-500/20 text-amber-600 border-amber-500/30')}>
                                                 {p.role === 'admin' ? '👑 Admin' : '👁 Viewer'}
                                             </Badge>
@@ -142,7 +144,7 @@ export default function AdminPage() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="h-7 text-xs gap-1"
+                                                    className="h-7 text-xs gap-1 ml-auto sm:ml-0"
                                                     onClick={() => updateRole(p.id, p.role === 'admin' ? 'viewer' : 'admin')}
                                                 >
                                                     {p.role === 'admin' ? <><UserX className="w-3 h-3" /> → Viewer</> : <><UserCheck className="w-3 h-3" /> → Admin</>}
