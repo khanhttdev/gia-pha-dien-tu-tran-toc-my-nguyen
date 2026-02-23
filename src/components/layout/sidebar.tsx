@@ -4,11 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-    GitFork, Users, BookOpen, Sun, Moon, LogOut, Menu, X, Shield,
+    GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
     Phone, CalendarDays, ImageIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase-client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -30,13 +29,9 @@ interface SidebarProps {
 
 export function Sidebar({ profile }: SidebarProps) {
     const pathname = usePathname()
-    const { theme, setTheme } = useTheme()
     const router = useRouter()
     const supabase = createClient()
     const [open, setOpen] = useState(false)
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => setMounted(true), [])
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -120,19 +115,11 @@ export function Sidebar({ profile }: SidebarProps) {
                 <div className="flex gap-2 px-1">
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    >
-                        {mounted ? (theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />) : <div className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                        variant="ghost"
                         size="sm"
-                        className="flex-1 justify-start gap-2 h-8 text-xs text-sidebar-foreground/60 hover:text-red-400 hover:bg-red-500/10"
+                        className="flex-1 justify-center gap-2 h-9 text-sm font-medium text-sidebar-foreground/70 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                         onClick={handleLogout}
                     >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-4 h-4" />
                         Đăng xuất
                     </Button>
                 </div>
