@@ -68,34 +68,34 @@
 }
 
 .dark {
-  /* Force Light theme even in Dark mode for this beautiful Heritage UI */
-  --background: 40 30% 97%;
-  --foreground: 25 20% 15%;
-  --card: 0 0% 100%;
-  --card-foreground: 25 20% 15%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 25 20% 15%;
+  /* Heritage Dark Theme */
+  --background: 40 15% 8%;
+  --foreground: 40 20% 90%;
+  --card: 40 15% 12%;
+  --card-foreground: 40 20% 90%;
+  --popover: 40 15% 10%;
+  --popover-foreground: 40 20% 90%;
   --primary: 38 92% 50%;
   --primary-foreground: 30 15% 8%;
-  --secondary: 40 20% 93%;
-  --secondary-foreground: 25 20% 20%;
-  --muted: 40 15% 92%;
-  --muted-foreground: 25 10% 45%;
-  --accent: 40 20% 93%;
-  --accent-foreground: 25 20% 20%;
+  --secondary: 40 15% 18%;
+  --secondary-foreground: 40 20% 90%;
+  --muted: 40 10% 20%;
+  --muted-foreground: 40 15% 65%;
+  --accent: 40 20% 20%;
+  --accent-foreground: 40 20% 90%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 40 15% 85%;
-  --input: 40 15% 88%;
+  --border: 40 15% 22%;
+  --input: 40 15% 25%;
   --ring: 38 92% 50%;
 
-  --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 25 20% 15%;
+  --sidebar-background: 40 15% 8%;
+  --sidebar-foreground: 40 20% 95%;
   --sidebar-primary: 38 92% 50%;
   --sidebar-primary-foreground: 30 15% 8%;
-  --sidebar-accent: 40 20% 93%;
-  --sidebar-accent-foreground: 25 20% 15%;
-  --sidebar-border: 40 15% 88%;
+  --sidebar-accent: 40 20% 15%;
+  --sidebar-accent-foreground: 40 20% 95%;
+  --sidebar-border: 40 15% 22%;
   --sidebar-ring: 38 92% 50%;
 }
 
