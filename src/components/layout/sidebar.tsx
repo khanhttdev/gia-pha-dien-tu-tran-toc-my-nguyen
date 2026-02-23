@@ -12,7 +12,7 @@ import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase-client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Profile } from '@/lib/types'
 
 const navItems = [
@@ -34,6 +34,9 @@ export function Sidebar({ profile }: SidebarProps) {
     const router = useRouter()
     const supabase = createClient()
     const [open, setOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => setMounted(true), [])
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -121,7 +124,7 @@ export function Sidebar({ profile }: SidebarProps) {
                         className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     >
-                        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                        {mounted ? (theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />) : <div className="w-4 h-4" />}
                     </Button>
                     <Button
                         variant="ghost"
