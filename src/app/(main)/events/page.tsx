@@ -121,7 +121,7 @@ export default function EventsPage() {
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">{formatDate(e.event_date)}</p>
                             {!isPast && (
-                                <p className="text-xs font-medium text-amber-500 dark:text-amber-400 mt-0.5">{daysUntil(e.event_date)}</p>
+                                <p className="text-xs font-semibold text-amber-600 mt-0.5">{daysUntil(e.event_date)}</p>
                             )}
                             {e.event_time && (
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">

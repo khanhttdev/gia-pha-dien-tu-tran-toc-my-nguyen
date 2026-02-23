@@ -151,7 +151,7 @@ function TreeCanvas({ people }: { people: Person[] }) {
                     </div>
                 </div>
                 {search && (
-                    <div className="glass rounded-lg px-3 py-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <div className="glass rounded-lg px-3 py-1.5 text-xs text-amber-700 font-medium">
                         {filtered.size === 0 ? 'Không tìm thấy' : `Tìm thấy ${filtered.size} người`}
                     </div>
                 )}

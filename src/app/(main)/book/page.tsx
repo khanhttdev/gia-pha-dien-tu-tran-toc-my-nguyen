@@ -58,7 +58,7 @@ function BranchSection({ branch, depth = 0 }: { branch: FamilyBranch; depth?: nu
                 </button>
                 <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={cn('font-bold', depth === 0 ? 'text-base text-amber-600 dark:text-amber-400' : depth === 1 ? 'text-sm' : 'text-sm text-foreground/90')}>
+                        <span className={cn('font-bold', depth === 0 ? 'text-base text-amber-600' : depth === 1 ? 'text-sm text-amber-700/80' : 'text-sm text-foreground/90')}>
                             {person.full_name}
                         </span>
                         {yearRange && <span className="text-xs text-muted-foreground">({yearRange})</span>}
@@ -166,9 +166,10 @@ export default function BookPage() {
                         <div className="mt-10 pt-6 border-t border-border">
                             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Danh Sách Theo Thế Hệ</h3>
                             {Array.from(new Set(people.map(p => p.generation))).sort().map(gen => (
-                                <div key={gen} className="mb-4">
-                                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">Thế hệ thứ {gen}</p>
-                                    <div className="space-y-1">
+                                <div key={gen} className="glass rounded-xl p-4 border border-border/60">
+                                    <p className="text-sm font-semibold text-amber-700 mb-1">Thế hệ thứ {gen}</p>
+                                    <p className="text-xs text-muted-foreground">{people.filter(p => p.generation === gen).length} thành viên ({people.filter(p => p.generation === gen && !p.is_alive).length} đã mất)</p>
+                                    <div className="space-y-1 mt-2">
                                         {people.filter(p => p.generation === gen).map(p => (
                                             <div key={p.id} className="flex items-center gap-2 text-sm text-foreground/80 pl-3">
                                                 <span>{p.gender === 'male' ? '♂' : p.gender === 'female' ? '♀' : '—'}</span>
