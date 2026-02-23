@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+
 import {
     GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
-    Phone, CalendarDays, ImageIcon, Sun, Moon
+    Phone, CalendarDays, ImageIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase-client'
@@ -13,7 +14,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Profile } from '@/lib/types'
-import { useTheme } from 'next-themes'
+
 
 const HeritageOverlay = () => (
     <>
@@ -46,9 +47,7 @@ export function Sidebar({ profile }: SidebarProps) {
     const router = useRouter()
     const supabase = createClient()
     const [open, setOpen] = useState(false)
-    const { theme, setTheme } = useTheme()
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => setMounted(true), [])
+
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -84,7 +83,7 @@ export function Sidebar({ profile }: SidebarProps) {
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                                 isActive
-                                    ? 'bg-amber-400/20 text-white border border-amber-300/30 shadow-sm'
+                                    ? 'bg-primary/20 text-white border border-primary/30 shadow-sm'
                                     : 'text-amber-100/70 hover:bg-white/10 hover:text-white'
                             )}
                         >
@@ -105,7 +104,7 @@ export function Sidebar({ profile }: SidebarProps) {
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                                 pathname.startsWith('/admin')
-                                    ? 'bg-amber-400/20 text-white border border-amber-300/30 shadow-sm'
+                                    ? 'bg-primary/20 text-white border border-primary/30 shadow-sm'
                                     : 'text-amber-100/70 hover:bg-white/10 hover:text-white'
                             )}
                         >
@@ -132,32 +131,21 @@ export function Sidebar({ profile }: SidebarProps) {
                     </div>
                 </div>
 
-                <div className="flex gap-2 px-1">
-                    {mounted && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="shrink-0 h-9 w-9 xl:w-full xl:flex-1 flex justify-center items-center gap-2 text-amber-100/70 hover:text-white hover:bg-white/10 transition-colors"
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            title="Đổi giao diện Sáng/Tối"
-                        >
-                            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                            <span className="hidden xl:inline text-sm font-medium">Giao diện</span>
-                        </Button>
-                    )}
+                <div className="flex flex-col gap-1">
+
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="shrink-0 h-9 w-9 xl:w-full xl:flex-1 flex justify-center items-center gap-2 text-amber-100/70 hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                        size="sm"
+                        className="w-full justify-start gap-2 text-amber-100/70 hover:text-red-400 hover:bg-red-500/20 transition-colors"
                         onClick={handleLogout}
-                        title="Đăng xuất"
                     >
                         <LogOut className="w-4 h-4" />
-                        <span className="hidden xl:inline text-sm font-medium">Đăng xuất</span>
+                        <span className="text-sm font-medium">Đăng xuất</span>
                     </Button>
                 </div>
             </div>
         </div>
+
     )
 
     return (
@@ -183,10 +171,9 @@ export function Sidebar({ profile }: SidebarProps) {
                 />
             )}
 
-            {/* Mobile drawer */}
             <aside className={cn(
                 'md:hidden fixed top-0 left-0 z-40 h-full w-64 flex flex-col',
-                'bg-amber-900 shadow-2xl overflow-hidden',
+                'bg-background shadow-2xl overflow-hidden',
                 'transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                 open ? 'translate-x-0' : '-translate-x-full'
             )}>
@@ -195,7 +182,7 @@ export function Sidebar({ profile }: SidebarProps) {
             </aside>
 
             {/* Desktop sidebar */}
-            <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-amber-900 border-r border-[#3a1a08] overflow-hidden">
+            <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-background border-r border-border overflow-hidden">
                 <HeritageOverlay />
                 <NavContent />
             </aside>

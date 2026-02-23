@@ -75,8 +75,8 @@ export function buildTreeLayout(people: Person[]): { nodes: PersonNode[]; edges:
                 id: `${p.father_id}->${p.id}`,
                 source: p.father_id,
                 target: p.id,
-                type: 'smoothstep',
-                style: { stroke: '#d97706', strokeWidth: 1.5, opacity: 0.7 },
+                type: 'step',
+                style: { stroke: 'rgba(251, 191, 36, 0.4)', strokeWidth: 1.5 },
                 animated: false,
             })
         } else if (p.mother_id && layoutMap.has(p.mother_id)) {
@@ -84,8 +84,8 @@ export function buildTreeLayout(people: Person[]): { nodes: PersonNode[]; edges:
                 id: `${p.mother_id}->${p.id}`,
                 source: p.mother_id,
                 target: p.id,
-                type: 'smoothstep',
-                style: { stroke: '#b45309', strokeWidth: 1.5, opacity: 0.5, strokeDasharray: '4 4' },
+                type: 'step',
+                style: { stroke: 'rgba(251, 191, 36, 0.2)', strokeWidth: 1.5, strokeDasharray: '4 4' },
                 animated: false,
             })
         }

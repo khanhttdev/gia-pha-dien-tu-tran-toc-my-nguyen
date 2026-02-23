@@ -13,63 +13,53 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
 
     return (
         <div className={cn(
-            'w-[180px] rounded-xl border transition-all duration-200 cursor-pointer group',
-            'bg-card/95 backdrop-blur-sm shadow-md',
+            'w-[160px] min-h-[120px] rounded-[20px] border transition-all duration-300 cursor-pointer group flex flex-col items-center justify-center text-center p-4 relative',
+            'bg-white/[0.04] backdrop-blur-md shadow-xl',
             selected
-                ? 'border-amber-400 shadow-amber-400/30 shadow-lg ring-2 ring-amber-400/50'
+                ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] ring-1 ring-amber-400/50 scale-105'
                 : isHighlighted
-                    ? 'border-amber-300 shadow-amber-300/20 shadow-md'
-                    : 'border-border hover:border-amber-400/50 hover:shadow-amber-400/10 hover:shadow-lg',
-            !person.is_alive && 'opacity-70'
+                    ? 'border-amber-400/50 shadow-md scale-105'
+                    : 'border-white/10 hover:bg-white/10 hover:border-white/20',
+            !person.is_alive && 'opacity-75 grayscale-[20%]'
         )}>
-            <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-amber-400 !border-amber-600" />
+            <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-amber-400 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
 
             {/* Generation badge */}
+            <div className="absolute top-2 right-2 text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
+                F{person.generation}
+            </div>
+
+            {/* Icon Box */}
             <div className={cn(
-                'absolute -top-2 -right-2 w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center',
-                isMale ? 'bg-blue-500/80 text-white' :
-                    isFemale ? 'bg-rose-400/80 text-white' :
-                        'bg-muted text-muted-foreground'
+                'w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3 shrink-0 transition-transform group-hover:scale-110 duration-500',
+                'bg-white/5 border border-white/10 shadow-inner',
+                isMale ? 'text-blue-400' :
+                    isFemale ? 'text-rose-400' :
+                        'text-amber-400'
             )}>
-                {person.generation}
+                {person.avatar_url
+                    ? <img src={person.avatar_url} alt={person.full_name} className="w-full h-full object-cover rounded-xl" />
+                    : isMale ? '👨' : isFemale ? '👩' : '👤'
+                }
             </div>
 
-            <div className="p-3">
-                {/* Avatar + Name */}
-                <div className="flex items-center gap-2.5">
-                    <div className={cn(
-                        'w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0',
-                        'border shadow-inner',
-                        isMale ? 'bg-blue-500/10 border-blue-500/30 text-blue-600' :
-                            isFemale ? 'bg-rose-400/10 border-rose-400/30 text-rose-500' :
-                                'bg-muted border-border'
-                    )}>
-                        {person.avatar_url
-                            ? <img src={person.avatar_url} alt={person.full_name} className="w-full h-full object-cover rounded-lg" />
-                            : isMale ? '👨' : isFemale ? '👩' : '👤'
-                        }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold leading-tight truncate text-foreground">
-                            {person.full_name}
-                        </p>
-                        {yearRange && (
-                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                                {yearRange}
-                            </p>
-                        )}
-                    </div>
-                </div>
+            {/* Title */}
+            <h3 className="text-xs font-bold text-white mb-1 leading-tight tracking-wide px-1">
+                {person.full_name}
+            </h3>
 
-                {/* Status */}
-                {!person.is_alive && (
-                    <div className="mt-2 flex items-center gap-1">
-                        <span className="text-[9px] text-muted-foreground/60 italic">đã mất</span>
-                    </div>
-                )}
-            </div>
+            {/* Description */}
+            {yearRange && (
+                <p className="text-[10px] text-white/50 leading-relaxed font-medium">
+                    {yearRange}
+                </p>
+            )}
 
-            <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-amber-400 !border-amber-600" />
+            {!person.is_alive && (
+                <span className="text-[9px] text-white/30 italic mt-1.5">đã mất</span>
+            )}
+
+            <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-amber-400 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
     )
 }

@@ -1,13 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+
 
 /* ============================================================
    GIA PHẢ ĐIỆN TỬ — DESIGN SYSTEM
    Tông màu: Ấm áp + Quý phái + Hiện đại
    Palette: Amber Gold × Deep Teak × Cream White
    ============================================================ */
+
+@font-face {
+  font-family: 'Zolina';
+  src: url('/fonts/zolina/ZolinaVariableGX.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Brand Colors — Amber Gold */
@@ -34,69 +42,41 @@
   --warm-800: #612f16;
   --warm-900: #4a2310;
 
-  /* shadcn/ui CSS Variables — Light Heritage */
-  --background: 40 30% 97%;
-  --foreground: 25 20% 15%;
-  --card: 0 0% 100%;
-  --card-foreground: 25 20% 15%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 25 20% 15%;
-  --primary: 38 92% 50%;
-  --primary-foreground: 30 15% 8%;
-  --secondary: 40 20% 93%;
-  --secondary-foreground: 25 20% 20%;
-  --muted: 40 15% 92%;
-  --muted-foreground: 25 10% 45%;
-  --accent: 40 20% 93%;
-  --accent-foreground: 25 20% 20%;
+  /* shadcn/ui CSS Variables — Heritage Zhen Dark-Only Theme */
+  --background: 351 69% 11%;
+  /* Deep Maroon #31090A */
+  --foreground: 0 0% 100%;
+  /* White */
+  --card: 351 45% 16%;
+  --card-foreground: 0 0% 100%;
+  --popover: 351 45% 14%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 40 100% 66%;
+  /* #FFC653 Gold */
+  --primary-foreground: 0 0% 11%;
+  /* #1B1B1B */
+  --secondary: 351 40% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 351 40% 20%;
+  --muted-foreground: 0 0% 70%;
+  --accent: 40 100% 66%;
+  --accent-foreground: 0 0% 11%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 40 15% 85%;
-  --input: 40 15% 88%;
-  --ring: 38 92% 50%;
-  --radius: 0.75rem;
+  --border: 351 30% 24%;
+  --input: 351 30% 22%;
+  --ring: 40 100% 66%;
+  --radius: 1rem;
 
   /* Sidebar */
-  --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 25 20% 15%;
-  --sidebar-primary: 38 92% 50%;
-  --sidebar-primary-foreground: 30 15% 8%;
-  --sidebar-accent: 40 20% 93%;
-  --sidebar-accent-foreground: 25 20% 15%;
-  --sidebar-border: 40 15% 88%;
-  --sidebar-ring: 38 92% 50%;
-}
-
-.dark {
-  /* Heritage Dark Theme */
-  --background: 40 15% 8%;
-  --foreground: 40 20% 90%;
-  --card: 40 15% 12%;
-  --card-foreground: 40 20% 90%;
-  --popover: 40 15% 10%;
-  --popover-foreground: 40 20% 90%;
-  --primary: 38 92% 50%;
-  --primary-foreground: 30 15% 8%;
-  --secondary: 40 15% 18%;
-  --secondary-foreground: 40 20% 90%;
-  --muted: 40 10% 20%;
-  --muted-foreground: 40 15% 65%;
-  --accent: 40 20% 20%;
-  --accent-foreground: 40 20% 90%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 40 15% 22%;
-  --input: 40 15% 25%;
-  --ring: 38 92% 50%;
-
-  --sidebar-background: 40 15% 8%;
-  --sidebar-foreground: 40 20% 95%;
-  --sidebar-primary: 38 92% 50%;
-  --sidebar-primary-foreground: 30 15% 8%;
-  --sidebar-accent: 40 20% 15%;
-  --sidebar-accent-foreground: 40 20% 95%;
-  --sidebar-border: 40 15% 22%;
-  --sidebar-ring: 38 92% 50%;
+  --sidebar-background: 351 69% 11%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 40 100% 66%;
+  --sidebar-primary-foreground: 0 0% 11%;
+  --sidebar-accent: 351 40% 20%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 351 40% 25%;
+  --sidebar-ring: 40 100% 66%;
 }
 
 @theme inline {
@@ -131,6 +111,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-inter), "Inter", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-serif: "Zolina", var(--font-playfair), "Playfair Display", Georgia, serif;
 }
 
 /* ============================================================
@@ -143,10 +126,38 @@
 
 body {
   background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(ellipse at 20% 50%, hsl(351 69% 15% / 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, hsl(40 100% 66% / 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 100%, hsl(351 69% 8% / 0.6) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-attachment: fixed;
   color: hsl(var(--foreground));
-  font-family: 'Inter', 'Be Vietnam Pro', system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Input text color fix - ensure white text on dark inputs */
+input,
+textarea,
+select {
+  color: hsl(var(--foreground)) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-serif {
+  font-family: var(--font-serif);
 }
 
 /* Scrollbar styling */
@@ -172,9 +183,10 @@ body {
    CUSTOM UTILITIES
    ============================================================ */
 .glass {
-  background: hsl(var(--card) / 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid hsl(var(--border) / 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .gold-gradient {
@@ -220,4 +232,11 @@ body {
 
 .page-enter {
   animation: fade-in 0.4s ease-out forwards;
+}
+
+/* Force ReactFlow background to be fully transparent so app's bg shows through */
+.react-flow,
+.react-flow__bg {
+  background: transparent !important;
+  background-color: transparent !important;
 }

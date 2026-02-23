@@ -49,7 +49,7 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen flex bg-background">
             {/* Left panel — decorative heritage */}
-            <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-amber-900 border-r border-border/50">
+            <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-background border-r border-border/50">
                 {/* Traditional Asian-inspired SVG Pattern */}
                 <div
                     className="absolute inset-0 opacity-15 mix-blend-overlay"
@@ -57,16 +57,16 @@ export default function RegisterPage() {
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-600/40 to-amber-950/90 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-background/90 mix-blend-multiply" />
                 <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]" />
 
                 <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center h-full w-full">
                     <div className="w-24 h-24 mb-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
                         <span className="text-6xl drop-shadow-lg">🌳</span>
                     </div>
-                    <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight tracking-tight">
+                    <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight tracking-tight font-serif">
                         Gia Phả <br />
-                        <span className="text-amber-300">Trần Tộc Mỹ Nguyên</span>
+                        <span className="text-primary">Trần Tộc Mỹ Nguyên</span>
                     </h1>
                     <p className="text-amber-100/80 text-lg max-w-sm leading-relaxed font-medium">
                         Bắt đầu hành trình lưu giữ<br />và kết nối cội nguồn gia tộc
@@ -74,11 +74,11 @@ export default function RegisterPage() {
 
                     <div className="mt-16 grid grid-cols-2 gap-8 w-full max-w-sm">
                         <div className="text-center space-y-1">
-                            <div className="text-3xl font-bold text-white">4+</div>
+                            <div className="text-3xl font-bold text-white font-serif">4+</div>
                             <div className="text-amber-200/70 text-sm font-medium uppercase tracking-wider">Thế hệ</div>
                         </div>
                         <div className="text-center space-y-1">
-                            <div className="text-3xl font-bold text-white">100+</div>
+                            <div className="text-3xl font-bold text-white font-serif">100+</div>
                             <div className="text-amber-200/70 text-sm font-medium uppercase tracking-wider">Năm lịch sử</div>
                         </div>
                     </div>
@@ -91,7 +91,7 @@ export default function RegisterPage() {
                 <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-amber-500/5 blur-[100px] pointer-events-none" />
                 <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-orange-500/5 blur-[100px] pointer-events-none" />
 
-                <div className="w-full max-w-md space-y-8 relative z-10 glass sm:bg-white/60 p-8 sm:p-10 rounded-3xl shadow-sm border border-border/50">
+                <div className="w-full max-w-md space-y-8 relative z-10 glass p-8 sm:p-10 rounded-3xl shadow-sm border border-border/50">
 
                     {/* Mobile internal logo */}
                     <div className="lg:hidden text-center mb-8">

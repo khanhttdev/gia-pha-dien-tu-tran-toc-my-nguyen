@@ -160,6 +160,9 @@ function TreeCanvas({ people }: { people: Person[] }) {
             {selected && <PersonDetailPanel person={selected} onClose={() => setSelected(null)} />}
 
             <ReactFlow
+                colorMode="dark"
+                className="bg-transparent"
+                style={{ backgroundColor: 'transparent', '--xy-background-color': 'transparent' } as React.CSSProperties}
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
@@ -173,14 +176,14 @@ function TreeCanvas({ people }: { people: Person[] }) {
                 maxZoom={2}
                 proOptions={{ hideAttribution: true }}
             >
-                <Background color="#92400e" gap={24} size={1} style={{ opacity: 0.15 }} />
-                <Controls />
+                <Controls className="!bg-background !border-border shadow-sm rounded-xl overflow-hidden [&>button]:!border-b-border [&>button]:!bg-background hover:[&>button]:!bg-muted [&>button>svg]:!fill-primary" />
                 <MiniMap
                     nodeColor={(n: Node) => {
                         const gender = (n.data as PersonNodeType['data'])?.person?.gender
                         return gender === 'male' ? '#3b82f6' : gender === 'female' ? '#fb7185' : '#78350f'
                     }}
-                    maskColor="rgba(0,0,0,0.3)"
+                    maskColor="rgba(0,0,0,0.05)"
+                    className="!bg-background !border-border rounded-xl shadow-sm border overflow-hidden"
                 />
             </ReactFlow>
         </div>
