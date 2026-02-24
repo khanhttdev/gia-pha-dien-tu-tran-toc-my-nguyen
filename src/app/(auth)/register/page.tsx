@@ -116,7 +116,7 @@ export default function RegisterPage() {
                                 value={name}
                                 onChange={e => setName(e.target.value)}
                                 disabled={loading}
-                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors"
+                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors text-amber-950 font-medium"
                             />
                         </div>
                         <div className="space-y-2">
@@ -128,7 +128,7 @@ export default function RegisterPage() {
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 disabled={loading}
-                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors"
+                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors text-amber-950 font-medium"
                             />
                         </div>
                         <div className="space-y-2">
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
                                 disabled={loading}
-                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors"
+                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors text-amber-950 font-medium"
                             />
                         </div>
                         <Button type="submit" className="w-full h-11 rounded-xl mt-4 gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all" disabled={loading}>

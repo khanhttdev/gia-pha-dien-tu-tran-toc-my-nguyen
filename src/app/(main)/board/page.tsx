@@ -6,8 +6,9 @@ import { createClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { MessageSquare, Send, Loader2, Info, Clock, CheckCircle2, UserCircle2 } from 'lucide-react'
+import { MessageSquare, Send, Loader2, Info, Clock, CheckCircle2, UserCircle2, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CommentSection } from '@/components/board/comment-section'
 
 export default function BoardPage() {
     const [feed, setFeed] = useState<any[]>([])
@@ -16,6 +17,14 @@ export default function BoardPage() {
     const [content, setContent] = useState('')
     const [type, setType] = useState('news')
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
+
+    const toggleComments = (id: string) => {
+        setExpandedComments(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }))
+    }
 
     const loadFeed = async () => {
         setLoading(true)
@@ -171,6 +180,31 @@ export default function BoardPage() {
                                         <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
                                             {item.content}
                                         </p>
+
+                                        {/* Action: Toggle Comments */}
+                                        {item.status === 'approved' && (
+                                            <div className="mt-3 pt-3 border-t border-border/20">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className={cn(
+                                                        "h-8 text-[11px] gap-1.5 px-3 rounded-full transition-all",
+                                                        expandedComments[item.id]
+                                                            ? "bg-amber-500/10 text-amber-500"
+                                                            : "text-muted-foreground hover:bg-white/5"
+                                                    )}
+                                                    onClick={() => toggleComments(item.id)}
+                                                >
+                                                    <MessageCircle className="w-3.5 h-3.5" />
+                                                    {expandedComments[item.id] ? 'Đóng bình luận' : 'Xem bình luận'}
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* Comment Section Content */}
+                                        {expandedComments[item.id] && (
+                                            <CommentSection contributionId={item.id} currentUserId={currentUserId} />
+                                        )}
                                     </div>
                                 </div>
                             </div>

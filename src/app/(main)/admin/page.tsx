@@ -312,7 +312,19 @@ export default function AdminPage() {
                                                         <Badge variant="outline" className="text-[10px] uppercase">{c.type}</Badge>
                                                         <span className="text-[10px] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString('vi-VN') : ''}</span>
                                                     </div>
-                                                    <p className="text-sm text-foreground mb-1">{c.content}</p>
+                                                    <p className="text-sm text-foreground mb-2 font-medium">{c.content}</p>
+                                                    {/* Hiển thị thông tin người gửi */}
+                                                    {(() => {
+                                                        const author = profiles.find(p => p.id === c.author_id)
+                                                        return author ? (
+                                                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-white/5 py-1 px-2 rounded-lg w-fit">
+                                                                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-600">
+                                                                    {author.full_name?.[0]?.toUpperCase() ?? '?'}
+                                                                </span>
+                                                                <span>Gửi bởi: <strong className="text-foreground/80">{author.full_name}</strong></span>
+                                                            </div>
+                                                        ) : null
+                                                    })()}
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
                                                     <Badge variant={c.status === 'pending' ? 'outline' : c.status === 'approved' ? 'default' : 'secondary'} className={cn(

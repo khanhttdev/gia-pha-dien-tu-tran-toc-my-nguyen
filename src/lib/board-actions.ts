@@ -71,3 +71,58 @@ export async function submitContribution(formData: FormData) {
     revalidatePath('/board')
     return { error: null }
 }
+
+/**
+ * Lấy danh sách bình luận của một bài đăng.
+ */
+export async function getComments(contributionId: string) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('comments')
+        .select(`
+            *,
+            author:profiles(full_name, avatar_url)
+        `)
+        .eq('contribution_id', contributionId)
+        .order('created_at', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching comments:', error)
+        return { error: error.message, data: null }
+    }
+
+    return { error: null, data: data as any[] }
+}
+
+/**
+ * Thêm bình luận mới.
+ */
+export async function addComment(contributionId: string, content: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Vui lòng đăng nhập để bình luận' }
+    }
+
+    if (!content.trim()) {
+        return { error: 'Nội dung bình luận không được để trống' }
+    }
+
+    const { error } = await supabase
+        .from('comments')
+        .insert({
+            contribution_id: contributionId,
+            author_id: user.id,
+            content: content.trim()
+        })
+
+    if (error) {
+        console.error('Error adding comment:', error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/board')
+    return { error: null }
+}
