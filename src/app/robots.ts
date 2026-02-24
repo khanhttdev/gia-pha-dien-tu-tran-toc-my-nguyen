@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin', '/api/', '/(auth)/*'],
         },
-        sitemap: 'https://giaphagiadinh.com/sitemap.xml',
+        sitemap: 'https://trantocmynguyen.vercel.app/sitemap.xml',
     }
 }

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://giaphagiadinh.com'
+    const baseUrl = 'https://trantocmynguyen.vercel.app'
 
     // Thêm các static routes public (những trang public người ngoài có thể search được)
     return [
