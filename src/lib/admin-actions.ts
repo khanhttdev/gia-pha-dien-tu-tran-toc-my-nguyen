@@ -106,3 +106,17 @@ export async function setUserActiveStatus(userId: string, newStatus: boolean) {
     revalidatePath('/admin/users')
     return { error: null }
 }
+
+export async function getDemographicStats() {
+    const supabase = await createClient()
+
+    // @ts-expect-error RPC types
+    const { data: stats, error } = await supabase.rpc('get_demographic_stats')
+
+    if (error) {
+        console.error('Error fetching demographic stats:', error)
+        return { error: error.message, data: null as any }
+    }
+
+    return { error: null, data: stats as any }
+}
