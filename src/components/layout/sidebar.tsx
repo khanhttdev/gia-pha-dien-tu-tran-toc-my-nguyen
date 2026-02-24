@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { Profile } from '@/lib/types'
 import { GlobalSearch } from '@/components/global-search'
+import { NotificationMenu } from '@/components/layout/notification-menu'
 
 
 const HeritageOverlay = () => (
@@ -63,15 +64,18 @@ export function Sidebar({ profile }: SidebarProps) {
         <div className="relative z-10 flex flex-col h-full text-amber-50">
             {/* Logo */}
             <div className="px-6 py-5 border-b border-white/10">
-                <Link href="/home" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
-                    <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
-                        <span className="text-lg drop-shadow-sm">🌳</span>
-                    </div>
-                    <div>
-                        <p className="text-sm font-bold text-white leading-none tracking-wide">Trần Tộc</p>
-                        <p className="text-xs text-amber-200/70 mt-0.5 font-medium">Mỹ Nguyên</p>
-                    </div>
-                </Link>
+                <div className="flex items-center justify-between">
+                    <Link href="/home" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
+                        <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
+                            <span className="text-lg drop-shadow-sm">🌳</span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-white leading-none tracking-wide">Trần Tộc</p>
+                            <p className="text-xs text-amber-200/70 mt-0.5 font-medium">Mỹ Nguyên</p>
+                        </div>
+                    </Link>
+                    <NotificationMenu />
+                </div>
                 <div className="mt-5">
                     <GlobalSearch />
                 </div>
@@ -162,11 +166,14 @@ export function Sidebar({ profile }: SidebarProps) {
                     <div className="w-7 h-7 rounded-md gold-gradient flex items-center justify-center shadow-sm">
                         <span className="text-sm drop-shadow-sm">🌳</span>
                     </div>
-                    <span className="font-bold text-sm">Trần Tộc Mỹ Nguyên</span>
+                    <span className="font-bold text-sm">Trần Tộc</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-foreground/5" onClick={() => setOpen(!open)}>
-                    {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-                </Button>
+                <div className="flex items-center gap-1">
+                    <NotificationMenu />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-foreground/5" onClick={() => setOpen(!open)}>
+                        {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                    </Button>
+                </div>
             </div>
 
             {/* Mobile overlay */}
