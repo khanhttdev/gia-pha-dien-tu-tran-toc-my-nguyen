@@ -103,8 +103,8 @@ const features = [
         icon: ImageIcon,
         title: 'Thư Viện Ảnh',
         desc: 'Bộ sưu tập hình ảnh quý giá từ các thế hệ — ảnh gia đình, sự kiện, di tích.',
-        color: 'from-violet-500/20 to-purple-500/20',
-        iconColor: 'text-violet-400',
+        color: 'from-slate-500/20 to-gray-500/20',
+        iconColor: 'text-slate-400',
     },
     {
         icon: Sparkles,
@@ -135,7 +135,7 @@ export function LandingPage() {
                     }}
                 />
 
-                <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+                <div aria-label="landing-wrapper" className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
                     {/* Logo */}
                     <div className="w-20 h-20 sm:w-24 sm:h-24 mb-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl hero-logo">
                         <span className="text-5xl sm:text-6xl drop-shadow-lg">🌳</span>

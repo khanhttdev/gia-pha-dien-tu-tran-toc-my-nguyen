@@ -13,7 +13,7 @@ const quickLinks = [
     { href: '/directory', label: 'Danh Bạ', icon: Phone, color: 'from-amber-500/20 to-orange-500/20', iconColor: 'text-amber-400' },
     { href: '/book', label: 'Sách Gia Phả', icon: BookOpen, color: 'from-rose-500/20 to-pink-500/20', iconColor: 'text-rose-400' },
     { href: '/events', label: 'Sự Kiện', icon: CalendarDays, color: 'from-cyan-500/20 to-sky-500/20', iconColor: 'text-cyan-400' },
-    { href: '/media', label: 'Thư Viện Ảnh', icon: ImageIcon, color: 'from-violet-500/20 to-purple-500/20', iconColor: 'text-violet-400' },
+    { href: '/media', label: 'Thư Viện Ảnh', icon: ImageIcon, color: 'from-slate-500/20 to-gray-500/20', iconColor: 'text-slate-400' },
 ]
 
 const getTimeAgo = (dateStr: string | null) => {
@@ -61,7 +61,7 @@ export default async function HomePage() {
     const maxGen = genData?.generation ?? 0
 
     return (
-        <div className="p-6 sm:p-8 max-w-6xl mx-auto space-y-8 page-enter">
+        <div aria-label="home" className="p-6 sm:p-8 max-w-6xl mx-auto space-y-8 page-enter">
             {/* Welcome Banner */}
             <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-amber-500/5 to-rose-500/10 rounded-2xl" />
