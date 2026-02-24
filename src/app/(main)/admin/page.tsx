@@ -209,8 +209,7 @@ export default function AdminPage() {
                                                     >
                                                         {p.role === 'admin' ? <><UserX className="w-3 h-3" /> → Member</> : <><UserCheck className="w-3 h-3" /> → Admin</>}
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
+                                                    <Button aria-label="Action Button" variant="ghost"
                                                         size="icon"
                                                         className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                                                         title="Xóa người dùng"
@@ -249,8 +248,8 @@ export default function AdminPage() {
                                                     </Badge>
                                                     {c.status === 'pending' && (
                                                         <div className="flex gap-1 ml-1">
-                                                            <Button size="icon" variant="outline" className="h-7 w-7 hover:text-green-500" onClick={() => updateContrib(c.id, 'approved')}><Check className="w-3.5 h-3.5" /></Button>
-                                                            <Button size="icon" variant="outline" className="h-7 w-7 hover:text-red-500" onClick={() => updateContrib(c.id, 'rejected')}><X className="w-3.5 h-3.5" /></Button>
+                                                            <Button aria-label="Action Button" size="icon" variant="outline" className="h-7 w-7 hover:text-green-500" onClick={() => updateContrib(c.id, 'approved')}><Check className="w-3.5 h-3.5" /></Button>
+                                                            <Button aria-label="Action Button" size="icon" variant="outline" className="h-7 w-7 hover:text-red-500" onClick={() => updateContrib(c.id, 'rejected')}><X className="w-3.5 h-3.5" /></Button>
                                                         </div>
                                                     )}
                                                 </div>

@@ -53,14 +53,14 @@ function PersonDetailPanel({ person, onClose }: { person: Person; onClose: () =>
                     </div>
                 </div>
                 <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-amber-500" onClick={() => {
+                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-6 w-6 hover:text-amber-500" onClick={() => {
                         const url = `${window.location.origin}/tree?root=${person.id}`
                         navigator.clipboard.writeText(url)
                         toast.success('Đã sao chép link chia sẻ nhánh!')
                     }} title="Chia sẻ nhánh này">
                         <Share2 className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
                         <X className="w-4 h-4" />
                     </Button>
                 </div>

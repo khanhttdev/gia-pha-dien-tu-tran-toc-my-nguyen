@@ -29,14 +29,15 @@ export const viewport: Viewport = {
   themeColor: '#09090b',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`} suppressHydrationWarning>
-        {children}
+        <main className="h-full w-full">
+          {children}
+        </main>
         <Toaster richColors position="top-right" />
       </body>
     </html>

@@ -203,10 +203,10 @@ export default function PeoplePage() {
                                             </div>
                                             {isAdmin && (
                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-amber-500" onClick={() => openEdit(p)}>
+                                                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-7 w-7 hover:text-amber-500" onClick={() => openEdit(p)}>
                                                         <Pencil className="w-3.5 h-3.5" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => handleDelete(p)}>
+                                                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => handleDelete(p)}>
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </Button>
                                                 </div>

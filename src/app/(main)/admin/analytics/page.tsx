@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
         <div className="h-full flex flex-col p-6 space-y-6 overflow-y-auto">
             <div className="flex items-center gap-4">
                 <Link href="/admin">
-                    <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="w-4 h-4" /></Button>
+                    <Button aria-label="Action Button" variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="w-4 h-4" /></Button>
                 </Link>
                 <h1 className="text-xl font-bold flex items-center gap-2">
                     <BarChart3 className="w-6 h-6 text-amber-500" />

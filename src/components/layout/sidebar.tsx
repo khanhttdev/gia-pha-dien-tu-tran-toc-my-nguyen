@@ -170,7 +170,7 @@ export function Sidebar({ profile }: SidebarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <NotificationMenu />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-foreground/5" onClick={() => setOpen(!open)}>
+                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-foreground/5" onClick={() => setOpen(!open)}>
                         {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
                     </Button>
                 </div>

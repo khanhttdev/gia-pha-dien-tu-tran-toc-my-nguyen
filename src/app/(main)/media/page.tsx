@@ -153,7 +153,7 @@ export default function MediaPage() {
                                                     {m.description && <p className="text-xs text-muted-foreground italic truncate">{m.description}</p>}
                                                 </div>
                                                 {isAdmin && (
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-red-500" onClick={() => handleDelete(m)}>
+                                                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-red-500" onClick={() => handleDelete(m)}>
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </Button>
                                                 )}

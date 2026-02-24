@@ -109,7 +109,7 @@ export default function DirectoryPage() {
                     </div>
                 </div>
                 {isAdmin && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-amber-500 shrink-0"
+                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-amber-500 shrink-0"
                         onClick={() => openEdit(p)}>
                         <Pencil className="w-3.5 h-3.5" />
                     </Button>

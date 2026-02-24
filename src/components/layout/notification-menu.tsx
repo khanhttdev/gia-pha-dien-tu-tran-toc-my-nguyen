@@ -60,7 +60,7 @@ export function NotificationMenu() {
     return (
         <Popover open={open} onOpenChange={handleOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-white/10 text-white group">
+                <Button aria-label="Action Button" variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-white/10 text-white group">
                     <Bell className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" />
                     {unread > 0 && (
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
