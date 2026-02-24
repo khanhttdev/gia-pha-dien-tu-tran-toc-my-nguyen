@@ -6,14 +6,15 @@ import { cn } from '@/lib/utils'
 
 import {
     Home, GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
-    Phone, CalendarDays, ImageIcon
+    Phone, CalendarDays, ImageIcon, UserCog
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase-client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Profile } from '@/lib/types'
+import { GlobalSearch } from '@/components/global-search'
 
 
 const HeritageOverlay = () => (
@@ -37,6 +38,7 @@ const navItems = [
     { href: '/book', label: 'Sách Gia Phả', icon: BookOpen },
     { href: '/events', label: 'Sự Kiện', icon: CalendarDays },
     { href: '/media', label: 'Thư Viện', icon: ImageIcon },
+    { href: '/settings', label: 'Hồ Sơ', icon: UserCog },
 ]
 
 interface SidebarProps {
@@ -70,6 +72,9 @@ export function Sidebar({ profile }: SidebarProps) {
                         <p className="text-xs text-amber-200/70 mt-0.5 font-medium">Mỹ Nguyên</p>
                     </div>
                 </Link>
+                <div className="mt-5">
+                    <GlobalSearch />
+                </div>
             </div>
 
             {/* Navigation */}

@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
     ReactFlow,
     Background,
@@ -22,7 +23,8 @@ import { Person } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Search, X, Users, GitBranch } from 'lucide-react'
+import { Search, X, Users, GitBranch, Share2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const nodeTypes = { person: PersonNode }
@@ -48,9 +50,18 @@ function PersonDetailPanel({ person, onClose }: { person: Person; onClose: () =>
                         </Badge>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-                    <X className="w-3 h-3" />
-                </Button>
+                <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-amber-500" onClick={() => {
+                        const url = `${window.location.origin}/tree?root=${person.id}`
+                        navigator.clipboard.writeText(url)
+                        toast.success('Đã sao chép link chia sẻ nhánh!')
+                    }} title="Chia sẻ nhánh này">
+                        <Share2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+                        <X className="w-4 h-4" />
+                    </Button>
+                </div>
             </div>
             <h3 className="font-bold text-base leading-tight mb-1">{person.full_name}</h3>
             <div className="space-y-1 text-sm text-muted-foreground">
@@ -70,75 +81,125 @@ function PersonDetailPanel({ person, onClose }: { person: Person; onClose: () =>
                     <p className="text-xs mt-2 italic border-t border-border pt-2">{person.notes}</p>
                 )}
             </div>
-        </div>
+        </div >
     )
 }
 
-function TreeCanvas({ people }: { people: Person[] }) {
+function TreeContent({ people }: { people: Person[] }) {
     const { fitView, setCenter } = useReactFlow()
     const [nodes, setNodes, onNodesChange] = useNodesState<PersonNodeType>([])
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
     const [selected, setSelected] = useState<Person | null>(null)
     const [search, setSearch] = useState('')
+    const searchParams = useSearchParams()
+    const focusId = searchParams.get('focus')
+    const rootId = searchParams.get('root')
+
+    const displayPeople = useMemo(() => {
+        if (!rootId) return people
+
+        // Filter logic for sub-tree
+        const childrenMap = new Map<string, string[]>()
+        people.forEach(p => {
+            if (p.father_id) {
+                if (!childrenMap.has(p.father_id)) childrenMap.set(p.father_id, [])
+                childrenMap.get(p.father_id)!.push(p.id)
+            }
+            if (p.mother_id) {
+                if (!childrenMap.has(p.mother_id)) childrenMap.set(p.mother_id, [])
+                childrenMap.get(p.mother_id)!.push(p.id)
+            }
+        })
+
+        const result = new Set<string>()
+        const queue = [rootId]
+        while (queue.length > 0) {
+            const curr = queue.shift()!
+            if (result.has(curr)) continue
+            result.add(curr)
+            const children = childrenMap.get(curr) || []
+            queue.push(...children)
+        }
+
+        // Include spouses? 
+        return people.filter(p => result.has(p.id))
+    }, [people, rootId])
+
+    useEffect(() => {
+        if (!focusId) return
+        const p = displayPeople.find(x => x.id === focusId)
+        if (p) setSelected(p)
+    }, [focusId, displayPeople])
+
     const rawNodes = useRef<PersonNodeType[]>([])
     useEffect(() => {
         rawNodes.current = nodes
     }, [nodes])
+
     useEffect(() => {
-        const { nodes: n, edges: e } = buildTreeLayout(people)
+        const { nodes: n, edges: e } = buildTreeLayout(displayPeople)
         setNodes(n)
         setEdges(e)
         setTimeout(() => fitView({ padding: 0.1 }), 100)
-    }, [people, setNodes, setEdges, fitView])
+    }, [displayPeople, setNodes, setEdges, fitView])
 
     const filtered = useMemo(() => {
         if (!search.trim()) return new Set<string>()
         const q = search.toLowerCase()
-        return new Set(people.filter(p => p.full_name.toLowerCase().includes(q)).map(p => p.id))
-    }, [search, people])
+        return new Set(displayPeople.filter(p => p.full_name.toLowerCase().includes(q)).map(p => p.id))
+    }, [search, displayPeople])
 
     useEffect(() => {
         setNodes(ns => ns.map(n => ({
             ...n,
             data: {
                 ...n.data,
-                isHighlighted: filtered.size > 0 && filtered.has(n.id),
+                isHighlighted: (filtered.size > 0 && filtered.has(n.id)) || n.id === focusId,
             },
         })))
-        if (filtered.size === 1) {
-            const [id] = filtered
-            const node = rawNodes.current.find(n => n.id === id)
-            if (node) setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1.2, duration: 600 })
+        if (filtered.size === 1 || focusId) {
+            const idToFocus = focusId || Array.from(filtered)[0]
+            const node = rawNodes.current.find(n => n.id === idToFocus)
+            if (node) {
+                setTimeout(() => setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1.2, duration: 600 }), 100)
+            }
         }
-    }, [filtered, setNodes, setCenter])
+    }, [filtered, focusId, setNodes, setCenter])
 
     const onNodeClick: NodeMouseHandler<PersonNodeType> = useCallback((_evt, node) => {
-        const p = people.find(x => x.id === node.id)
+        const p = displayPeople.find(x => x.id === node.id)
         setSelected(p ?? null)
-    }, [people])
+    }, [displayPeople])
 
     const stats = useMemo(() => ({
-        total: people.length,
-        alive: people.filter(p => p.is_alive).length,
-        gens: new Set(people.map(p => p.generation)).size,
-    }), [people])
+        total: displayPeople.length,
+        alive: displayPeople.filter(p => p.is_alive).length,
+        gens: new Set(displayPeople.map(p => p.generation)).size,
+    }), [displayPeople])
 
     return (
         <div className="relative w-full h-full">
             {/* Toolbar */}
             <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                        placeholder="Tìm thành viên..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="pl-8 pr-8 h-8 w-52 text-sm glass border-border/60"
-                    />
-                    {search && (
-                        <button className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearch('')}>
-                            <X className="w-3 h-3" />
-                        </button>
+                <div className="relative flex items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Tìm thành viên..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-8 pr-8 h-8 w-52 text-sm glass border-border/60"
+                        />
+                        {search && (
+                            <button className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearch('')}>
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+                    {rootId && (
+                        <Button variant="outline" size="sm" className="h-8 text-xs bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20" onClick={() => window.location.href = '/tree'}>
+                            Xem toàn bộ
+                        </Button>
                     )}
                 </div>
                 <div className="glass rounded-lg px-3 py-2 space-y-1">
@@ -225,7 +286,9 @@ export default function TreePage() {
                     </div>
                 ) : (
                     <ReactFlowProvider>
-                        <TreeCanvas people={people} />
+                        <Suspense fallback={null}>
+                            <TreeContent people={people} />
+                        </Suspense>
                     </ReactFlowProvider>
                 )}
             </div>

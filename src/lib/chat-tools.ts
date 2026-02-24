@@ -126,7 +126,7 @@ async function getFamilyStatistics() {
 interface RelationshipResult {
     person1: string
     person2: string
-    path: Array<{ id: string; name: string; generation: number }>
+    path: Array<{ id: string; name: string; generation: number | null }>
     relationship: string
     description: string
 }
@@ -155,9 +155,9 @@ function describeRelationship(path: Person[], person1: Person, person2: Person):
     }
 
     // Grandparent-grandchild & beyond — use generation gap
-    const genGap = Math.abs(person1.generation - person2.generation)
-    const elder = person1.generation < person2.generation ? person1 : person2
-    const younger = person1.generation < person2.generation ? person2 : person1
+    const genGap = Math.abs((person1.generation ?? 1) - (person2.generation ?? 1))
+    const elder = (person1.generation ?? 1) < (person2.generation ?? 1) ? person1 : person2
+    const younger = (person1.generation ?? 1) < (person2.generation ?? 1) ? person2 : person1
 
     if (genGap === 2) {
         return elder.gender === 'male'

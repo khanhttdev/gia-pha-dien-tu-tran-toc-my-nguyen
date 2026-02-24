@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { ImageUpload } from '@/components/ui/image-upload'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Plus, Search, Pencil, Trash2, Loader2, Users } from 'lucide-react'
@@ -23,11 +24,12 @@ type FormData = {
     notes: string
     father_id: string
     mother_id: string
+    avatar_url: string | null
 }
 
 const EMPTY_FORM: FormData = {
     full_name: '', gender: 'unknown', birth_year: '', death_year: '',
-    is_alive: true, generation: '1', notes: '', father_id: '', mother_id: ''
+    is_alive: true, generation: '1', notes: '', father_id: '', mother_id: '', avatar_url: null
 }
 
 export default function PeoplePage() {
@@ -71,10 +73,11 @@ export default function PeoplePage() {
     const openEdit = (p: Person) => {
         setEditTarget(p)
         setForm({
-            full_name: p.full_name, gender: p.gender, birth_year: String(p.birth_year ?? ''),
-            death_year: String(p.death_year ?? ''), is_alive: p.is_alive,
+            full_name: p.full_name, gender: (p.gender as any) || 'unknown', birth_year: String(p.birth_year ?? ''),
+            death_year: String(p.death_year ?? ''), is_alive: p.is_alive ?? true,
             generation: String(p.generation), notes: p.notes ?? '',
             father_id: p.father_id ?? '', mother_id: p.mother_id ?? '',
+            avatar_url: p.avatar_url,
         })
         setDialogOpen(true)
     }
@@ -92,7 +95,7 @@ export default function PeoplePage() {
             notes: form.notes.trim() || null,
             father_id: form.father_id || null,
             mother_id: form.mother_id || null,
-            avatar_url: null, sort_order: 0,
+            avatar_url: form.avatar_url, sort_order: 0,
         }
         try {
             if (editTarget) {
@@ -190,7 +193,7 @@ export default function PeoplePage() {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-semibold text-sm truncate">{p.full_name}</p>
-                                                    <p className={cn('text-xs', genderClass(p.gender))}>{genderLabel(p.gender)}</p>
+                                                    <p className={cn('text-xs', genderClass(p.gender || 'unknown'))}>{genderLabel(p.gender || 'unknown')}</p>
                                                     {(p.birth_year || p.death_year) && (
                                                         <p className="text-xs text-muted-foreground mt-0.5">
                                                             {[p.birth_year, p.death_year].filter(Boolean).join(' – ')}
@@ -229,6 +232,14 @@ export default function PeoplePage() {
                         <div className="space-y-1">
                             <Label>Họ và tên *</Label>
                             <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Trần Văn A" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label>Ảnh đại diện (Avatar)</Label>
+                            <ImageUpload
+                                bucket="avatars"
+                                value={form.avatar_url}
+                                onChange={url => setForm(f => ({ ...f, avatar_url: url }))}
+                            />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">

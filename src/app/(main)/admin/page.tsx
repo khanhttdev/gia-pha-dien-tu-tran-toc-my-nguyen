@@ -5,13 +5,14 @@ import { createClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw } from 'lucide-react'
+import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Profile as UserProfile, Contribution } from '@/lib/types'
+import { Profile as UserProfile, Contribution, ActivityLog } from '@/lib/types'
 
 export default function AdminPage() {
     const [profiles, setProfiles] = useState<UserProfile[]>([])
     const [contributions, setContributions] = useState<Contribution[]>([])
+    const [logs, setLogs] = useState<ActivityLog[]>([])
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -34,12 +35,14 @@ export default function AdminPage() {
 
     const loadData = async () => {
         setLoading(true)
-        const [{ data: users }, { data: contribs }] = await Promise.all([
+        const [{ data: users }, { data: contribs }, { data: history }] = await Promise.all([
             sb.from('profiles').select('*').order('created_at', { ascending: false }),
             sb.from('contributions').select('*').order('created_at', { ascending: false }).limit(20),
+            sb.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(50),
         ])
         setProfiles(users ?? [])
         setContributions(contribs ?? [])
+        setLogs(history ?? [])
         setLoading(false)
     }
 
@@ -170,6 +173,43 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Activity Logs */}
+                        {logs.length > 0 && (
+                            <div>
+                                <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                                    <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật Ký Hoạt Động (Gần nhất)
+                                </h2>
+                                <div className="space-y-2">
+                                    {logs.map(log => {
+                                        const user = profiles.find(p => p.id === log.user_id)
+                                        return (
+                                            <div key={log.id} className="glass rounded-xl p-3 border border-border/60">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Badge variant="outline" className={cn(
+                                                        'text-[10px] px-1.5 py-0 border',
+                                                        log.action === 'INSERT' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                                                            log.action === 'UPDATE' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                                                'bg-red-500/10 text-red-500 border-red-500/20'
+                                                    )}>
+                                                        {log.action}
+                                                    </Badge>
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{log.table_name}</span>
+                                                    <span className="text-[10px] text-muted-foreground ml-auto">
+                                                        {new Date(log.created_at).toLocaleString('vi-VN')}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs">
+                                                    <strong className="text-foreground">{user?.full_name || 'System / Mặc định'}</strong>
+                                                    <span className="text-muted-foreground">đã {log.action === 'INSERT' ? 'thêm mới' : log.action === 'UPDATE' ? 'cập nhật' : 'xoá'} record ID</span>
+                                                    <span className="font-mono text-[9px] text-amber-500">{log.record_id.slice(0, 8)}...</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}

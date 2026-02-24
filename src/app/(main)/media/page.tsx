@@ -12,6 +12,7 @@ import { ImageIcon, Plus, Loader2, Trash2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Media } from '@/lib/types'
 import Image from 'next/image'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 const EMPTY_FORM = { title: '', description: '', url: '', type: 'image', year: '' }
 
@@ -201,7 +202,14 @@ export default function MediaPage() {
                             </div>
                             <div className="space-y-1"><Label>Năm</Label><Input type="number" placeholder="2025" value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} /></div>
                         </div>
-                        <div className="space-y-1"><Label>URL ảnh / video *</Label><Input value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} placeholder="https://..." /></div>
+                        <div className="space-y-1">
+                            <Label>Tải ảnh / video trực tiếp *</Label>
+                            <ImageUpload
+                                bucket="media"
+                                value={form.url}
+                                onChange={url => setForm(f => ({ ...f, url }))}
+                            />
+                        </div>
                         <div className="space-y-1"><Label>Mô tả</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả thêm..." /></div>
                     </div>
                     <DialogFooter>
