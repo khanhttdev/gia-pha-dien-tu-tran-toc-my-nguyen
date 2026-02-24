@@ -23,7 +23,9 @@ import { Person } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Search, X, Users, GitBranch, Share2 } from 'lucide-react'
+import { Search, X, Users, GitBranch, Share2, Download, Loader2 } from 'lucide-react'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -177,6 +179,33 @@ function TreeContent({ people }: { people: Person[] }) {
         gens: new Set(displayPeople.map(p => p.generation)).size,
     }), [displayPeople])
 
+    const handleExportPDF = async () => {
+        const element = document.querySelector('.react-flow') as HTMLElement
+        if (!element) return
+
+        toast.loading('Đang xử lý PDF...', { id: 'pdf' })
+        try {
+            // Hide some UI elements before capture if needed
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#09090b',
+                scale: 2,
+                ignoreElements: (el) => el.classList.contains('react-flow__controls') || el.classList.contains('react-flow__minimap')
+            })
+            const imgData = canvas.toDataURL('image/png')
+            const pdf = new jsPDF({
+                orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            })
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height)
+            pdf.save('gia-pha-tran-toc.pdf')
+            toast.success('Tải PDF thành công!', { id: 'pdf' })
+        } catch (e) {
+            console.error(e)
+            toast.error('Lỗi khi xuất PDF', { id: 'pdf' })
+        }
+    }
+
     return (
         <div className="relative w-full h-full">
             {/* Toolbar */}
@@ -201,6 +230,9 @@ function TreeContent({ people }: { people: Person[] }) {
                             Xem toàn bộ
                         </Button>
                     )}
+                    <Button variant="outline" size="sm" className="h-8 px-2 glass" onClick={handleExportPDF} title="Xuất PDF">
+                        <Download className="w-4 h-4" />
+                    </Button>
                 </div>
                 <div className="glass rounded-lg px-3 py-2 space-y-1">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

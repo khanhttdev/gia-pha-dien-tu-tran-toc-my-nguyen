@@ -1,0 +1,17 @@
+{
+    "name": "Gia Phả Trần Tộc Mỹ Nguyên",
+    "short_name": "Gia Phả Trần Tộc",
+    "description": "Website gia phả điện tử dòng họ Trần tộc Mỹ Nguyên",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#09090b",
+    "theme_color": "#09090b",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/globe.svg",
+            "sizes": "192x192 512x512",
+            "type": "image/svg+xml"
+        }
+    ]
+}
