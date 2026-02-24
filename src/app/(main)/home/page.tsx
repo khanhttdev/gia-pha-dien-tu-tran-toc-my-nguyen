@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Person } from '@/lib/types'
 import {
     GitFork, Users, BookOpen, CalendarDays, ImageIcon,
-    Phone, TrendingUp, Clock
+    Phone, TrendingUp, Clock, MessageSquare
 } from 'lucide-react'
 
 const quickLinks = [
@@ -14,6 +14,7 @@ const quickLinks = [
     { href: '/book', label: 'Sách Gia Phả', icon: BookOpen, color: 'from-rose-500/20 to-pink-500/20', iconColor: 'text-rose-400' },
     { href: '/events', label: 'Sự Kiện', icon: CalendarDays, color: 'from-cyan-500/20 to-sky-500/20', iconColor: 'text-cyan-400' },
     { href: '/media', label: 'Thư Viện Ảnh', icon: ImageIcon, color: 'from-slate-500/20 to-gray-500/20', iconColor: 'text-slate-400' },
+    { href: '/board', label: 'Bảng Tin', icon: MessageSquare, color: 'from-amber-500/20 to-yellow-500/20', iconColor: 'text-amber-400' },
 ]
 
 const getTimeAgo = (dateStr: string | null) => {
