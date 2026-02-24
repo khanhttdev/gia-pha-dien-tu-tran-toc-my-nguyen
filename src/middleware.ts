@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // All main app routes require login
-    const protectedPrefixes = ['/tree', '/people', '/directory', '/book', '/events', '/media', '/admin']
+    const protectedPrefixes = ['/home', '/tree', '/people', '/directory', '/book', '/events', '/media', '/admin']
     const isProtected = protectedPrefixes.some(r => pathname.startsWith(r))
 
     if (isProtected && !user) {
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     // Redirect logged-in users away from auth pages
     const authRoutes = ['/login', '/register']
     if (authRoutes.includes(pathname) && user) {
-        return NextResponse.redirect(new URL('/tree', request.url))
+        return NextResponse.redirect(new URL('/home', request.url))
     }
 
     return supabaseResponse

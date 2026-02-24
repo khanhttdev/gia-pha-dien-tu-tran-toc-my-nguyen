@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 import {
-    GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
+    Home, GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
     Phone, CalendarDays, ImageIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ const HeritageOverlay = () => (
 )
 
 const navItems = [
+    { href: '/home', label: 'Trang Chủ', icon: Home },
     { href: '/tree', label: 'Cây Gia Phả', icon: GitFork },
     { href: '/people', label: 'Thành Viên', icon: Users },
     { href: '/directory', label: 'Danh Bạ', icon: Phone },
@@ -60,7 +61,7 @@ export function Sidebar({ profile }: SidebarProps) {
         <div className="relative z-10 flex flex-col h-full text-amber-50">
             {/* Logo */}
             <div className="px-6 py-5 border-b border-white/10">
-                <Link href="/tree" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
+                <Link href="/home" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
                     <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
                         <span className="text-lg drop-shadow-sm">🌳</span>
                     </div>

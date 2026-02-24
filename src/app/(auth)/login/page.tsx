@@ -34,14 +34,14 @@ export default function LoginPage() {
             return
         }
         toast.success('Đăng nhập thành công!')
-        router.push('/tree')
+        router.push('/home')
         router.refresh()
     }
 
     const handleGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: `${window.location.origin}/auth/callback?next=/tree` }
+            options: { redirectTo: `${window.location.origin}/auth/callback?next=/home` }
         })
         if (error) toast.error(error.message)
     }
