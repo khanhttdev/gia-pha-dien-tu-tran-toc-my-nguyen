@@ -10,7 +10,17 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
     const { person, isHighlighted } = data
     const isMale = person.gender === 'male'
     const isFemale = person.gender === 'female'
-    const yearRange = [person.birth_year, person.death_year].filter(Boolean).join(' – ')
+
+    // Format dates
+    const formatDate = (y: number | null, m: number | null, d: number | null) => {
+        if (!y) return null;
+        if (m && d) return `${d}/${m}/${y}`;
+        if (m) return `${m}/${y}`;
+        return `${y}`;
+    }
+    const birthDate = formatDate(person.birth_year, person.birth_month, person.birth_day);
+    const deathDate = formatDate(person.death_year, person.death_month, person.death_day);
+    const yearRange = [birthDate, deathDate].filter(Boolean).join(' – ')
 
     return (
         <div className={cn(
@@ -26,8 +36,15 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
             <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-amber-400 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
 
             {/* Generation badge */}
-            <div className="absolute top-2 right-2 text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
-                F{person.generation}
+            <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                <div className="text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
+                    F{person.generation}
+                </div>
+                {person.is_in_law && (
+                    <div className="text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        {isFemale ? 'DÂU' : isMale ? 'RỂ' : 'DÂU/RỂ'}
+                    </div>
+                )}
             </div>
 
             {/* Icon Box */}

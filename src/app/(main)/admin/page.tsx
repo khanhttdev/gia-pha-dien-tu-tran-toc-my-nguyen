@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, ClipboardList } from 'lucide-react'
+import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, ClipboardList, Plus, Trash2 } from 'lucide-react'
+import { adminCreateUser, deleteUser } from '@/lib/admin-actions'
 import { cn } from '@/lib/utils'
 import { Profile as UserProfile, Contribution, ActivityLog } from '@/lib/types'
 
@@ -16,6 +17,14 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+    // Add user states
+    const [showAddUser, setShowAddUser] = useState(false)
+    const [newEmail, setNewEmail] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [newRole, setNewRole] = useState<'admin' | 'member'>('member')
+    const [isCreatingUser, setIsCreatingUser] = useState(false)
+
     const sb = createClient()
 
     useEffect(() => {
@@ -46,12 +55,47 @@ export default function AdminPage() {
         setLoading(false)
     }
 
-    const updateRole = async (userId: string, role: 'admin' | 'viewer') => {
+    const updateRole = async (userId: string, role: 'admin' | 'member') => {
         try {
             await sb.from('profiles').update({ role }).eq('id', userId)
-            toast.success(`Đã đổi vai trò thành ${role === 'admin' ? 'Admin' : 'Viewer'}`)
+            toast.success(`Đã đổi vai trò thành ${role === 'admin' ? 'Admin' : 'Member'}`)
             await loadData()
         } catch (e: any) { toast.error(e.message) }
+    }
+
+    const handleAddUser = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newEmail || !newPassword) return toast.error('Vui lòng nhập email và mật khẩu')
+        setIsCreatingUser(true)
+        const formData = new FormData()
+        formData.append('email', newEmail)
+        formData.append('password', newPassword)
+        formData.append('role', newRole)
+        formData.append('is_active', 'true')
+
+        const res = await adminCreateUser(formData)
+        if (res.error) {
+            toast.error(res.error)
+        } else {
+            toast.success('Đã tạo người dùng thành công')
+            setShowAddUser(false)
+            setNewEmail('')
+            setNewPassword('')
+            setNewRole('member')
+            await loadData()
+        }
+        setIsCreatingUser(false)
+    }
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return
+        const res = await deleteUser(id)
+        if (res.error) {
+            toast.error(res.error)
+        } else {
+            toast.success('Đã xóa người dùng')
+            await loadData()
+        }
     }
 
     const updateContrib = async (id: string, status: 'approved' | 'rejected') => {
@@ -100,9 +144,38 @@ export default function AdminPage() {
                     <>
                         {/* Users management */}
                         <div>
-                            <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-                                <Users className="w-4 h-4 text-amber-500" /> Quản lý người dùng
-                            </h2>
+                            <div className="flex items-center gap-4 mb-3">
+                                <h2 className="text-sm font-bold flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-amber-500" /> Quản lý người dùng
+                                </h2>
+                                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddUser(!showAddUser)}>
+                                    <Plus className="w-3 h-3" /> Thêm người dùng
+                                </Button>
+                            </div>
+
+                            {showAddUser && (
+                                <form onSubmit={handleAddUser} className="glass rounded-xl p-4 mb-4 border border-amber-500/30 flex flex-wrap gap-3 items-end">
+                                    <div className="flex-1 min-w-[200px] space-y-1.5">
+                                        <label className="text-[10px] text-muted-foreground uppercase font-bold">Email</label>
+                                        <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} required className="flex h-8 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="email@example.com" />
+                                    </div>
+                                    <div className="flex-1 min-w-[200px] space-y-1.5">
+                                        <label className="text-[10px] text-muted-foreground uppercase font-bold">Mật khẩu</label>
+                                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="flex h-8 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="******" />
+                                    </div>
+                                    <div className="w-[120px] space-y-1.5">
+                                        <label className="text-[10px] text-muted-foreground uppercase font-bold">Vai trò</label>
+                                        <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="flex h-8 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                            <option value="member">Member</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <Button type="submit" disabled={isCreatingUser} size="sm" className="h-8 text-xs shrink-0">
+                                        {isCreatingUser ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Lưu'}
+                                    </Button>
+                                </form>
+                            )}
+
                             <div className="space-y-2">
                                 {profiles.map(p => (
                                     <div key={p.id} className={cn(
@@ -124,17 +197,28 @@ export default function AdminPage() {
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0 pt-2 sm:pt-0 mt-2 border-t border-border/40 sm:border-0 sm:mt-0">
                                             <Badge variant={p.role === 'admin' ? 'default' : 'secondary'} className={cn('text-[10px]', p.role === 'admin' && 'bg-amber-500/20 text-amber-600 border-amber-500/30')}>
-                                                {p.role === 'admin' ? '👑 Admin' : '👁 Viewer'}
+                                                {p.role === 'admin' ? '👑 Admin' : '👁 Member'}
                                             </Badge>
                                             {p.id !== currentUserId && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-7 text-xs gap-1 ml-auto sm:ml-0"
-                                                    onClick={() => updateRole(p.id, p.role === 'admin' ? 'viewer' : 'admin')}
-                                                >
-                                                    {p.role === 'admin' ? <><UserX className="w-3 h-3" /> → Viewer</> : <><UserCheck className="w-3 h-3" /> → Admin</>}
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-7 text-xs gap-1 ml-auto sm:ml-0"
+                                                        onClick={() => updateRole(p.id, p.role === 'admin' ? 'member' : 'admin')}
+                                                    >
+                                                        {p.role === 'admin' ? <><UserX className="w-3 h-3" /> → Member</> : <><UserCheck className="w-3 h-3" /> → Admin</>}
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                                        title="Xóa người dùng"
+                                                        onClick={() => handleDeleteUser(p.id)}
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </>
                                             )}
                                         </div>
                                     </div>

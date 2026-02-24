@@ -265,7 +265,7 @@ async function findRelationship(name1: string, name2: string): Promise<Relations
 
 // ─── Tool Router ───────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function executeTool(name: string, args: Record<string, any>): Promise<unknown> {
     switch (name) {
         case 'get_all_members':

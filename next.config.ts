@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    return config;
+  },
+  turbopack: {}, // Suppress "This build is using Turbopack, with a webpack config and no turbopack config" error
 };
 
 export default withSerwist(nextConfig);
