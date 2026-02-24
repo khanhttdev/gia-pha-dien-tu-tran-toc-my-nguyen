@@ -121,7 +121,14 @@ export default function BoardPage() {
             {/* Feed List */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-serif font-bold">Dòng Thời Gian</h2>
+                    <h2 className="text-xl font-serif font-bold flex items-center gap-2">
+                        Dòng Thời Gian
+                        {feed.length > 0 && (
+                            <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20 px-2 py-0 h-5 text-[10px]">
+                                {feed.length} bài đăng
+                            </Badge>
+                        )}
+                    </h2>
                     <Button variant="ghost" size="sm" onClick={loadFeed} disabled={loading} className="text-muted-foreground">
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Làm mới'}
                     </Button>
@@ -197,6 +204,9 @@ export default function BoardPage() {
                                                 >
                                                     <MessageCircle className="w-3.5 h-3.5" />
                                                     {expandedComments[item.id] ? 'Đóng bình luận' : 'Xem bình luận'}
+                                                    {!expandedComments[item.id] && item.comments?.[0]?.count > 0 && (
+                                                        <span className="ml-1 opacity-60">({item.comments[0].count})</span>
+                                                    )}
                                                 </Button>
                                             </div>
                                         )}

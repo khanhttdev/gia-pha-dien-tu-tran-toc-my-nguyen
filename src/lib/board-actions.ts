@@ -23,7 +23,8 @@ export async function getBoardFeed() {
         .from('contributions')
         .select(`
             *,
-            author:profiles!contributions_author_id_fkey(full_name, avatar_url)
+            author:profiles!contributions_author_id_fkey(full_name, avatar_url),
+            comments(count)
         `)
         .order('created_at', { ascending: false })
         .limit(100)
