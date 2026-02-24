@@ -129,15 +129,19 @@ export function Sidebar({ profile }: SidebarProps) {
             {/* Bottom */}
             <div className="px-3 py-4 border-t border-white/10 space-y-3">
                 <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-inner">
-                        {profile?.full_name?.[0]?.toUpperCase() ?? '?'}
+                    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-inner overflow-hidden">
+                        {profile?.avatar_url ? (
+                            <img src={profile.avatar_url} alt="avt" className="w-full h-full object-cover" />
+                        ) : (
+                            profile?.full_name?.[0]?.toUpperCase() ?? '?'
+                        )}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-white truncate">
                             {profile?.full_name ?? 'Thành viên'}
                         </p>
                         <p className="text-[10px] text-amber-200/60 truncate uppercase tracking-wider font-medium mt-0.5">
-                            {profile?.role === 'admin' ? '👑 Quản trị viên' : '👁 Người xem'}
+                            {profile?.role === 'admin' ? '👑 Quản trị viên' : '👤 Thành viên'}
                         </p>
                     </div>
                 </div>

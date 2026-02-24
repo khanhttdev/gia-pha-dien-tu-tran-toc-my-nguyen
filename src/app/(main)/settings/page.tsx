@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { useRouter } from 'next/navigation'
 import { Profile } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [form, setForm] = useState({ full_name: '', avatar_url: '' })
+    const router = useRouter()
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -50,6 +52,7 @@ export default function SettingsPage() {
             toast.error('Lỗi khi lưu: ' + error.message)
         } else {
             toast.success('Đã cập nhật hồ sơ thành công!')
+            router.refresh()
         }
         setSaving(false)
     }

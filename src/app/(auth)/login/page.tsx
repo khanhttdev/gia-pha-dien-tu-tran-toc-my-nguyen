@@ -123,7 +123,7 @@ export default function LoginPage() {
                                 onChange={e => setEmail(e.target.value)}
                                 disabled={loading}
                                 autoComplete="email"
-                                className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors text-amber-950 font-medium"
+                                className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
                             />
                         </div>
 
@@ -146,7 +146,7 @@ export default function LoginPage() {
                                     onChange={e => setPassword(e.target.value)}
                                     disabled={loading}
                                     autoComplete="current-password"
-                                    className="h-11 rounded-xl bg-white/50 border-border/80 focus:bg-white transition-colors text-amber-950 font-medium pr-10"
+                                    className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium pr-10"
                                 />
                                 <button
                                     type="button"
