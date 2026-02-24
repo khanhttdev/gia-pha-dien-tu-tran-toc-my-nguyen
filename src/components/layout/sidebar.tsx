@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 import {
     Home, GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
-    Phone, CalendarDays, ImageIcon, UserCog
+    Phone, CalendarDays, ImageIcon, UserCog, MessageSquare
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase-client'
@@ -39,6 +39,7 @@ const navItems = [
     { href: '/book', label: 'Sách Gia Phả', icon: BookOpen },
     { href: '/events', label: 'Sự Kiện', icon: CalendarDays },
     { href: '/media', label: 'Thư Viện', icon: ImageIcon },
+    { href: '/board', label: 'Bảng Tin', icon: MessageSquare },
     { href: '/settings', label: 'Hồ Sơ', icon: UserCog },
 ]
 
