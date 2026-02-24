@@ -7,24 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-type UserProfile = {
-    id: string
-    full_name: string | null
-    email: string | null
-    role: 'admin' | 'viewer'
-    created_at: string
-    linked_person: string | null
-}
-
-type Contribution = {
-    id: string
-    content: string
-    type: string
-    status: string
-    created_at: string
-    author_id: string
-}
+import { Profile as UserProfile, Contribution } from '@/lib/types'
 
 export default function AdminPage() {
     const [profiles, setProfiles] = useState<UserProfile[]>([])
@@ -32,7 +15,7 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-    const sb = createClient() as any
+    const sb = createClient()
 
     useEffect(() => {
         sb.auth.getUser().then(({ data }: any) => {
@@ -133,7 +116,7 @@ export default function AdminPage() {
                                                     {p.id === currentUserId && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bạn</Badge>}
                                                 </div>
                                                 <p className="text-xs text-muted-foreground truncate">{p.email}</p>
-                                                <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('vi-VN')}</p>
+                                                <p className="text-[10px] text-muted-foreground">{p.created_at ? new Date(p.created_at).toLocaleDateString('vi-VN') : ''}</p>
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0 pt-2 sm:pt-0 mt-2 border-t border-border/40 sm:border-0 sm:mt-0">
@@ -171,7 +154,7 @@ export default function AdminPage() {
                                                         {c.type === 'edit' ? '📝 Chỉnh sửa' : c.type === 'add' ? '➕ Thêm mới' : c.type === 'delete' ? '🗑️ Xoá' : '💬 Bình luận'}
                                                     </p>
                                                     <p className="text-sm text-foreground">{c.content}</p>
-                                                    <p className="text-[10px] text-muted-foreground mt-1">{new Date(c.created_at).toLocaleDateString('vi-VN')}</p>
+                                                    <p className="text-[10px] text-muted-foreground mt-1">{c.created_at ? new Date(c.created_at).toLocaleDateString('vi-VN') : ''}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1 shrink-0">
                                                     <Badge variant={c.status === 'pending' ? 'outline' : c.status === 'approved' ? 'default' : 'secondary'} className="text-[10px]">

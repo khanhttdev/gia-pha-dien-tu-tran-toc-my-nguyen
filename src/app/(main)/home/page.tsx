@@ -16,6 +16,17 @@ const quickLinks = [
     { href: '/media', label: 'Thư Viện Ảnh', icon: ImageIcon, color: 'from-violet-500/20 to-purple-500/20', iconColor: 'text-violet-400' },
 ]
 
+const getTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return 'Gần đây'
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins} phút trước`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours} giờ trước`
+    const days = Math.floor(hours / 24)
+    return `${days} ngày trước`
+}
+
 export default async function HomePage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -48,16 +59,6 @@ export default async function HomePage() {
 
     const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Thành viên'
     const maxGen = genData?.generation ?? 0
-
-    const getTimeAgo = (dateStr: string) => {
-        const diff = Date.now() - new Date(dateStr).getTime()
-        const mins = Math.floor(diff / 60000)
-        if (mins < 60) return `${mins} phút trước`
-        const hours = Math.floor(mins / 60)
-        if (hours < 24) return `${hours} giờ trước`
-        const days = Math.floor(hours / 24)
-        return `${days} ngày trước`
-    }
 
     return (
         <div className="p-6 sm:p-8 max-w-6xl mx-auto space-y-8 page-enter">

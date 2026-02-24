@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase-client'
 import { Person, PersonInsert, PersonUpdate } from './types'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = () => createClient() as any
+const db = () => createClient()
 
 // ─── People ───────────────────────────────────────────────────────────────────
 export async function getAllPeople(): Promise<Person[]> {

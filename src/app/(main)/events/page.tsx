@@ -10,17 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner'
 import { CalendarDays, Plus, Loader2, MapPin, Clock, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-type Event = {
-    id: string
-    title: string
-    description: string | null
-    event_date: string
-    event_time: string | null
-    location: string | null
-    type: string
-    created_at: string
-}
+import { Event } from '@/lib/types'
 
 const EVENT_TYPES: Record<string, { label: string; emoji: string; color: string }> = {
     gio_to: { label: 'Giỗ Tổ', emoji: '🕯️', color: 'text-red-500 bg-red-500/10 border-red-500/30' },
@@ -41,7 +31,7 @@ export default function EventsPage() {
     const [editTarget, setEditTarget] = useState<Event | null>(null)
     const [form, setForm] = useState(EMPTY_FORM)
     const [saving, setSaving] = useState(false)
-    const sb = createClient() as any
+    const sb = createClient()
 
     const load = async () => {
         setLoading(true)
@@ -63,7 +53,7 @@ export default function EventsPage() {
     const openAdd = () => { setEditTarget(null); setForm(EMPTY_FORM); setDialogOpen(true) }
     const openEdit = (e: Event) => {
         setEditTarget(e)
-        setForm({ title: e.title, description: e.description ?? '', event_date: e.event_date, event_time: e.event_time ?? '', location: e.location ?? '', type: e.type })
+        setForm({ title: e.title, description: e.description ?? '', event_date: e.event_date, event_time: e.event_time ?? '', location: e.location ?? '', type: e.type ?? 'khac' })
         setDialogOpen(true)
     }
 
@@ -105,7 +95,7 @@ export default function EventsPage() {
     }
 
     const EventCard = ({ e }: { e: Event }) => {
-        const meta = EVENT_TYPES[e.type] ?? EVENT_TYPES.khac
+        const meta = EVENT_TYPES[e.type ?? 'khac'] ?? EVENT_TYPES.khac
         const isPast = new Date(e.event_date) < now
         return (
             <div className={cn('glass rounded-xl p-4 border transition-all group', isPast ? 'opacity-60 border-border/40' : 'border-border/60 hover:border-amber-400/40')}>

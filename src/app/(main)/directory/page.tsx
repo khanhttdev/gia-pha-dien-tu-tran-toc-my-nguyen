@@ -12,17 +12,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Phone, Search, Pencil, Loader2, MessageCircle, Mail, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-type Contact = {
-    id: string
-    person_id: string
-    phone: string | null
-    zalo: string | null
-    facebook: string | null
-    email: string | null
-    address: string | null
-    notes: string | null
-}
+import { Contact } from '@/lib/types'
 
 type PersonWithContact = Person & { contact?: Contact }
 
@@ -35,7 +25,7 @@ export default function DirectoryPage() {
     const [editPerson, setEditPerson] = useState<PersonWithContact | null>(null)
     const [form, setForm] = useState({ phone: '', zalo: '', facebook: '', email: '', address: '', notes: '' })
     const [saving, setSaving] = useState(false)
-    const sb = createClient() as any
+    const sb = createClient()
 
     const load = async () => {
         setLoading(true)

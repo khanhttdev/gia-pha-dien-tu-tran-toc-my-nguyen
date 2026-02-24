@@ -10,18 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner'
 import { ImageIcon, Plus, Loader2, Trash2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Media } from '@/lib/types'
+import Image from 'next/image'
 
-type Media = {
-    id: string
-    title: string
-    description: string | null
-    url: string
-    type: 'image' | 'video'
-    year: number | null
-    created_at: string
-}
-
-const EMPTY_FORM = { title: '', description: '', url: '', type: 'image' as 'image' | 'video', year: '' }
+const EMPTY_FORM = { title: '', description: '', url: '', type: 'image', year: '' }
 
 export default function MediaPage() {
     const [media, setMedia] = useState<Media[]>([])
@@ -33,7 +25,7 @@ export default function MediaPage() {
     const [form, setForm] = useState(EMPTY_FORM)
     const [saving, setSaving] = useState(false)
     const [selected, setSelected] = useState<Media | null>(null)
-    const sb = createClient() as any
+    const sb = createClient()
 
     const load = async () => {
         setLoading(true)
@@ -122,7 +114,13 @@ export default function MediaPage() {
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                     {images.map(m => (
                                         <div key={m.id} className="relative group aspect-square rounded-xl overflow-hidden border border-border/60 cursor-pointer" onClick={() => setSelected(m)}>
-                                            <img src={m.url} alt={m.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={e => { (e.target as any).src = 'https://placehold.co/400x400/92400e/fbbf24?text=📷' }} />
+                                            <Image
+                                                src={m.url}
+                                                alt={m.title}
+                                                fill
+                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <div className="absolute bottom-0 left-0 right-0 p-2">
                                                     <p className="text-white text-xs font-medium truncate">{m.title}</p>
@@ -175,7 +173,9 @@ export default function MediaPage() {
                         <X className="w-6 h-6" />
                     </button>
                     <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
-                        <img src={selected.url} alt={selected.title} className="w-full max-h-[80vh] object-contain rounded-xl" />
+                        <div className="relative w-full h-[60vh] sm:h-[80vh]">
+                            <Image src={selected.url} alt={selected.title} fill className="object-contain rounded-xl" sizes="100vw" />
+                        </div>
                         <div className="text-center mt-4">
                             <p className="text-white font-semibold">{selected.title}</p>
                             {selected.year && <p className="text-white/70 text-sm">{selected.year}</p>}

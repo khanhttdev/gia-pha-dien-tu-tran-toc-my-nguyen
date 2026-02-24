@@ -4,6 +4,7 @@ import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { PersonNode as PersonNodeType } from '@/lib/tree-layout'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
     const { person, isHighlighted } = data
@@ -38,7 +39,7 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
                         'text-amber-400'
             )}>
                 {person.avatar_url
-                    ? <img src={person.avatar_url} alt={person.full_name} className="w-full h-full object-cover rounded-xl" />
+                    ? <Image src={person.avatar_url} alt={person.full_name} width={40} height={40} className="w-full h-full object-cover rounded-xl" />
                     : isMale ? '👨' : isFemale ? '👩' : '👤'
                 }
             </div>
