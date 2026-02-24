@@ -9,13 +9,16 @@ import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, Clipboar
 import { adminCreateUser, deleteUser, setUserRole } from '@/lib/admin-actions'
 import { cn } from '@/lib/utils'
 import { Profile as UserProfile, Contribution, ActivityLog } from '@/lib/types'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Menu } from 'lucide-react'
 
 // Import New Subcomponents
 import { AnalyticsTab } from '@/components/admin/analytics-tab'
 import { FundManagerTab } from '@/components/admin/fund-manager-tab'
 
 export default function AdminPage() {
+    const [activeTab, setActiveTab] = useState('analytics')
     const [profiles, setProfiles] = useState<UserProfile[]>([])
     const [contributions, setContributions] = useState<Contribution[]>([])
     const [logs, setLogs] = useState<ActivityLog[]>([])
@@ -146,19 +149,58 @@ export default function AdminPage() {
                 {loading ? (
                     <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                 ) : (
-                    <Tabs defaultValue="analytics" className="w-full max-w-5xl mx-auto">
-                        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full h-auto gap-2 md:gap-0 bg-transparent p-0 mb-6 border-b border-border/40 pb-2 overflow-x-auto justify-start">
-                            <TabsTrigger value="analytics" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><BarChart3 className="w-4 h-4" /><span className="hidden sm:inline">Thống Kê</span></TabsTrigger>
-                            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Users className="w-4 h-4" /><span className="hidden sm:inline">Người Dùng</span></TabsTrigger>
-                            <TabsTrigger value="funds" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500 data-[state=active]:border-emerald-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Wallet className="w-4 h-4" /><span className="hidden sm:inline">Quỹ Họ</span></TabsTrigger>
-                            <TabsTrigger value="contributions" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative">
-                                <MessageSquare className="w-4 h-4" /><span className="hidden sm:inline">Đề Xuất</span>
-                                {contributions.filter(c => c.status === 'pending').length > 0 && (
-                                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                )}
-                            </TabsTrigger>
-                            <TabsTrigger value="logs" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><ClipboardList className="w-4 h-4" /><span className="hidden sm:inline">Nhật Ký</span></TabsTrigger>
-                        </TabsList>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-5xl mx-auto">
+                        <div className="mb-6 border-b border-border/40 pb-2">
+                            {/* MOBILE TABS (DROPDOWN) */}
+                            <div className="md:hidden">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-between gap-2 border-amber-500/30 glass">
+                                            <span className="flex items-center gap-2">
+                                                {activeTab === 'analytics' && <><BarChart3 className="w-4 h-4 text-amber-500" /> Thống Kê</>}
+                                                {activeTab === 'users' && <><Users className="w-4 h-4 text-amber-500" /> Người Dùng</>}
+                                                {activeTab === 'funds' && <><Wallet className="w-4 h-4 text-emerald-500" /> Quỹ Họ</>}
+                                                {activeTab === 'contributions' && <><MessageSquare className="w-4 h-4 text-amber-500" /> Đề Xuất</>}
+                                                {activeTab === 'logs' && <><ClipboardList className="w-4 h-4 text-amber-500" /> Nhật Ký</>}
+                                            </span>
+                                            <Menu className="w-4 h-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-[300px] glass-toast border-amber-500/20">
+                                        <DropdownMenuItem onClick={() => setActiveTab('analytics')} className={cn("gap-2 py-3", activeTab === 'analytics' && "bg-amber-500/10 text-amber-500")}>
+                                            <BarChart3 className={cn("w-4 h-4", activeTab === 'analytics' ? "text-amber-500" : "text-muted-foreground")} /> Thống Kê
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setActiveTab('users')} className={cn("gap-2 py-3", activeTab === 'users' && "bg-amber-500/10 text-amber-500")}>
+                                            <Users className={cn("w-4 h-4", activeTab === 'users' ? "text-amber-500" : "text-muted-foreground")} /> Người Dùng
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setActiveTab('funds')} className={cn("gap-2 py-3", activeTab === 'funds' && "bg-emerald-500/10 text-emerald-500")}>
+                                            <Wallet className={cn("w-4 h-4", activeTab === 'funds' ? "text-emerald-500" : "text-muted-foreground")} /> Quỹ Họ
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setActiveTab('contributions')} className={cn("gap-2 py-3 justify-between", activeTab === 'contributions' && "bg-amber-500/10 text-amber-500")}>
+                                            <div className="flex items-center gap-2"><MessageSquare className={cn("w-4 h-4", activeTab === 'contributions' ? "text-amber-500" : "text-muted-foreground")} /> Đề Xuất</div>
+                                            {contributions.filter(c => c.status === 'pending').length > 0 && <Badge variant="destructive" className="h-5 text-[10px] px-1.5 animate-pulse">{contributions.filter(c => c.status === 'pending').length}</Badge>}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setActiveTab('logs')} className={cn("gap-2 py-3", activeTab === 'logs' && "bg-amber-500/10 text-amber-500")}>
+                                            <ClipboardList className={cn("w-4 h-4", activeTab === 'logs' ? "text-amber-500" : "text-muted-foreground")} /> Nhật Ký Hoạt Động
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            {/* DESKTOP TABS LIST */}
+                            <TabsList className="hidden md:flex w-full h-auto gap-0 bg-transparent p-0 justify-start">
+                                <TabsTrigger value="analytics" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><BarChart3 className="w-4 h-4" /><span>Thống Kê</span></TabsTrigger>
+                                <TabsTrigger value="users" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Users className="w-4 h-4" /><span>Người Dùng</span></TabsTrigger>
+                                <TabsTrigger value="funds" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500 data-[state=active]:border-emerald-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Wallet className="w-4 h-4" /><span>Quỹ Họ</span></TabsTrigger>
+                                <TabsTrigger value="contributions" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative">
+                                    <MessageSquare className="w-4 h-4" /><span>Đề Xuất</span>
+                                    {contributions.filter(c => c.status === 'pending').length > 0 && (
+                                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="logs" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><ClipboardList className="w-4 h-4" /><span>Nhật Ký</span></TabsTrigger>
+                            </TabsList>
+                        </div>
 
                         {/* TAB: THỐNG KÊ */}
                         <TabsContent value="analytics" className="animate-in fade-in-50 duration-500 outline-none">
