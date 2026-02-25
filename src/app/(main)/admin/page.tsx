@@ -5,13 +5,14 @@ import { createClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, ClipboardList, Plus, Trash2, BarChart3, Wallet, MessageSquare } from 'lucide-react'
-import { adminCreateUser, deleteUser, setUserRole } from '@/lib/admin-actions'
+import { Shield, Users, Check, X, Loader2, UserCheck, UserX, RefreshCw, ClipboardList, Plus, Trash2, BarChart3, Wallet, MessageSquare, ShieldCheck, Clock } from 'lucide-react'
+import { adminCreateUser, deleteUser, setUserRole, setUserStatus } from '@/lib/admin-actions'
 import { cn } from '@/lib/utils'
 import { Profile as UserProfile, Contribution, ActivityLog } from '@/lib/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Menu } from 'lucide-react'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 // Import New Subcomponents
 import { AnalyticsTab } from '@/components/admin/analytics-tab'
@@ -29,8 +30,16 @@ export default function AdminPage() {
     const [showAddUser, setShowAddUser] = useState(false)
     const [newEmail, setNewEmail] = useState('')
     const [newPassword, setNewPassword] = useState('')
-    const [newRole, setNewRole] = useState<'admin' | 'member'>('member')
+    const [newRole, setNewRole] = useState<'admin' | 'member' | 'accountant'>('member')
     const [isCreatingUser, setIsCreatingUser] = useState(false)
+
+    // Delete modal state
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({ open: false, userId: '', userName: '' })
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    // Status modal state
+    const [statusModal, setStatusModal] = useState<{ open: boolean; userId: string; userName: string; action: 'approved' | 'rejected' }>({ open: false, userId: '', userName: '', action: 'approved' })
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
     const sb = createClient()
 
@@ -62,11 +71,11 @@ export default function AdminPage() {
         setLoading(false)
     }
 
-    const updateRole = async (userId: string, role: 'admin' | 'member') => {
+    const updateRole = async (userId: string, role: 'admin' | 'member' | 'accountant') => {
         try {
             const res = await setUserRole(userId, role)
             if (res.error) throw new Error(res.error)
-            toast.success(`Đã đổi vai trò thành ${role === 'admin' ? 'Admin' : 'Member'}`)
+            toast.success(`Đã đổi vai trò thành ${role === 'admin' ? 'Admin' : role === 'accountant' ? 'Thủ quỹ' : 'Thành viên'}`)
             await loadData()
         } catch (e: any) { toast.error(e.message) }
     }
@@ -95,15 +104,30 @@ export default function AdminPage() {
         setIsCreatingUser(false)
     }
 
-    const handleDeleteUser = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return
-        const res = await deleteUser(id)
+    const confirmDeleteUser = async () => {
+        setIsDeleting(true)
+        const res = await deleteUser(deleteModal.userId)
         if (res.error) {
             toast.error(res.error)
         } else {
-            toast.success('Đã xóa người dùng')
+            toast.success('Đã xóa người dùng thành công')
             await loadData()
         }
+        setIsDeleting(false)
+        setDeleteModal({ open: false, userId: '', userName: '' })
+    }
+
+    const confirmStatusChange = async () => {
+        setIsUpdatingStatus(true)
+        const res = await setUserStatus(statusModal.userId, statusModal.action)
+        if (res.error) {
+            toast.error(res.error)
+        } else {
+            toast.success(statusModal.action === 'approved' ? 'Đã duyệt thành viên' : 'Đã từ chối thành viên')
+            await loadData()
+        }
+        setIsUpdatingStatus(false)
+        setStatusModal({ open: false, userId: '', userName: '', action: 'approved' })
     }
 
     const updateContrib = async (id: string, status: 'approved' | 'rejected') => {
@@ -113,6 +137,20 @@ export default function AdminPage() {
             await loadData()
         } catch (e: any) { toast.error(e.message) }
     }
+
+    const getRoleBadge = (role: string | null) => {
+        if (role === 'admin') return <Badge className="text-[10px] bg-amber-500/20 text-amber-600 border-amber-500/30">👑 Admin</Badge>
+        if (role === 'accountant') return <Badge className="text-[10px] bg-emerald-500/20 text-emerald-600 border-emerald-500/30">💰 Thủ quỹ</Badge>
+        return <Badge variant="secondary" className="text-[10px]">👁 Thành viên</Badge>
+    }
+
+    const getStatusBadge = (status: string | null) => {
+        if (status === 'approved') return <Badge className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">✅ Đã duyệt</Badge>
+        if (status === 'rejected') return <Badge className="text-[10px] bg-red-500/10 text-red-500 border-red-500/20">❌ Từ chối</Badge>
+        return <Badge className="text-[10px] bg-yellow-500/10 text-yellow-500 border-yellow-500/20 animate-pulse">⏳ Chờ duyệt</Badge>
+    }
+
+    const pendingCount = profiles.filter(p => p.status === 'pending').length
 
     if (!isAdmin && !loading) {
         return (
@@ -139,9 +177,16 @@ export default function AdminPage() {
                             <p className="text-xs text-muted-foreground mt-0.5">Quản lý Gia phả & Dòng họ</p>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs bg-background/50 backdrop-blur-sm" onClick={loadData}>
-                        <RefreshCw className="w-3 h-3" /> <span className="hidden sm:inline">Làm mới</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {pendingCount > 0 && (
+                            <Badge variant="destructive" className="text-xs animate-pulse gap-1">
+                                <Clock className="w-3 h-3" /> {pendingCount} chờ duyệt
+                            </Badge>
+                        )}
+                        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs bg-background/50 backdrop-blur-sm" onClick={loadData}>
+                            <RefreshCw className="w-3 h-3" /> <span className="hidden sm:inline">Làm mới</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -170,8 +215,9 @@ export default function AdminPage() {
                                         <DropdownMenuItem onClick={() => setActiveTab('analytics')} className={cn("gap-2 py-3", activeTab === 'analytics' && "bg-amber-500/10 text-amber-500")}>
                                             <BarChart3 className={cn("w-4 h-4", activeTab === 'analytics' ? "text-amber-500" : "text-muted-foreground")} /> Thống Kê
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setActiveTab('users')} className={cn("gap-2 py-3", activeTab === 'users' && "bg-amber-500/10 text-amber-500")}>
-                                            <Users className={cn("w-4 h-4", activeTab === 'users' ? "text-amber-500" : "text-muted-foreground")} /> Người Dùng
+                                        <DropdownMenuItem onClick={() => setActiveTab('users')} className={cn("gap-2 py-3 justify-between", activeTab === 'users' && "bg-amber-500/10 text-amber-500")}>
+                                            <div className="flex items-center gap-2"><Users className={cn("w-4 h-4", activeTab === 'users' ? "text-amber-500" : "text-muted-foreground")} /> Người Dùng</div>
+                                            {pendingCount > 0 && <Badge variant="destructive" className="h-5 text-[10px] px-1.5 animate-pulse">{pendingCount}</Badge>}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => setActiveTab('funds')} className={cn("gap-2 py-3", activeTab === 'funds' && "bg-emerald-500/10 text-emerald-500")}>
                                             <Wallet className={cn("w-4 h-4", activeTab === 'funds' ? "text-emerald-500" : "text-muted-foreground")} /> Quỹ Họ
@@ -190,7 +236,10 @@ export default function AdminPage() {
                             {/* DESKTOP TABS LIST */}
                             <TabsList className="hidden md:flex w-full h-auto gap-0 bg-transparent p-0 justify-start">
                                 <TabsTrigger value="analytics" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><BarChart3 className="w-4 h-4" /><span>Thống Kê</span></TabsTrigger>
-                                <TabsTrigger value="users" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Users className="w-4 h-4" /><span>Người Dùng</span></TabsTrigger>
+                                <TabsTrigger value="users" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative">
+                                    <Users className="w-4 h-4" /><span>Người Dùng</span>
+                                    {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse">{pendingCount}</span>}
+                                </TabsTrigger>
                                 <TabsTrigger value="funds" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500 data-[state=active]:border-emerald-500/50 border border-transparent rounded-full px-4 py-2 gap-2"><Wallet className="w-4 h-4" /><span>Quỹ Họ</span></TabsTrigger>
                                 <TabsTrigger value="contributions" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative">
                                     <MessageSquare className="w-4 h-4" /><span>Đề Xuất</span>
@@ -214,6 +263,47 @@ export default function AdminPage() {
 
                         {/* TAB: NGƯỜI DÙNG */}
                         <TabsContent value="users" className="animate-in fade-in-50 duration-500 outline-none space-y-4">
+                            {/* Pending users section */}
+                            {pendingCount > 0 && (
+                                <div className="glass rounded-xl p-4 border border-yellow-500/30 space-y-3">
+                                    <h3 className="text-sm font-bold flex items-center gap-2 text-yellow-500">
+                                        <Clock className="w-4 h-4" /> Thành viên chờ duyệt ({pendingCount})
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {profiles.filter(p => p.status === 'pending').map(p => (
+                                            <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-full bg-yellow-500/20 flex items-center justify-center text-sm font-bold text-yellow-600 shrink-0">
+                                                        {p.full_name?.[0]?.toUpperCase() ?? '?'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium">{p.full_name ?? 'Chưa đặt tên'}</p>
+                                                        <p className="text-xs text-muted-foreground">{p.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <Button
+                                                        size="sm"
+                                                        className="flex-1 sm:flex-none h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                        onClick={() => setStatusModal({ open: true, userId: p.id, userName: p.full_name ?? p.email ?? '', action: 'approved' })}
+                                                    >
+                                                        <ShieldCheck className="w-3.5 h-3.5" /> Duyệt
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="flex-1 sm:flex-none h-8 gap-1.5 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
+                                                        onClick={() => setStatusModal({ open: true, userId: p.id, userName: p.full_name ?? p.email ?? '', action: 'rejected' })}
+                                                    >
+                                                        <X className="w-3.5 h-3.5" /> Từ chối
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-bold flex items-center gap-2">
                                     <Users className="w-4 h-4 text-amber-500" /> Quản lý người dùng ({profiles.length})
@@ -233,10 +323,11 @@ export default function AdminPage() {
                                         <label className="text-[10px] text-muted-foreground uppercase font-bold">Mật khẩu</label>
                                         <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50" placeholder="******" />
                                     </div>
-                                    <div className="w-[120px] space-y-1.5">
+                                    <div className="w-[140px] space-y-1.5">
                                         <label className="text-[10px] text-muted-foreground uppercase font-bold">Vai trò</label>
                                         <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50">
-                                            <option value="member">Member</option>
+                                            <option value="member">Thành viên</option>
+                                            <option value="accountant">Thủ quỹ</option>
                                             <option value="admin">Admin</option>
                                         </select>
                                     </div>
@@ -247,7 +338,7 @@ export default function AdminPage() {
                             )}
 
                             <div className="space-y-2">
-                                {profiles.map(p => (
+                                {profiles.filter(p => p.status !== 'pending').map(p => (
                                     <div key={p.id} className={cn(
                                         'glass rounded-xl p-3 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 transition-all duration-200 hover:bg-white/5',
                                         p.id === currentUserId && 'border-amber-400/30'
@@ -266,24 +357,33 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0 pt-2 sm:pt-0 mt-2 border-t border-border/40 sm:border-0 sm:mt-0">
-                                            <Badge variant={p.role === 'admin' ? 'default' : 'secondary'} className={cn('text-[10px]', p.role === 'admin' && 'bg-amber-500/20 text-amber-600 border-amber-500/30')}>
-                                                {p.role === 'admin' ? '👑 Admin' : '👁 Member'}
-                                            </Badge>
+                                            {getRoleBadge(p.role)}
+                                            {getStatusBadge(p.status)}
                                             {p.id !== currentUserId && (
                                                 <>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-8 text-xs gap-1 ml-auto sm:ml-0"
-                                                        onClick={() => updateRole(p.id, p.role === 'admin' ? 'member' : 'admin')}
-                                                    >
-                                                        {p.role === 'admin' ? <><UserX className="w-3 h-3" /> → Member</> : <><UserCheck className="w-3 h-3" /> → Admin</>}
-                                                    </Button>
-                                                    <Button aria-label="Action Button" variant="ghost"
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="h-8 text-xs gap-1 ml-auto sm:ml-0">
+                                                                Vai trò ▾
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="glass-toast border-amber-500/20">
+                                                            <DropdownMenuItem onClick={() => updateRole(p.id, 'member')} className={cn("gap-2", p.role === 'member' && "bg-amber-500/10")}>
+                                                                <UserCheck className="w-3.5 h-3.5" /> Thành viên
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => updateRole(p.id, 'accountant')} className={cn("gap-2", p.role === 'accountant' && "bg-emerald-500/10")}>
+                                                                <Wallet className="w-3.5 h-3.5" /> Thủ quỹ
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => updateRole(p.id, 'admin')} className={cn("gap-2", p.role === 'admin' && "bg-amber-500/10")}>
+                                                                <Shield className="w-3.5 h-3.5" /> Admin
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <Button aria-label="Xóa người dùng" variant="ghost"
                                                         size="icon"
                                                         className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                                                         title="Xóa người dùng"
-                                                        onClick={() => handleDeleteUser(p.id)}
+                                                        onClick={() => setDeleteModal({ open: true, userId: p.id, userName: p.full_name ?? p.email ?? '' })}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
@@ -313,7 +413,6 @@ export default function AdminPage() {
                                                         <span className="text-[10px] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString('vi-VN') : ''}</span>
                                                     </div>
                                                     <p className="text-sm text-foreground mb-2 font-medium">{c.content}</p>
-                                                    {/* Hiển thị thông tin người gửi */}
                                                     {(() => {
                                                         const author = profiles.find(p => p.id === c.author_id)
                                                         return author ? (
@@ -336,8 +435,8 @@ export default function AdminPage() {
                                                     </Badge>
                                                     {c.status === 'pending' && (
                                                         <div className="flex gap-1 ml-auto sm:ml-2">
-                                                            <Button aria-label="Action Button" size="sm" variant="outline" className="h-8 gap-1 hover:text-emerald-500 hover:bg-emerald-500/10 border-emerald-500/20" onClick={() => updateContrib(c.id, 'approved')}><Check className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Duyệt</span></Button>
-                                                            <Button aria-label="Action Button" size="sm" variant="outline" className="h-8 gap-1 hover:text-red-500 hover:bg-red-500/10 border-red-500/20" onClick={() => updateContrib(c.id, 'rejected')}><X className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Từ chối</span></Button>
+                                                            <Button aria-label="Duyệt" size="sm" variant="outline" className="h-8 gap-1 hover:text-emerald-500 hover:bg-emerald-500/10 border-emerald-500/20" onClick={() => updateContrib(c.id, 'approved')}><Check className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Duyệt</span></Button>
+                                                            <Button aria-label="Từ chối" size="sm" variant="outline" className="h-8 gap-1 hover:text-red-500 hover:bg-red-500/10 border-red-500/20" onClick={() => updateContrib(c.id, 'rejected')}><X className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Từ chối</span></Button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -389,6 +488,34 @@ export default function AdminPage() {
                     </Tabs>
                 )}
             </div>
+
+            {/* DELETE USER MODAL */}
+            <ConfirmModal
+                open={deleteModal.open}
+                onOpenChange={(open) => setDeleteModal(prev => ({ ...prev, open }))}
+                variant="confirm"
+                title="Xóa người dùng"
+                description={`Bạn có chắc chắn muốn xóa "${deleteModal.userName}" khỏi hệ thống? Hành động này không thể hoàn tác.`}
+                confirmText="Xóa"
+                cancelText="Hủy"
+                onConfirm={confirmDeleteUser}
+                loading={isDeleting}
+            />
+
+            {/* APPROVE/REJECT MODAL */}
+            <ConfirmModal
+                open={statusModal.open}
+                onOpenChange={(open) => setStatusModal(prev => ({ ...prev, open }))}
+                variant={statusModal.action === 'approved' ? 'success' : 'warning'}
+                title={statusModal.action === 'approved' ? 'Duyệt thành viên' : 'Từ chối thành viên'}
+                description={statusModal.action === 'approved'
+                    ? `Bạn có muốn duyệt "${statusModal.userName}" trở thành thành viên chính thức?`
+                    : `Bạn có muốn từ chối "${statusModal.userName}"? Họ sẽ không thể truy cập ứng dụng.`}
+                confirmText={statusModal.action === 'approved' ? 'Duyệt' : 'Từ chối'}
+                cancelText="Hủy"
+                onConfirm={confirmStatusChange}
+                loading={isUpdatingStatus}
+            />
         </div>
     )
 }

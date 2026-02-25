@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 import {
     Home, GitFork, Users, BookOpen, LogOut, Menu, X, Shield,
-    Phone, CalendarDays, ImageIcon, UserCog, MessageSquare
+    Phone, CalendarDays, ImageIcon, UserCog, MessageSquare, Wallet
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase-client'
@@ -104,24 +104,43 @@ export function Sidebar({ profile }: SidebarProps) {
                     )
                 })}
 
-                {profile?.role === 'admin' && (
+                {(profile?.role === 'admin' || profile?.role === 'accountant') && (
                     <>
                         <div className="pt-4 pb-1 px-3 mt-4 border-t border-white/10">
-                            <p className="text-[10px] uppercase tracking-wider text-amber-200/50 font-bold">Quản trị</p>
+                            <p className="text-[10px] uppercase tracking-wider text-amber-200/50 font-bold">
+                                {profile.role === 'admin' ? 'Quản trị' : 'Thủ quỹ'}
+                            </p>
                         </div>
-                        <Link
-                            href="/admin"
-                            onClick={() => setOpen(false)}
-                            className={cn(
-                                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                                pathname.startsWith('/admin')
-                                    ? 'bg-primary/20 text-white border border-primary/30 shadow-sm'
-                                    : 'text-amber-100/70 hover:bg-white/10 hover:text-white'
-                            )}
-                        >
-                            <Shield className="w-4 h-4 shrink-0" />
-                            Admin Panel
-                        </Link>
+                        {profile.role === 'admin' && (
+                            <Link
+                                href="/admin"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                                    pathname.startsWith('/admin')
+                                        ? 'bg-primary/20 text-white border border-primary/30 shadow-sm'
+                                        : 'text-amber-100/70 hover:bg-white/10 hover:text-white'
+                                )}
+                            >
+                                <Shield className="w-4 h-4 shrink-0" />
+                                Admin Panel
+                            </Link>
+                        )}
+                        {profile.role === 'accountant' && (
+                            <Link
+                                href="/fund"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                                    pathname.startsWith('/fund')
+                                        ? 'bg-emerald-500/20 text-white border border-emerald-500/30 shadow-sm'
+                                        : 'text-amber-100/70 hover:bg-white/10 hover:text-white'
+                                )}
+                            >
+                                <Wallet className="w-4 h-4 shrink-0" />
+                                Quỹ Họ
+                            </Link>
+                        )}
                     </>
                 )}
             </nav>
@@ -141,7 +160,7 @@ export function Sidebar({ profile }: SidebarProps) {
                             {profile?.full_name ?? 'Thành viên'}
                         </p>
                         <p className="text-[10px] text-amber-200/60 truncate uppercase tracking-wider font-medium mt-0.5">
-                            {profile?.role === 'admin' ? '👑 Quản trị viên' : '👤 Thành viên'}
+                            {profile?.role === 'admin' ? '👑 Quản trị viên' : profile?.role === 'accountant' ? '💰 Thủ quỹ' : '👤 Thành viên'}
                         </p>
                     </div>
                 </div>

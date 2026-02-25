@@ -28,13 +28,35 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // All main app routes require login
-    const protectedPrefixes = ['/home', '/tree', '/people', '/directory', '/book', '/events', '/media', '/admin']
+    const protectedPrefixes = ['/home', '/tree', '/people', '/directory', '/book', '/events', '/media', '/admin', '/fund']
     const isProtected = protectedPrefixes.some(r => pathname.startsWith(r))
 
     if (isProtected && !user) {
         const loginUrl = new URL('/login', request.url)
         loginUrl.searchParams.set('redirect', pathname)
         return NextResponse.redirect(loginUrl)
+    }
+
+    // Check if user is 'pending' and restrict to homepage only
+    if (user && isProtected && pathname !== '/home') {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('status, role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile && profile.status === 'pending') {
+            return NextResponse.redirect(new URL('/home', request.url))
+        }
+
+        if (profile && profile.status === 'rejected') {
+            return NextResponse.redirect(new URL('/home', request.url))
+        }
+
+        // Restrict non-admin & non-accountant from /admin (but accountant can access /fund route)
+        if (pathname.startsWith('/admin') && profile?.role !== 'admin') {
+            return NextResponse.redirect(new URL('/home', request.url))
+        }
     }
 
     // Redirect logged-in users away from auth pages
@@ -47,5 +69,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|sw\\.js|manifest\\.json).*)'],
 }

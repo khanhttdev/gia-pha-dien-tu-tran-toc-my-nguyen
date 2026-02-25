@@ -6,9 +6,10 @@ import { revalidatePath } from 'next/cache'
 export interface AdminUserData {
     id: string
     email: string
-    role: 'admin' | 'member'
+    role: 'admin' | 'member' | 'accountant'
     created_at: string
     is_active: boolean
+    status: 'pending' | 'approved' | 'rejected'
 }
 
 export async function getAdminUsers() {
@@ -25,7 +26,7 @@ export async function getAdminUsers() {
     return { error: null, data: data as AdminUserData[] }
 }
 
-export async function setUserRole(userId: string, newRole: 'admin' | 'member') {
+export async function setUserRole(userId: string, newRole: 'admin' | 'member' | 'accountant') {
     const supabase = await createClient()
 
     // @ts-expect-error RPC types not synced
@@ -39,7 +40,25 @@ export async function setUserRole(userId: string, newRole: 'admin' | 'member') {
         return { error: error.message }
     }
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin')
+    return { error: null }
+}
+
+export async function setUserStatus(userId: string, newStatus: 'approved' | 'rejected') {
+    const supabase = await createClient()
+
+    // @ts-expect-error RPC types not synced
+    const { error } = await supabase.rpc('set_user_status', {
+        target_user_id: userId,
+        new_status: newStatus
+    })
+
+    if (error) {
+        console.error('Error setting user status:', error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/admin')
     return { error: null }
 }
 
@@ -56,7 +75,7 @@ export async function deleteUser(userId: string) {
         return { error: error.message }
     }
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin')
     return { error: null }
 }
 
@@ -85,7 +104,7 @@ export async function adminCreateUser(formData: FormData) {
         return { error: error.message }
     }
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin')
     return { error: null, data }
 }
 
@@ -103,7 +122,7 @@ export async function setUserActiveStatus(userId: string, newStatus: boolean) {
         return { error: error.message }
     }
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin')
     return { error: null }
 }
 

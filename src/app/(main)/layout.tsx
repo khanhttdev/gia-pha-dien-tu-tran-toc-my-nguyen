@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase-server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { MeiChatWidget } from '@/components/chat/mei-chat-widget'
 import { redirect } from 'next/navigation'
+import { PwaInstallPrompt } from '@/components/pwa/pwa-install-prompt'
+import { PushNotificationPrompt } from '@/components/pwa/push-notification-prompt'
+import { PendingUserPopup } from '@/components/pwa/pending-user-popup'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient()
@@ -24,6 +27,10 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 </div>
             </main>
             <MeiChatWidget />
+            <PwaInstallPrompt />
+            <PushNotificationPrompt />
+            <PendingUserPopup />
         </div>
     )
 }
+

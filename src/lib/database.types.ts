@@ -381,8 +381,11 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_active: boolean | null
           linked_person: string | null
           role: string | null
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -390,8 +393,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean | null
           linked_person?: string | null
           role?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -399,8 +405,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean | null
           linked_person?: string | null
           role?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -411,6 +420,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth_key: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth_key: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth_key?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string | null
+          title: string
+          body: string | null
+          type: string | null
+          is_read: boolean | null
+          data: Json | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          title: string
+          body?: string | null
+          type?: string | null
+          is_read?: boolean | null
+          data?: Json | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          title?: string
+          body?: string | null
+          type?: string | null
+          is_read?: boolean | null
+          data?: Json | null
+          created_at?: string | null
+        }
+        Relationships: []
       }
       comments: {
         Row: {

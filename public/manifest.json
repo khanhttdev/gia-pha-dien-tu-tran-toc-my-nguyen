@@ -7,11 +7,18 @@
     "background_color": "#09090b",
     "theme_color": "#09090b",
     "orientation": "portrait",
+    "categories": [
+        "lifestyle",
+        "social"
+    ],
+    "lang": "vi",
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "/globe.svg",
             "sizes": "192x192 512x512",
-            "type": "image/svg+xml"
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
         }
     ]
 }
