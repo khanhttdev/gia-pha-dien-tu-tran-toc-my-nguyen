@@ -493,9 +493,9 @@ export default function AdminPage() {
             <ConfirmModal
                 open={deleteModal.open}
                 onOpenChange={(open) => setDeleteModal(prev => ({ ...prev, open }))}
-                variant="confirm"
+                variant="destructive"
                 title="Xóa người dùng"
-                description={`Bạn có chắc chắn muốn xóa "${deleteModal.userName}" khỏi hệ thống? Hành động này không thể hoàn tác.`}
+                description={`Bạn có chắc chắn muốn xóa "${deleteModal.userName}" khỏi hệ thống? Toàn bộ dữ liệu liên quan sẽ bị xóa vĩnh viễn.`}
                 confirmText="Xóa"
                 cancelText="Hủy"
                 onConfirm={confirmDeleteUser}
