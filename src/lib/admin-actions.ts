@@ -15,7 +15,7 @@ export interface AdminUserData {
 export async function getAdminUsers() {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
+
     const { data, error } = await supabase.rpc('get_admin_users')
 
     if (error) {
@@ -29,7 +29,6 @@ export async function getAdminUsers() {
 export async function setUserRole(userId: string, newRole: 'admin' | 'member' | 'accountant') {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
     const { error } = await supabase.rpc('set_user_role', {
         target_user_id: userId,
         new_role: newRole
@@ -47,7 +46,6 @@ export async function setUserRole(userId: string, newRole: 'admin' | 'member' | 
 export async function setUserStatus(userId: string, newStatus: 'approved' | 'rejected') {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
     const { error } = await supabase.rpc('set_user_status', {
         target_user_id: userId,
         new_status: newStatus
@@ -65,7 +63,6 @@ export async function setUserStatus(userId: string, newStatus: 'approved' | 'rej
 export async function deleteUser(userId: string) {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
     const { error } = await supabase.rpc('delete_user', {
         target_user_id: userId
     })
@@ -91,7 +88,7 @@ export async function adminCreateUser(formData: FormData) {
 
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
+    // @ts-ignore RPC not in generated types
     const { data, error } = await supabase.rpc('admin_create_user', {
         new_email: email,
         new_password: password,
@@ -111,7 +108,7 @@ export async function adminCreateUser(formData: FormData) {
 export async function setUserActiveStatus(userId: string, newStatus: boolean) {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types not synced
+    // @ts-ignore RPC not in generated types
     const { error } = await supabase.rpc('set_user_active_status', {
         target_user_id: userId,
         new_status: newStatus
@@ -129,7 +126,6 @@ export async function setUserActiveStatus(userId: string, newStatus: boolean) {
 export async function getDemographicStats() {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types
     const { data: stats, error } = await supabase.rpc('get_demographic_stats')
 
     if (error) {

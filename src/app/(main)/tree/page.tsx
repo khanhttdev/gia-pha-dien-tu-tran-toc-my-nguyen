@@ -18,8 +18,8 @@ import {
 import '@xyflow/react/dist/style.css'
 import { PersonNode } from '@/components/tree/person-node'
 import { buildTreeLayout, type PersonNode as PersonNodeType } from '@/lib/tree-layout'
-import { getAllPeople } from '@/lib/supabase-data'
-import { Person } from '@/lib/types'
+import { getAllMembers, getAllSpouses } from '@/lib/supabase-data'
+import { Member, Spouse, MemberMetadata } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,85 +31,98 @@ import { cn } from '@/lib/utils'
 
 const nodeTypes = { person: PersonNode }
 
-function PersonDetailPanel({ person, onClose }: { person: Person; onClose: () => void }) {
+function PersonDetailPanel({ member, spouses, onClose }: { member: Member; spouses: Spouse[]; onClose: () => void }) {
+    const meta = (member.metadata as MemberMetadata) || {}
+    const memberSpouses = spouses.filter(s => s.member_id === member.id)
+
     return (
         <div className="absolute right-4 top-4 z-20 w-64 glass rounded-xl p-4 shadow-xl border border-border">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className={cn(
                         'w-10 h-10 rounded-lg flex items-center justify-center text-xl border',
-                        person.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' :
-                            person.gender === 'female' ? 'bg-rose-400/10 border-rose-400/30' : 'bg-muted border-border'
+                        member.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' :
+                            member.gender === 'female' ? 'bg-rose-400/10 border-rose-400/30' : 'bg-muted border-border'
                     )}>
-                        {person.gender === 'male' ? '👨' : person.gender === 'female' ? '👩' : '👤'}
+                        {member.gender === 'male' ? '👨' : member.gender === 'female' ? '👩' : '👤'}
                     </div>
                     <div>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            Thế hệ {person.generation}
+                            Thế hệ {member.generation_level}
                         </Badge>
-                        <Badge variant={person.is_alive ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 ml-1">
-                            {person.is_alive ? 'Còn sống' : 'Đã mất'}
+                        <Badge variant={meta.is_alive !== false ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 ml-1">
+                            {meta.is_alive !== false ? 'Còn sống' : 'Đã mất'}
                         </Badge>
                     </div>
                 </div>
                 <div className="flex gap-1">
-                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-6 w-6 hover:text-amber-500" onClick={() => {
-                        const url = `${window.location.origin}/tree?root=${person.id}`
+                    <Button aria-label="Share branch" variant="ghost" size="icon" className="h-6 w-6 hover:text-amber-500" onClick={() => {
+                        const url = `${window.location.origin}/tree?root=${member.id}`
                         navigator.clipboard.writeText(url)
                         toast.success('Đã sao chép link chia sẻ nhánh!')
                     }} title="Chia sẻ nhánh này">
                         <Share2 className="w-3.5 h-3.5" />
                     </Button>
-                    <Button aria-label="Action Button" variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+                    <Button aria-label="Close panel" variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
                         <X className="w-4 h-4" />
                     </Button>
                 </div>
             </div>
-            <h3 className="font-bold text-base leading-tight mb-1">{person.full_name}</h3>
+            <h3 className="font-bold text-base leading-tight mb-1">{member.full_name}</h3>
             <div className="space-y-1 text-sm text-muted-foreground">
-                {person.birth_year && (
+                {meta.birth_year && (
                     <div className="flex justify-between">
                         <span>Năm sinh:</span>
-                        <span className="text-foreground font-medium">{person.birth_year}</span>
+                        <span className="text-foreground font-medium">{meta.birth_year}</span>
                     </div>
                 )}
-                {person.death_year && (
+                {meta.death_year && (
                     <div className="flex justify-between">
                         <span>Năm mất:</span>
-                        <span className="text-foreground font-medium">{person.death_year}</span>
+                        <span className="text-foreground font-medium">{meta.death_year}</span>
                     </div>
                 )}
-                {person.notes && (
-                    <p className="text-xs mt-2 italic border-t border-border pt-2">{person.notes}</p>
+                {memberSpouses.length > 0 && (
+                    <div className="border-t border-border pt-2 mt-2">
+                        <span className="text-xs font-medium text-amber-500">💍 Phối ngẫu:</span>
+                        {memberSpouses.map(s => {
+                            const sMeta = (s.metadata as MemberMetadata) || {}
+                            return (
+                                <div key={s.id} className="text-xs mt-1 pl-2 border-l-2 border-rose-400/30">
+                                    <span className="font-medium text-foreground">{s.full_name}</span>
+                                    {sMeta.birth_year && <span className="text-muted-foreground ml-1">({sMeta.birth_year})</span>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+                {meta.notes && (
+                    <p className="text-xs mt-2 italic border-t border-border pt-2">{meta.notes}</p>
                 )}
             </div>
-        </div >
+        </div>
     )
 }
 
-function TreeContent({ people }: { people: Person[] }) {
+function TreeContent({ members, spouses }: { members: Member[]; spouses: Spouse[] }) {
     const { fitView, setCenter } = useReactFlow()
     const [nodes, setNodes, onNodesChange] = useNodesState<PersonNodeType>([])
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
-    const [selected, setSelected] = useState<Person | null>(null)
+    const [selected, setSelected] = useState<Member | null>(null)
     const [search, setSearch] = useState('')
     const searchParams = useSearchParams()
     const focusId = searchParams.get('focus')
     const rootId = searchParams.get('root')
 
-    const displayPeople = useMemo(() => {
-        if (!rootId) return people
+    const displayMembers = useMemo(() => {
+        if (!rootId) return members
 
-        // Filter logic for sub-tree
+        // Filter logic for sub-tree using father_id
         const childrenMap = new Map<string, string[]>()
-        people.forEach(p => {
-            if (p.father_id) {
-                if (!childrenMap.has(p.father_id)) childrenMap.set(p.father_id, [])
-                childrenMap.get(p.father_id)!.push(p.id)
-            }
-            if (p.mother_id) {
-                if (!childrenMap.has(p.mother_id)) childrenMap.set(p.mother_id, [])
-                childrenMap.get(p.mother_id)!.push(p.id)
+        members.forEach(m => {
+            if (m.father_id) {
+                if (!childrenMap.has(m.father_id)) childrenMap.set(m.father_id, [])
+                childrenMap.get(m.father_id)!.push(m.id)
             }
         })
 
@@ -123,15 +136,14 @@ function TreeContent({ people }: { people: Person[] }) {
             queue.push(...children)
         }
 
-        // Include spouses? 
-        return people.filter(p => result.has(p.id))
-    }, [people, rootId])
+        return members.filter(m => result.has(m.id))
+    }, [members, rootId])
 
     useEffect(() => {
         if (!focusId) return
-        const p = displayPeople.find(x => x.id === focusId)
-        if (p) setSelected(p)
-    }, [focusId, displayPeople])
+        const m = displayMembers.find(x => x.id === focusId)
+        if (m) setSelected(m)
+    }, [focusId, displayMembers])
 
     const rawNodes = useRef<PersonNodeType[]>([])
     useEffect(() => {
@@ -139,17 +151,17 @@ function TreeContent({ people }: { people: Person[] }) {
     }, [nodes])
 
     useEffect(() => {
-        const { nodes: n, edges: e } = buildTreeLayout(displayPeople)
+        const { nodes: n, edges: e } = buildTreeLayout(displayMembers, spouses)
         setNodes(n)
         setEdges(e)
         setTimeout(() => fitView({ padding: 0.1 }), 100)
-    }, [displayPeople, setNodes, setEdges, fitView])
+    }, [displayMembers, spouses, setNodes, setEdges, fitView])
 
     const filtered = useMemo(() => {
         if (!search.trim()) return new Set<string>()
         const q = search.toLowerCase()
-        return new Set(displayPeople.filter(p => p.full_name.toLowerCase().includes(q)).map(p => p.id))
-    }, [search, displayPeople])
+        return new Set(displayMembers.filter(m => m.full_name.toLowerCase().includes(q)).map(m => m.id))
+    }, [search, displayMembers])
 
     useEffect(() => {
         setNodes(ns => ns.map(n => ({
@@ -169,15 +181,15 @@ function TreeContent({ people }: { people: Person[] }) {
     }, [filtered, focusId, setNodes, setCenter])
 
     const onNodeClick: NodeMouseHandler<PersonNodeType> = useCallback((_evt, node) => {
-        const p = displayPeople.find(x => x.id === node.id)
-        setSelected(p ?? null)
-    }, [displayPeople])
+        const m = displayMembers.find(x => x.id === node.id)
+        setSelected(m ?? null)
+    }, [displayMembers])
 
     const stats = useMemo(() => ({
-        total: displayPeople.length,
-        alive: displayPeople.filter(p => p.is_alive).length,
-        gens: new Set(displayPeople.map(p => p.generation)).size,
-    }), [displayPeople])
+        total: displayMembers.length,
+        alive: displayMembers.filter(m => (m.metadata as MemberMetadata)?.is_alive !== false).length,
+        gens: new Set(displayMembers.map(m => m.generation_level)).size,
+    }), [displayMembers])
 
     const handleExportPDF = async () => {
         const element = document.querySelector('.react-flow') as HTMLElement
@@ -185,7 +197,6 @@ function TreeContent({ people }: { people: Person[] }) {
 
         toast.loading('Đang xử lý PDF...', { id: 'pdf' })
         try {
-            // Hide some UI elements before capture if needed
             const canvas = await html2canvas(element, {
                 backgroundColor: '#09090b',
                 scale: 2,
@@ -251,7 +262,7 @@ function TreeContent({ people }: { people: Person[] }) {
                 )}
             </div>
 
-            {selected && <PersonDetailPanel person={selected} onClose={() => setSelected(null)} />}
+            {selected && <PersonDetailPanel member={selected} spouses={spouses} onClose={() => setSelected(null)} />}
 
             <ReactFlow
                 colorMode="dark"
@@ -273,7 +284,7 @@ function TreeContent({ people }: { people: Person[] }) {
                 <Controls className="!bg-background !border-border shadow-sm rounded-xl overflow-hidden [&>button]:!border-b-border [&>button]:!bg-background hover:[&>button]:!bg-muted [&>button>svg]:!fill-primary" />
                 <MiniMap
                     nodeColor={(n: Node) => {
-                        const gender = (n.data as PersonNodeType['data'])?.person?.gender
+                        const gender = (n.data as PersonNodeType['data'])?.member?.gender
                         return gender === 'male' ? '#3b82f6' : gender === 'female' ? '#fb7185' : '#78350f'
                     }}
                     maskColor="rgba(0,0,0,0.05)"
@@ -285,12 +296,13 @@ function TreeContent({ people }: { people: Person[] }) {
 }
 
 export default function TreePage() {
-    const [people, setPeople] = useState<Person[]>([])
+    const [members, setMembers] = useState<Member[]>([])
+    const [spouses, setSpouses] = useState<Spouse[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        getAllPeople()
-            .then(data => { setPeople(data); setLoading(false) })
+        Promise.all([getAllMembers(), getAllSpouses()])
+            .then(([m, s]) => { setMembers(m); setSpouses(s); setLoading(false) })
             .catch(console.error)
     }, [])
 
@@ -319,7 +331,7 @@ export default function TreePage() {
                 ) : (
                     <ReactFlowProvider>
                         <Suspense fallback={null}>
-                            <TreeContent people={people} />
+                            <TreeContent members={members} spouses={spouses} />
                         </Suspense>
                     </ReactFlowProvider>
                 )}

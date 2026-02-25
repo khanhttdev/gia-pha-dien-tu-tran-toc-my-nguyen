@@ -10,7 +10,7 @@ export async function getFunds() {
         .from('funds')
         .select(`
       *,
-      person:people(id, full_name)
+      member:members(id, full_name)
     `)
         .order('transaction_date', { ascending: false })
         .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export async function addTransaction(formData: FormData) {
     const amount = Number(amountStr.replace(/,/g, ''))
     const description = formData.get('description') as string
     const transactionDate = formData.get('transaction_date') as string
-    const personId = formData.get('person_id') as string | null
+    const memberId = formData.get('member_id') as string | null
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -46,7 +46,7 @@ export async function addTransaction(formData: FormData) {
             amount,
             description,
             transaction_date: transactionDate,
-            person_id: personId || null,
+            member_id: memberId || null,
             created_by: user.id
         })
 
@@ -79,7 +79,6 @@ export async function deleteTransaction(id: string) {
 export async function getFundBalance() {
     const supabase = await createClient()
 
-    // @ts-expect-error RPC types missing
     const { data, error } = await supabase.rpc('get_fund_balance')
 
     if (error) {

@@ -3,24 +3,18 @@
 import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { PersonNode as PersonNodeType } from '@/lib/tree-layout'
+import { MemberMetadata } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
 function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
-    const { person, isHighlighted } = data
-    const isMale = person.gender === 'male'
-    const isFemale = person.gender === 'female'
+    const { member, spouse, isHighlighted } = data
+    const meta = (member.metadata as MemberMetadata) || {}
+    const isMale = member.gender === 'male'
+    const isFemale = member.gender === 'female'
+    const isAlive = meta.is_alive !== false
 
-    // Format dates
-    const formatDate = (y: number | null, m: number | null, d: number | null) => {
-        if (!y) return null;
-        if (m && d) return `${d}/${m}/${y}`;
-        if (m) return `${m}/${y}`;
-        return `${y}`;
-    }
-    const birthDate = formatDate(person.birth_year, person.birth_month, person.birth_day);
-    const deathDate = formatDate(person.death_year, person.death_month, person.death_day);
-    const yearRange = [birthDate, deathDate].filter(Boolean).join(' – ')
+    const yearRange = [meta.birth_year, meta.death_year].filter(Boolean).join(' – ')
 
     return (
         <div className={cn(
@@ -31,20 +25,15 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
                 : isHighlighted
                     ? 'border-amber-400/50 shadow-md scale-105'
                     : 'border-white/10 hover:bg-white/10 hover:border-white/20',
-            !person.is_alive && 'opacity-75 grayscale-[20%]'
+            !isAlive && 'opacity-75 grayscale-[20%]'
         )}>
             <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-amber-400 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
 
             {/* Generation badge */}
-            <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+            <div className="absolute top-2 right-2">
                 <div className="text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
-                    F{person.generation}
+                    F{member.generation_level}
                 </div>
-                {person.is_in_law && (
-                    <div className="text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        {isFemale ? 'DÂU' : isMale ? 'RỂ' : 'DÂU/RỂ'}
-                    </div>
-                )}
             </div>
 
             {/* Icon Box */}
@@ -55,25 +44,32 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
                     isFemale ? 'text-rose-400' :
                         'text-amber-400'
             )}>
-                {person.avatar_url
-                    ? <Image src={person.avatar_url} alt={person.full_name} width={40} height={40} className="w-full h-full object-cover rounded-xl" />
+                {meta.avatar_url
+                    ? <Image src={meta.avatar_url} alt={member.full_name} width={40} height={40} className="w-full h-full object-cover rounded-xl" />
                     : isMale ? '👨' : isFemale ? '👩' : '👤'
                 }
             </div>
 
-            {/* Title */}
+            {/* Name */}
             <h3 className="text-xs font-bold text-white mb-1 leading-tight tracking-wide px-1">
-                {person.full_name}
+                {member.full_name}
             </h3>
 
-            {/* Description */}
+            {/* Spouse name */}
+            {spouse && (
+                <p className="text-[10px] text-rose-300/70 mb-0.5">
+                    💍 {spouse.full_name}
+                </p>
+            )}
+
+            {/* Year range */}
             {yearRange && (
                 <p className="text-[10px] text-white/50 leading-relaxed font-medium">
                     {yearRange}
                 </p>
             )}
 
-            {!person.is_alive && (
+            {!isAlive && (
                 <span className="text-[9px] text-white/30 italic mt-1.5">đã mất</span>
             )}
 

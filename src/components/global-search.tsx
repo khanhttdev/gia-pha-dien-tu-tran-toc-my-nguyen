@@ -40,7 +40,7 @@ export function GlobalSearch() {
             const q = `%${query}%`
 
             const [p, e, m] = await Promise.all([
-                sb.from('people').select('id, full_name, birth_year').ilike('full_name', q).limit(5),
+                sb.from('members').select('id, full_name, metadata').ilike('full_name', q).limit(5),
                 sb.from('events').select('id, title, date').ilike('title', q).limit(5),
                 sb.from('media').select('id, title, type').ilike('title', q).limit(5)
             ])

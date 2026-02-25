@@ -23,16 +23,16 @@ export default function AnalyticsPage() {
     useEffect(() => {
         const fetchStats = async () => {
             const sb = createClient()
-            const { data: people } = await sb.from('people').select('gender, generation, is_alive')
+            const { data: people } = await sb.from('members').select('gender, generation_level, metadata')
             if (!people) return
 
-            const maleCount = people.filter(p => p.gender === 'male').length
-            const femaleCount = people.filter(p => p.gender === 'female').length
-            const aliveCount = people.filter(p => p.is_alive).length
+            const maleCount = people.filter((p: any) => p.gender === 'male').length
+            const femaleCount = people.filter((p: any) => p.gender === 'female').length
+            const aliveCount = people.filter((p: any) => (p.metadata as any)?.is_alive !== false).length
 
             const genMap: Record<number, number> = {}
-            people.forEach(p => {
-                const g = p.generation || 1
+            people.forEach((p: any) => {
+                const g = p.generation_level || 1
                 genMap[g] = (genMap[g] || 0) + 1
             })
 

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase-server'
-import { Person } from './types'
+import { Member, MemberMetadata } from './types'
 import { Type, FunctionDeclaration } from '@google/genai'
 
 // ─── Tool Declarations for Gemini Function Calling ─────────────────────────
@@ -7,7 +7,7 @@ import { Type, FunctionDeclaration } from '@google/genai'
 export const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'get_all_members',
-        description: 'Lấy danh sách toàn bộ thành viên trong gia phả Trần Tộc Mỹ Nguyên. Dùng khi cần tổng quan hoặc tìm quan hệ.',
+        description: 'Lấy danh sách toàn bộ thành viên huyết thống trong gia phả Trần Tộc Mỹ Nguyên. Dùng khi cần tổng quan hoặc tìm quan hệ.',
         parameters: {
             type: Type.OBJECT,
             properties: {},
@@ -44,7 +44,7 @@ export const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'get_family_statistics',
-        description: 'Lấy thống kê tổng quan gia phả: tổng thành viên, số còn sống, số thế hệ.',
+        description: 'Lấy thống kê tổng quan gia phả: tổng thành viên, số còn sống, số thế hệ, số phối ngẫu.',
         parameters: {
             type: Type.OBJECT,
             properties: {},
@@ -71,52 +71,64 @@ export const toolDeclarations: FunctionDeclaration[] = [
     },
 ]
 
-// ─── Tool Executors ────────────────────────────────────────────────────────
+// ─── Metadata Helpers ──────────────────────────────────────────────────────
 
-async function getAllMembers(): Promise<Person[]> {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-        .from('people')
-        .select('*')
-        .order('generation', { ascending: true })
-        .order('sort_order', { ascending: true })
-
-    if (error) throw error
-    return data as Person[]
+function getMeta(member: Member): MemberMetadata {
+    return (member.metadata as MemberMetadata) || {}
 }
 
-async function searchMember(query: string): Promise<Person[]> {
+// ─── Tool Executors ────────────────────────────────────────────────────────
+
+async function getAllMembers(): Promise<Member[]> {
     const supabase = await createClient()
     const { data, error } = await supabase
-        .from('people')
+        .from('members')
+        .select('*')
+        .order('generation_level', { ascending: true })
+        .order('birth_order', { ascending: true })
+
+    if (error) throw error
+    return data as Member[]
+}
+
+async function searchMember(query: string): Promise<Member[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('members')
         .select('*')
         .ilike('full_name', `%${query}%`)
         .limit(20)
 
     if (error) throw error
-    return data as Person[]
+    return data as Member[]
 }
 
-async function getMemberById(id: string): Promise<Person | null> {
+async function getMemberById(id: string): Promise<Member | null> {
     const supabase = await createClient()
     const { data } = await supabase
-        .from('people')
+        .from('members')
         .select('*')
         .eq('id', id)
         .single()
 
-    return data as Person | null
+    return data as Member | null
 }
 
 async function getFamilyStatistics() {
-    const people = await getAllMembers()
-    const alive = people.filter(p => p.is_alive).length
-    const generations = new Set(people.map(p => p.generation)).size
+    const supabase = await createClient()
+    const members = await getAllMembers()
+    const { count: spouseCount } = await supabase
+        .from('spouses')
+        .select('*', { count: 'exact', head: true })
+
+    const alive = members.filter(m => getMeta(m).is_alive !== false).length
+    const generations = new Set(members.map(m => m.generation_level)).size
 
     return {
-        total: people.length,
+        total_members: members.length,
+        total_spouses: spouseCount ?? 0,
         alive,
-        deceased: people.length - alive,
+        deceased: members.length - alive,
         generations,
     }
 }
@@ -131,33 +143,30 @@ interface RelationshipResult {
     description: string
 }
 
-function describeRelationship(path: Person[], person1: Person, person2: Person): string {
+function describeRelationship(path: Member[], person1: Member, person2: Member): string {
     if (path.length < 2) return 'Cùng một người'
 
-    // Direct parent-child
-    if (person1.father_id === person2.id || person1.mother_id === person2.id) {
+    // Direct parent-child (father_id only in members)
+    if (person1.father_id === person2.id) {
         return person2.gender === 'male'
             ? `${person2.full_name} là **cha** của ${person1.full_name}`
             : `${person2.full_name} là **mẹ** của ${person1.full_name}`
     }
-    if (person2.father_id === person1.id || person2.mother_id === person1.id) {
+    if (person2.father_id === person1.id) {
         return person1.gender === 'male'
             ? `${person1.full_name} là **cha** của ${person2.full_name}`
             : `${person1.full_name} là **mẹ** của ${person2.full_name}`
     }
 
-    // Siblings
-    if (
-        person1.father_id && person1.father_id === person2.father_id ||
-        person1.mother_id && person1.mother_id === person2.mother_id
-    ) {
+    // Siblings (same father)
+    if (person1.father_id && person1.father_id === person2.father_id) {
         return `${person1.full_name} và ${person2.full_name} là **anh/chị em** ruột`
     }
 
     // Grandparent-grandchild & beyond — use generation gap
-    const genGap = Math.abs((person1.generation ?? 1) - (person2.generation ?? 1))
-    const elder = (person1.generation ?? 1) < (person2.generation ?? 1) ? person1 : person2
-    const younger = (person1.generation ?? 1) < (person2.generation ?? 1) ? person2 : person1
+    const genGap = Math.abs((person1.generation_level ?? 1) - (person2.generation_level ?? 1))
+    const elder = (person1.generation_level ?? 1) < (person2.generation_level ?? 1) ? person1 : person2
+    const younger = (person1.generation_level ?? 1) < (person2.generation_level ?? 1) ? person2 : person1
 
     if (genGap === 2) {
         return elder.gender === 'male'
@@ -173,7 +182,7 @@ function describeRelationship(path: Person[], person1: Person, person2: Person):
 
     // Same generation but not siblings — cousins
     if (genGap === 0) {
-        return `${person1.full_name} và ${person2.full_name} là **anh/chị em họ** (cùng thế hệ F${person1.generation})`
+        return `${person1.full_name} và ${person2.full_name} là **anh/chị em họ** (cùng thế hệ F${person1.generation_level})`
     }
 
     // Uncle/Aunt relationship (gap = 1, not parent-child)
@@ -187,30 +196,25 @@ function describeRelationship(path: Person[], person1: Person, person2: Person):
 }
 
 async function findRelationship(name1: string, name2: string): Promise<RelationshipResult> {
-    const people = await getAllMembers()
-    const byId = new Map(people.map(p => [p.id, p]))
+    const members = await getAllMembers()
+    const byId = new Map(members.map(m => [m.id, m]))
 
     // Find both people by name
-    const p1 = people.find(p => p.full_name.toLowerCase().includes(name1.toLowerCase()))
-    const p2 = people.find(p => p.full_name.toLowerCase().includes(name2.toLowerCase()))
+    const p1 = members.find(m => m.full_name.toLowerCase().includes(name1.toLowerCase()))
+    const p2 = members.find(m => m.full_name.toLowerCase().includes(name2.toLowerCase()))
 
     if (!p1) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name1}" trong gia phả` }
     if (!p2) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name2}" trong gia phả` }
-    if (p1.id === p2.id) return { person1: name1, person2: name2, path: [{ id: p1.id, name: p1.full_name, generation: p1.generation }], relationship: 'self', description: 'Đó là cùng một người' }
+    if (p1.id === p2.id) return { person1: name1, person2: name2, path: [{ id: p1.id, name: p1.full_name, generation: p1.generation_level }], relationship: 'self', description: 'Đó là cùng một người' }
 
-    // Build adjacency list (undirected: parent↔child)
+    // Build adjacency list (undirected: parent↔child via father_id)
     const adj = new Map<string, string[]>()
-    for (const p of people) {
-        if (!adj.has(p.id)) adj.set(p.id, [])
-        if (p.father_id && byId.has(p.father_id)) {
-            adj.get(p.id)!.push(p.father_id)
-            if (!adj.has(p.father_id)) adj.set(p.father_id, [])
-            adj.get(p.father_id)!.push(p.id)
-        }
-        if (p.mother_id && byId.has(p.mother_id)) {
-            adj.get(p.id)!.push(p.mother_id)
-            if (!adj.has(p.mother_id)) adj.set(p.mother_id, [])
-            adj.get(p.mother_id)!.push(p.id)
+    for (const m of members) {
+        if (!adj.has(m.id)) adj.set(m.id, [])
+        if (m.father_id && byId.has(m.father_id)) {
+            adj.get(m.id)!.push(m.father_id)
+            if (!adj.has(m.father_id)) adj.set(m.father_id, [])
+            adj.get(m.father_id)!.push(m.id)
         }
     }
 
@@ -251,13 +255,13 @@ async function findRelationship(name1: string, name2: string): Promise<Relations
         cur = parent.get(cur) ?? null
     }
 
-    const pathPersons = pathIds.map(id => byId.get(id)!).filter(Boolean)
-    const description = describeRelationship(pathPersons, p1, p2)
+    const pathMembers = pathIds.map(id => byId.get(id)!).filter(Boolean)
+    const description = describeRelationship(pathMembers, p1, p2)
 
     return {
         person1: p1.full_name,
         person2: p2.full_name,
-        path: pathPersons.map(p => ({ id: p.id, name: p.full_name, generation: p.generation })),
+        path: pathMembers.map(m => ({ id: m.id, name: m.full_name, generation: m.generation_level })),
         relationship: description,
         description,
     }
@@ -265,7 +269,7 @@ async function findRelationship(name1: string, name2: string): Promise<Relations
 
 // ─── Tool Router ───────────────────────────────────────────────────────────
 
- 
+
 export async function executeTool(name: string, args: Record<string, any>): Promise<unknown> {
     switch (name) {
         case 'get_all_members':

@@ -1,8 +1,9 @@
-import { Person } from './types'
+import { Member, Spouse } from './types'
 import { Node, Edge } from '@xyflow/react'
 
 export type PersonNode = Node<{
-    person: Person
+    member: Member
+    spouse?: Spouse
     hasChildren: boolean
     isHighlighted: boolean
 }, 'person'>
@@ -13,7 +14,7 @@ const H_GAP = 60
 const V_GAP = 100
 
 interface LayoutNode {
-    person: Person
+    member: Member
     x: number
     y: number
     children: string[]
@@ -22,31 +23,39 @@ interface LayoutNode {
 /**
  * Build a tree layout using a simple top-down algorithm.
  * Positions nodes by generation row, distributing horizontally per family.
+ * Uses father_id as the backbone for tree traversal (members table only).
  */
-export function buildTreeLayout(people: Person[]): { nodes: PersonNode[]; edges: Edge[] } {
-    if (!people.length) return { nodes: [], edges: [] }
+export function buildTreeLayout(
+    members: Member[],
+    spouses: Spouse[] = []
+): { nodes: PersonNode[]; edges: Edge[] } {
+    if (!members.length) return { nodes: [], edges: [] }
 
-    const map = new Map<string, Person>(people.map(p => [p.id, p]))
+    const map = new Map<string, Member>(members.map(m => [m.id, m]))
+    const spouseMap = new Map<string, Spouse>(spouses.map(s => [s.id, s]))
+    const spouseByMember = new Map<string, Spouse[]>()
+    spouses.forEach(s => {
+        if (!spouseByMember.has(s.member_id)) spouseByMember.set(s.member_id, [])
+        spouseByMember.get(s.member_id)!.push(s)
+    })
+
     const childrenMap = new Map<string, string[]>()
     const edges: Edge[] = []
 
-    // Build children map
-    people.forEach(p => {
-        if (p.father_id && map.has(p.father_id)) {
-            if (!childrenMap.has(p.father_id)) childrenMap.set(p.father_id, [])
-            childrenMap.get(p.father_id)!.push(p.id)
-        } else if (p.mother_id && map.has(p.mother_id)) {
-            if (!childrenMap.has(p.mother_id)) childrenMap.set(p.mother_id, [])
-            childrenMap.get(p.mother_id)!.push(p.id)
+    // Build children map using father_id as backbone
+    members.forEach(m => {
+        if (m.father_id && map.has(m.father_id)) {
+            if (!childrenMap.has(m.father_id)) childrenMap.set(m.father_id, [])
+            childrenMap.get(m.father_id)!.push(m.id)
         }
     })
 
-    // Group by generation
-    const byGen = new Map<number, Person[]>()
-    people.forEach(p => {
-        const gen = p.generation ?? 1
+    // Group by generation_level
+    const byGen = new Map<number, Member[]>()
+    members.forEach(m => {
+        const gen = m.generation_level ?? 1
         if (!byGen.has(gen)) byGen.set(gen, [])
-        byGen.get(gen)!.push(p)
+        byGen.get(gen)!.push(m)
     })
 
     const sortedGens = Array.from(byGen.keys()).sort((a, b) => a - b)
@@ -54,53 +63,48 @@ export function buildTreeLayout(people: Person[]): { nodes: PersonNode[]; edges:
 
     // Position nodes row by row
     sortedGens.forEach((gen, rowIdx) => {
-        const members = byGen.get(gen)!.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-        const totalWidth = members.length * NODE_WIDTH + (members.length - 1) * H_GAP
+        const genMembers = byGen.get(gen)!.sort((a, b) => (a.birth_order ?? 0) - (b.birth_order ?? 0))
+        const totalWidth = genMembers.length * NODE_WIDTH + (genMembers.length - 1) * H_GAP
         const startX = -totalWidth / 2
 
-        members.forEach((p, colIdx) => {
-            layoutMap.set(p.id, {
-                person: p,
+        genMembers.forEach((m, colIdx) => {
+            layoutMap.set(m.id, {
+                member: m,
                 x: startX + colIdx * (NODE_WIDTH + H_GAP),
                 y: rowIdx * (NODE_HEIGHT + V_GAP),
-                children: childrenMap.get(p.id) ?? [],
+                children: childrenMap.get(m.id) ?? [],
             })
         })
     })
 
-    // Build edges
-    people.forEach(p => {
-        if (p.father_id && layoutMap.has(p.father_id)) {
+    // Build edges from father_id
+    members.forEach(m => {
+        if (m.father_id && layoutMap.has(m.father_id)) {
             edges.push({
-                id: `${p.father_id}->${p.id}`,
-                source: p.father_id,
-                target: p.id,
+                id: `${m.father_id}->${m.id}`,
+                source: m.father_id,
+                target: m.id,
                 type: 'step',
                 style: { stroke: 'rgba(251, 191, 36, 0.4)', strokeWidth: 1.5 },
-                animated: false,
-            })
-        } else if (p.mother_id && layoutMap.has(p.mother_id)) {
-            edges.push({
-                id: `${p.mother_id}->${p.id}`,
-                source: p.mother_id,
-                target: p.id,
-                type: 'step',
-                style: { stroke: 'rgba(251, 191, 36, 0.2)', strokeWidth: 1.5, strokeDasharray: '4 4' },
                 animated: false,
             })
         }
     })
 
-    const nodes: PersonNode[] = Array.from(layoutMap.values()).map(ln => ({
-        id: ln.person.id,
-        type: 'person',
-        position: { x: ln.x, y: ln.y },
-        data: {
-            person: ln.person,
-            hasChildren: ln.children.length > 0,
-            isHighlighted: false,
-        },
-    }))
+    const nodes: PersonNode[] = Array.from(layoutMap.values()).map(ln => {
+        const memberSpouses = spouseByMember.get(ln.member.id)
+        return {
+            id: ln.member.id,
+            type: 'person',
+            position: { x: ln.x, y: ln.y },
+            data: {
+                member: ln.member,
+                spouse: memberSpouses?.[0],
+                hasChildren: ln.children.length > 0,
+                isHighlighted: false,
+            },
+        }
+    })
 
     return { nodes, edges }
 }

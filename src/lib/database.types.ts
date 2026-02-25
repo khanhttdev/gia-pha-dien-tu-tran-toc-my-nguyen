@@ -47,46 +47,41 @@ export type Database = {
         }
         Relationships: []
       }
-      funds: {
+      comments: {
         Row: {
-          amount: number
+          author_id: string
+          content: string
+          contribution_id: string
           created_at: string | null
-          created_by: string | null
-          description: string
           id: string
-          person_id: string | null
-          transaction_date: string
-          transaction_type: string
-          updated_at: string | null
         }
         Insert: {
-          amount: number
+          author_id: string
+          content: string
+          contribution_id: string
           created_at?: string | null
-          created_by?: string | null
-          description: string
           id?: string
-          person_id?: string | null
-          transaction_date?: string
-          transaction_type: string
-          updated_at?: string | null
         }
         Update: {
-          amount?: number
+          author_id?: string
+          content?: string
+          contribution_id?: string
           created_at?: string | null
-          created_by?: string | null
-          description?: string
           id?: string
-          person_id?: string | null
-          transaction_date?: string
-          transaction_type?: string
-          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "funds_person_id_fkey"
-            columns: ["person_id"]
+            foreignKeyName: "comments_author_id_fkey"
+            columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "contributions"
             referencedColumns: ["id"]
           },
         ]
@@ -99,8 +94,8 @@ export type Database = {
           facebook: string | null
           id: string
           is_public: boolean | null
+          member_id: string
           notes: string | null
-          person_id: string
           phone: string | null
           updated_at: string | null
           zalo: string | null
@@ -112,8 +107,8 @@ export type Database = {
           facebook?: string | null
           id?: string
           is_public?: boolean | null
+          member_id: string
           notes?: string | null
-          person_id: string
           phone?: string | null
           updated_at?: string | null
           zalo?: string | null
@@ -125,18 +120,18 @@ export type Database = {
           facebook?: string | null
           id?: string
           is_public?: boolean | null
+          member_id?: string
           notes?: string | null
-          person_id?: string
           phone?: string | null
           updated_at?: string | null
           zalo?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "contacts_person_id_fkey"
-            columns: ["person_id"]
+            foreignKeyName: "contacts_member_id_fkey"
+            columns: ["member_id"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -151,7 +146,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
-          target_person: string | null
+          target_member: string | null
           type: string | null
         }
         Insert: {
@@ -163,7 +158,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
-          target_person?: string | null
+          target_member?: string | null
           type?: string | null
         }
         Update: {
@@ -175,7 +170,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
-          target_person?: string | null
+          target_member?: string | null
           type?: string | null
         }
         Relationships: [
@@ -194,10 +189,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contributions_target_person_fkey"
-            columns: ["target_person"]
+            foreignKeyName: "contributions_target_member_fkey"
+            columns: ["target_member"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -249,6 +244,50 @@ export type Database = {
           },
         ]
       }
+      funds: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          description: string
+          id: string
+          member_id: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          id?: string
+          member_id?: string | null
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          id?: string
+          member_id?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funds_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media: {
         Row: {
           created_at: string | null
@@ -293,86 +332,92 @@ export type Database = {
           },
         ]
       }
-      people: {
+      members: {
         Row: {
-          avatar_url: string | null
-          birth_year: number | null
-          birth_month: number | null
-          birth_day: number | null
+          birth_order: number | null
           created_at: string | null
-          death_year: number | null
-          death_month: number | null
-          death_day: number | null
           father_id: string | null
           full_name: string
-          gender: string | null
-          generation: number | null
+          gender: string
+          generation_level: number
           id: string
-          is_alive: boolean | null
-          is_in_law: boolean | null
+          metadata: Json | null
           mother_id: string | null
-          notes: string | null
-          sort_order: number | null
           updated_at: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          birth_year?: number | null
-          birth_month?: number | null
-          birth_day?: number | null
+          birth_order?: number | null
           created_at?: string | null
-          death_year?: number | null
-          death_month?: number | null
-          death_day?: number | null
           father_id?: string | null
           full_name: string
-          gender?: string | null
-          generation?: number | null
+          gender?: string
+          generation_level?: number
           id?: string
-          is_alive?: boolean | null
-          is_in_law?: boolean | null
+          metadata?: Json | null
           mother_id?: string | null
-          notes?: string | null
-          sort_order?: number | null
           updated_at?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          birth_year?: number | null
-          birth_month?: number | null
-          birth_day?: number | null
+          birth_order?: number | null
           created_at?: string | null
-          death_year?: number | null
-          death_month?: number | null
-          death_day?: number | null
           father_id?: string | null
           full_name?: string
-          gender?: string | null
-          generation?: number | null
+          gender?: string
+          generation_level?: number
           id?: string
-          is_alive?: boolean | null
-          is_in_law?: boolean | null
+          metadata?: Json | null
           mother_id?: string | null
-          notes?: string | null
-          sort_order?: number | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "people_father_id_fkey"
+            foreignKeyName: "members_father_id_fkey"
             columns: ["father_id"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "people_mother_id_fkey"
+            foreignKeyName: "members_mother_id_fkey"
             columns: ["mother_id"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "spouses"
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -381,8 +426,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
-          is_active: boolean | null
-          linked_person: string | null
+          linked_member: string | null
           role: string | null
           status: string | null
           updated_at: string | null
@@ -393,8 +437,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
-          is_active?: boolean | null
-          linked_person?: string | null
+          linked_member?: string | null
           role?: string | null
           status?: string | null
           updated_at?: string | null
@@ -405,119 +448,87 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          is_active?: boolean | null
-          linked_person?: string | null
+          linked_member?: string | null
           role?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_linked_person_fkey"
-            columns: ["linked_person"]
+            foreignKeyName: "profiles_linked_member_fkey"
+            columns: ["linked_member"]
             isOneToOne: false
-            referencedRelation: "people"
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
       }
       push_subscriptions: {
         Row: {
-          id: string
-          user_id: string
-          endpoint: string
-          p256dh: string
           auth_key: string
           created_at: string | null
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          endpoint: string
-          p256dh: string
           auth_key: string
           created_at?: string | null
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          endpoint?: string
-          p256dh?: string
           auth_key?: string
           created_at?: string | null
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
         }
         Relationships: []
       }
-      notifications: {
+      spouses: {
         Row: {
-          id: string
-          user_id: string | null
-          title: string
-          body: string | null
-          type: string | null
-          is_read: boolean | null
-          data: Json | null
           created_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          title: string
-          body?: string | null
-          type?: string | null
-          is_read?: boolean | null
-          data?: Json | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          title?: string
-          body?: string | null
-          type?: string | null
-          is_read?: boolean | null
-          data?: Json | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      comments: {
-        Row: {
+          full_name: string
           id: string
-          contribution_id: string
-          author_id: string
-          content: string
-          created_at: string
+          member_id: string
+          metadata: Json | null
+          role_type: string | null
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
+          full_name: string
           id?: string
-          contribution_id: string
-          author_id: string
-          content: string
-          created_at?: string
+          member_id: string
+          metadata?: Json | null
+          role_type?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
+          full_name?: string
           id?: string
-          contribution_id?: string
-          author_id?: string
-          content?: string
-          created_at?: string
+          member_id?: string
+          metadata?: Json | null
+          role_type?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "comments_contribution_id_fkey"
-            columns: ["contribution_id"]
+            foreignKeyName: "spouses_member_id_fkey"
+            columns: ["member_id"]
             isOneToOne: false
-            referencedRelation: "contributions"
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "comments_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
         ]
       }
     }
@@ -525,13 +536,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_user: { Args: { target_user_id: string }; Returns: undefined }
+      get_admin_users: {
+        Args: never
+        Returns: Database["public"]["CompositeTypes"]["admin_user_data"][]
+        SetofOptions: {
+          from: "*"
+          to: "admin_user_data"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_demographic_stats: { Args: never; Returns: Json }
+      get_family_tree: {
+        Args: { root_id?: string }
+        Returns: {
+          birth_order: number
+          depth: number
+          father_id: string
+          full_name: string
+          gender: string
+          generation_level: number
+          id: string
+          metadata: Json
+          mother_id: string
+        }[]
+      }
+      get_fund_balance: { Args: never; Returns: number }
+      is_accountant: { Args: never; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      set_user_role: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: undefined
+      }
+      set_user_status: {
+        Args: { new_status: string; target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      admin_user_data: {
+        id: string | null
+        email: string | null
+        role: string | null
+        created_at: string | null
+        is_active: boolean | null
+        status: string | null
+      }
     }
   }
 }

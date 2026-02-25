@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getAllPeople } from '@/lib/supabase-data'
-import { Person } from '@/lib/types'
+import { getAllMembers } from '@/lib/supabase-data'
+import { Member } from '@/lib/types'
 import { createClient } from '@/lib/supabase-client'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -14,25 +14,25 @@ import { Phone, Search, Pencil, Loader2, MessageCircle, Mail, MapPin } from 'luc
 import { cn } from '@/lib/utils'
 import { Contact } from '@/lib/types'
 
-type PersonWithContact = Person & { contact?: Contact }
+type MemberWithContact = Member & { contact?: Contact }
 
 export default function DirectoryPage() {
-    const [people, setPeople] = useState<PersonWithContact[]>([])
-    const [filtered, setFiltered] = useState<PersonWithContact[]>([])
+    const [people, setPeople] = useState<MemberWithContact[]>([])
+    const [filtered, setFiltered] = useState<MemberWithContact[]>([])
     const [query, setQuery] = useState('')
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
-    const [editPerson, setEditPerson] = useState<PersonWithContact | null>(null)
+    const [editMember, setEditMember] = useState<MemberWithContact | null>(null)
     const [form, setForm] = useState({ phone: '', zalo: '', facebook: '', email: '', address: '', notes: '' })
     const [saving, setSaving] = useState(false)
     const sb = createClient()
 
     const load = async () => {
         setLoading(true)
-        const allPeople = await getAllPeople()
+        const allMembers = await getAllMembers()
         const { data: contacts } = await sb.from('contacts').select('*')
-        const contactMap = new Map((contacts ?? []).map((c: Contact) => [c.person_id, c]))
-        const merged = allPeople.map(p => ({ ...p, contact: contactMap.get(p.id) as Contact | undefined }))
+        const contactMap = new Map((contacts ?? []).map((c: any) => [c.member_id, c]))
+        const merged = allMembers.map(m => ({ ...m, contact: contactMap.get(m.id) as Contact | undefined }))
         setPeople(merged)
         setFiltered(merged)
         setLoading(false)
@@ -55,8 +55,8 @@ export default function DirectoryPage() {
         setFiltered(people.filter(p => p.full_name.toLowerCase().includes(q) || p.contact?.phone?.includes(q) || p.contact?.email?.toLowerCase().includes(q)))
     }, [query, people])
 
-    const openEdit = (p: PersonWithContact) => {
-        setEditPerson(p)
+    const openEdit = (p: MemberWithContact) => {
+        setEditMember(p)
         setForm({
             phone: p.contact?.phone ?? '',
             zalo: p.contact?.zalo ?? '',
@@ -68,17 +68,17 @@ export default function DirectoryPage() {
     }
 
     const handleSave = async () => {
-        if (!editPerson) return
+        if (!editMember) return
         setSaving(true)
         try {
-            const existing = editPerson.contact
+            const existing = editMember.contact
             if (existing) {
                 await sb.from('contacts').update({ ...form, updated_at: new Date().toISOString() }).eq('id', existing.id)
             } else {
-                await sb.from('contacts').insert({ ...form, person_id: editPerson.id })
+                await sb.from('contacts').insert({ ...form, member_id: editMember.id })
             }
             toast.success('Đã lưu thông tin liên lạc')
-            setEditPerson(null)
+            setEditMember(null)
             await load()
         } catch (e: any) {
             toast.error(e.message)
@@ -89,10 +89,9 @@ export default function DirectoryPage() {
     const withContact = filtered.filter(p => p.contact)
     const withoutContact = filtered.filter(p => !p.contact)
 
-    const ContactCard = ({ p }: { p: PersonWithContact }) => (
+    const ContactCard = ({ p }: { p: MemberWithContact }) => (
         <div className={cn(
-            'glass rounded-xl p-4 border border-border/60 hover:border-amber-400/40 transition-all group',
-            !p.is_alive && 'opacity-60'
+            'glass rounded-xl p-4 border border-border/60 hover:border-amber-400/40 transition-all group'
         )}>
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -105,7 +104,7 @@ export default function DirectoryPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{p.full_name}</p>
-                        <p className="text-xs text-muted-foreground">Thế hệ {p.generation}</p>
+                        <p className="text-xs text-muted-foreground">Thế hệ {p.generation_level}</p>
                     </div>
                 </div>
                 {isAdmin && (
@@ -196,10 +195,10 @@ export default function DirectoryPage() {
                 )}
             </div>
 
-            <Dialog open={!!editPerson} onOpenChange={v => !v && setEditPerson(null)}>
+            <Dialog open={!!editMember} onOpenChange={v => !v && setEditMember(null)}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Thông tin liên lạc — {editPerson?.full_name}</DialogTitle>
+                        <DialogTitle>Thông tin liên lạc — {editMember?.full_name}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3 py-2">
                         {[
@@ -217,7 +216,7 @@ export default function DirectoryPage() {
                         ))}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setEditPerson(null)}>Hủy</Button>
+                        <Button variant="outline" onClick={() => setEditMember(null)}>Hủy</Button>
                         <Button className="gold-gradient border-0 text-amber-950" onClick={handleSave} disabled={saving}>
                             {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Lưu

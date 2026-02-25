@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import type { Person } from '@/lib/types'
+import type { Member } from '@/lib/types'
 import {
     GitFork, Users, BookOpen, CalendarDays, ImageIcon,
     Phone, TrendingUp, Clock, MessageSquare
@@ -41,25 +41,25 @@ export default async function HomePage() {
 
     // Fetch stats
     const { count: totalMembers } = await supabase
-        .from('people')
+        .from('members')
         .select('*', { count: 'exact', head: true })
 
     const { data: genData } = await supabase
-        .from('people')
-        .select('generation')
-        .order('generation', { ascending: false })
+        .from('members')
+        .select('generation_level')
+        .order('generation_level', { ascending: false })
         .limit(1)
-        .single() as { data: { generation: number } | null }
+        .single() as { data: { generation_level: number } | null }
 
     // Recent updates
     const { data: recentPeople } = await supabase
-        .from('people')
-        .select('id, full_name, gender, generation, updated_at')
+        .from('members')
+        .select('id, full_name, gender, generation_level, updated_at')
         .order('updated_at', { ascending: false })
-        .limit(5) as { data: Pick<Person, 'id' | 'full_name' | 'gender' | 'generation' | 'updated_at'>[] | null }
+        .limit(5) as { data: Pick<Member, 'id' | 'full_name' | 'gender' | 'generation_level' | 'updated_at'>[] | null }
 
     const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Thành viên'
-    const maxGen = genData?.generation ?? 0
+    const maxGen = genData?.generation_level ?? 0
 
     return (
         <div aria-label="home" className="p-6 sm:p-8 max-w-6xl mx-auto space-y-8 page-enter">
@@ -158,7 +158,7 @@ export default async function HomePage() {
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{person.full_name}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Đời {person.generation} · {person.gender === 'male' ? 'Nam' : person.gender === 'female' ? 'Nữ' : ''}
+                                        Đời {person.generation_level} · {person.gender === 'male' ? 'Nam' : person.gender === 'female' ? 'Nữ' : ''}
                                     </p>
                                 </div>
                                 <span className="text-xs text-muted-foreground/70 shrink-0">
