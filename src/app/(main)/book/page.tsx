@@ -127,6 +127,30 @@ export default function BookPage() {
                 backgroundColor: '#31090A', // Fix cứng màu nền thay vì dùng biến CSS
                 windowWidth: 1024,
                 onclone: (clonedDoc) => {
+                    // Xử lý triệt để các hệ màu hiện đại (lab, oklch) mà html2canvas chưa hỗ trợ
+                    const allElements = clonedDoc.getElementsByTagName('*')
+                    for (let i = 0; i < allElements.length; i++) {
+                        const el = allElements[i] as HTMLElement
+                        const style = window.getComputedStyle(el)
+
+                        // Danh sách các thuộc tính màu cần kiểm tra
+                        const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor']
+
+                        colorProps.forEach(prop => {
+                            const val = (style as any)[prop]
+                            // Nếu trình duyệt trả về lab(), oklch() hoặc các hệ màu L4
+                            if (val && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
+                                // Ép về màu an toàn (fallback)
+                                if (prop === 'color') el.style.color = '#ffffff'
+                                if (prop === 'backgroundColor') {
+                                    if (el.classList.contains('glass')) el.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                                    else el.style.backgroundColor = 'transparent'
+                                }
+                                if (prop.includes('Color')) el.style.borderColor = 'rgba(255,255,255,0.1)'
+                            }
+                        })
+                    }
+
                     // Xử lý các thành phần CSS không được html2canvas hỗ trợ
                     const glasses = clonedDoc.querySelectorAll('.glass')
                     glasses.forEach(el => {
