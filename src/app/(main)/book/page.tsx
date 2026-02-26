@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { getAllMembers, getAllSpouses } from '@/lib/supabase-data'
 import { Member, Spouse, MemberMetadata } from '@/lib/types'
-import { BookOpen, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronRight, Loader2, Download, Printer } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 type FamilyBranch = {
@@ -105,6 +107,56 @@ export default function BookPage() {
     const [members, setMembers] = useState<Member[]>([])
     const [spouses, setSpouses] = useState<Spouse[]>([])
     const [loading, setLoading] = useState(true)
+    const [isExporting, setIsExporting] = useState(false)
+    const printRef = useRef<HTMLDivElement>(null)
+
+    const handleExportPDF = async () => {
+        if (!printRef.current) return
+        try {
+            setIsExporting(true)
+            const html2canvas = (await import('html2canvas')).default
+            const { jsPDF } = await import('jspdf')
+
+            toast.info('Đang tạo file PDF, vui lòng đợi...', { duration: 3000 })
+
+            // Hide some interactive elements during print if needed
+            // Currently we just capture the div
+            const canvas = await html2canvas(printRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                windowWidth: 1024 // Giữ độ rộng để tránh vỡ layout trên mobile
+            })
+
+            const imgData = canvas.toDataURL('image/jpeg', 1.0)
+            const pdf = new jsPDF('p', 'mm', 'a4')
+
+            const pdfWidth = pdf.internal.pageSize.getWidth()
+            const pageHeight = pdf.internal.pageSize.getHeight()
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width
+
+            let heightLeft = imgHeight
+            let position = 0
+
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight)
+            heightLeft -= pageHeight
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight
+                pdf.addPage()
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight)
+                heightLeft -= pageHeight
+            }
+
+            pdf.save('Gia-Pha-Tran-Toc.pdf')
+            toast.success('Xuất file PDF thành công!')
+        } catch (error) {
+            console.error('Error exporting PDF:', error)
+            toast.error('Có lỗi xảy ra khi xuất PDF')
+        } finally {
+            setIsExporting(false)
+        }
+    }
 
     useEffect(() => {
         Promise.all([getAllMembers(), getAllSpouses()])
@@ -122,13 +174,27 @@ export default function BookPage() {
     return (
         <div className="h-full flex flex-col">
             <div className="shrink-0 px-6 py-4 border-b border-border glass">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-amber-900" />
+                <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
+                            <BookOpen className="w-4 h-4 text-amber-900" />
+                        </div>
+                        <div>
+                            <h1 className="text-base font-bold leading-none">Sách Gia Phả</h1>
+                            <p className="text-xs text-muted-foreground mt-0.5">Trần Tộc Mỹ Nguyên — tự động tạo từ dữ liệu</p>
+                        </div>
                     </div>
                     <div>
-                        <h1 className="text-base font-bold leading-none">Sách Gia Phả</h1>
-                        <p className="text-xs text-muted-foreground mt-0.5">Trần Tộc Mỹ Nguyên — tự động tạo từ dữ liệu</p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5 border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-500 transition-colors"
+                            onClick={handleExportPDF}
+                            disabled={isExporting || loading}
+                        >
+                            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">Xuất PDF</span>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -137,7 +203,7 @@ export default function BookPage() {
                 {loading ? (
                     <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                 ) : (
-                    <>
+                    <div ref={printRef} className="pb-8 rounded-xl" style={{ backgroundColor: 'var(--background)' }}>
                         {/* Header */}
                         <div className="text-center mb-10 p-8 glass rounded-2xl border border-border/60">
                             <div className="text-5xl mb-4">📖</div>
@@ -197,7 +263,7 @@ export default function BookPage() {
                                 )
                             })}
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </div>

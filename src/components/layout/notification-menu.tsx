@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import { format, addDays, formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
+import { toast } from 'sonner'
+
 type NotifEvent = {
     id: string
     title: string
@@ -28,7 +30,32 @@ export function NotificationMenu() {
     const [events, setEvents] = useState<NotifEvent[]>([])
     const [realtimeNotifs, setRealtimeNotifs] = useState<RealtimeNotif[]>([])
     const [open, setOpen] = useState(false)
+    const [pushStatus, setPushStatus] = useState<NotificationPermission>('default')
     const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+
+    useEffect(() => {
+        if ('Notification' in window) {
+            setPushStatus(Notification.permission)
+        }
+    }, [])
+
+    const handleSubscribePush = async () => {
+        if (!('Notification' in window)) {
+            toast.error('Trình duyệt không hỗ trợ Push Notification')
+            return
+        }
+        try {
+            const permission = await Notification.requestPermission()
+            setPushStatus(permission)
+            if (permission === 'granted') {
+                toast.success('Đã bật thông báo thành công!')
+            } else if (permission === 'denied') {
+                toast.info('Bạn đã từ chối nhận thông báo.')
+            }
+        } catch (error) {
+            console.error('Error requesting push permission:', error)
+        }
+    }
 
     const totalUnread = realtimeNotifs.filter(n => !n.read).length +
         (() => {
@@ -182,6 +209,16 @@ export function NotificationMenu() {
                         </span>
                     )}
                 </div>
+
+                {/* Push Notif Banner */}
+                {pushStatus === 'default' && (
+                    <div className="px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 flex flex-col gap-1.5">
+                        <p className="text-[11px] text-blue-500 leading-tight">Nhận thông báo ngay khi không mở trình duyệt</p>
+                        <Button variant="outline" size="sm" className="h-6 text-[10px] text-blue-500 border-blue-500/30 hover:bg-blue-500/10" onClick={handleSubscribePush}>
+                            Bật quyền thông báo
+                        </Button>
+                    </div>
+                )}
 
                 {/* List */}
                 <div className="max-h-[360px] overflow-y-auto divide-y divide-border/30">

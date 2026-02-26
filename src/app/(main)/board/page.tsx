@@ -59,7 +59,6 @@ export default function BoardPage() {
         }
         fetchUser()
         loadFeed(true)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {

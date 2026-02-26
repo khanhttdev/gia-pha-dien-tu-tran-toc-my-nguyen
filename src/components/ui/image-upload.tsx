@@ -72,6 +72,7 @@ export function ImageUpload({
                         <input
                             type="file"
                             accept={accept}
+                            capture="environment"
                             className="hidden"
                             onChange={onFileChange}
                             disabled={uploading}
