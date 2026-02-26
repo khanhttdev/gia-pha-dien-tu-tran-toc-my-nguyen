@@ -106,4 +106,4 @@ Dưới đây là một số cập nhật nổi bật của nhánh phát triển
 
 Dự án này là tâm huyết hướng về cội nguồn nhằm duy trì và lan tỏa kết nối cho hậu duệ dòng tộc. Xin vui lòng không dùng vì các mục đích thương mại vi phạm bản quyền hoặc tấn công phá hoại.
 
-Được phát triển và duy trì bởi đội ngũ Antigravity AI.
+Được phát triển và duy trì bởi Karo Kei

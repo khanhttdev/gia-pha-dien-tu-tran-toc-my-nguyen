@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
             status = profile?.status ?? undefined
         }
 
-        if (status === 'pending' || status === 'rejected') {
+        if ((status === 'pending' || status === 'rejected') && pathname !== '/') {
             return NextResponse.redirect(new URL('/home', request.url))
         }
 

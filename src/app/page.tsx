@@ -6,7 +6,16 @@ export default async function RootPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) redirect('/home')
+  let authState: 'unauthenticated' | 'pending' | 'approved' = 'unauthenticated'
 
-  return <LandingPage />
+  if (user) {
+    const status = user.app_metadata?.status
+    if (status === 'approved') {
+      redirect('/home')
+    } else {
+      authState = 'pending'
+    }
+  }
+
+  return <LandingPage authState={authState} />
 }
