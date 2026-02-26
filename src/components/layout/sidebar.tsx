@@ -14,9 +14,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { Profile } from '@/lib/types'
-import { GlobalSearch } from '@/components/global-search'
+import { GlobalSearch } from '@/components/layout/global-search'
 import { NotificationMenu } from '@/components/layout/notification-menu'
-
 
 const HeritageOverlay = () => (
     <>

@@ -169,16 +169,22 @@ describe('chat-tools executeTool', () => {
 // through the find_relationship tool with fully mocked data.
 
 describe('find_relationship BFS Logic', () => {
+    const SPOUSES = [
+        { id: 'vo_ong', full_name: 'Bà Nội', member_id: 'ong', role_type: 'chinh_that' },
+        { id: 'vo_cha', full_name: 'Mẹ Cha', member_id: 'cha', role_type: 'chinh_that' },
+        { id: 'vo_con1', full_name: 'Vợ Con 1', member_id: 'con1', role_type: 'chinh_that' }
+    ]
+
     beforeEach(() => {
         vi.clearAllMocks()
-        // Mock getAllMembers to always return our MEMBERS fixture
+        // Mock supabase.from().select()
         vi.mocked(createClient).mockResolvedValue({
-            from: () => ({
-                select: () => ({
-                    order: () => ({
-                        order: async () => ({ data: MEMBERS, error: null }),
-                    }),
-                }),
+            from: (table: string) => ({
+                select: () => {
+                    const result = table === 'members' ? MEMBERS : SPOUSES
+                    // We must return a thenable object that resolves to { data, error }
+                    return Promise.resolve({ data: table === 'members' ? MEMBERS : SPOUSES, error: null })
+                }
             }),
         } as any)
     })
@@ -211,6 +217,18 @@ describe('find_relationship BFS Logic', () => {
         expect(result.description).toContain('ông')
     })
 
+    it('identifies relationship through spouse (e.g. Grandma -> Grandchild)', async () => {
+        const result = await executeTool('find_relationship', {
+            person_name_1: 'Bà Nội',
+            person_name_2: 'Trần Văn Con1',
+        }) as { description: string }
+
+        // Mẹ Cha nối với Ông Nội, Ông Nội là cha của Cha, Cha là cha của Con1 => "gián tiếp... các bước"
+        expect(result.description).toContain('gián tiếp')
+        expect(result.description).toContain('Bà Nội là vợ của Trần Văn Ông')
+        expect(result.description).toContain('Trần Văn Ông là cha/mẹ của Trần Văn Cha')
+    })
+
     it('returns "not found" for member not in gia phả', async () => {
         const result = await executeTool('find_relationship', {
             person_name_1: 'Người Không Tồn Tại',
@@ -223,12 +241,11 @@ describe('find_relationship BFS Logic', () => {
     it('detects disconnected members (no path)', async () => {
         // Add stranger to mock data
         vi.mocked(createClient).mockResolvedValue({
-            from: () => ({
-                select: () => ({
-                    order: () => ({
-                        order: async () => ({ data: [...MEMBERS, stranger], error: null }),
-                    }),
-                }),
+            from: (table: string) => ({
+                select: () => {
+                    const res = table === 'members' ? [...MEMBERS, stranger] : SPOUSES
+                    return Promise.resolve({ data: res, error: null })
+                }
             }),
         } as any)
 

@@ -135,6 +135,17 @@ async function getFamilyStatistics() {
 
 // ─── BFS Relationship Finder ───────────────────────────────────────────────
 
+interface GraphNode {
+    id: string
+    name: string
+    generation: number | null
+    gender: string | null
+    type: 'member' | 'spouse'
+    father_id?: string | null
+    spouse_of?: string | null
+    role_type?: string | null
+}
+
 interface RelationshipResult {
     person1: string
     person2: string
@@ -143,82 +154,114 @@ interface RelationshipResult {
     description: string
 }
 
-function describeRelationship(path: Member[], person1: Member, person2: Member): string {
+function describePath(path: GraphNode[]): string {
     if (path.length < 2) return 'Cùng một người'
 
-    // Direct parent-child (father_id only in members)
-    if (person1.father_id === person2.id) {
-        return person2.gender === 'male'
-            ? `${person2.full_name} là **cha** của ${person1.full_name}`
-            : `${person2.full_name} là **mẹ** của ${person1.full_name}`
-    }
-    if (person2.father_id === person1.id) {
-        return person1.gender === 'male'
-            ? `${person1.full_name} là **cha** của ${person2.full_name}`
-            : `${person1.full_name} là **mẹ** của ${person2.full_name}`
-    }
+    // If purely members and short enough, we can use old static logic, but unified step-by-step is better for complex
+    const isPureMembers = path.every(n => n.type === 'member')
 
-    // Siblings (same father)
-    if (person1.father_id && person1.father_id === person2.father_id) {
-        return `${person1.full_name} và ${person2.full_name} là **anh/chị em** ruột`
-    }
+    if (isPureMembers) {
+        const p1 = path[0]
+        const p2 = path[path.length - 1]
 
-    // Grandparent-grandchild & beyond — use generation gap
-    const genGap = Math.abs((person1.generation_level ?? 1) - (person2.generation_level ?? 1))
-    const elder = (person1.generation_level ?? 1) < (person2.generation_level ?? 1) ? person1 : person2
-    const younger = (person1.generation_level ?? 1) < (person2.generation_level ?? 1) ? person2 : person1
+        // Direct parent-child
+        if (p1.father_id === p2.id) return p2.gender === 'male' ? `${p2.name} là **cha** của ${p1.name}` : `${p2.name} là **mẹ** của ${p1.name}`
+        if (p2.father_id === p1.id) return p1.gender === 'male' ? `${p1.name} là **cha** của ${p2.name}` : `${p1.name} là **mẹ** của ${p2.name}`
 
-    if (genGap === 2) {
-        return elder.gender === 'male'
-            ? `${elder.full_name} là **ông nội/ngoại** của ${younger.full_name}`
-            : `${elder.full_name} là **bà nội/ngoại** của ${younger.full_name}`
+        // Siblings
+        if (p1.father_id && p1.father_id === p2.father_id) return `${p1.name} và ${p2.name} là **anh/chị em** ruột`
+
+        // generation gap
+        const genGap = Math.abs((p1.generation ?? 1) - (p2.generation ?? 1))
+        const elder = (p1.generation ?? 1) < (p2.generation ?? 1) ? p1 : p2
+        const younger = (p1.generation ?? 1) < (p2.generation ?? 1) ? p2 : p1
+
+        if (genGap === 2) return elder.gender === 'male' ? `${elder.name} là **ông** của ${younger.name}` : `${elder.name} là **bà** của ${younger.name}`
+        if (genGap === 3) return elder.gender === 'male' ? `${elder.name} là **cụ ông** của ${younger.name}` : `${elder.name} là **cụ bà** của ${younger.name}`
+        if (genGap === 0) return `${p1.name} và ${p2.name} là **anh/chị em họ** (cùng thế hệ F${p1.generation})`
+        if (genGap === 1) return elder.gender === 'male' ? `${elder.name} là **chú/bác** của ${younger.name}` : `${elder.name} là **cô/dì** của ${younger.name}`
     }
 
-    if (genGap === 3) {
-        return elder.gender === 'male'
-            ? `${elder.full_name} là **cụ ông** của ${younger.full_name}`
-            : `${elder.full_name} là **cụ bà** của ${younger.full_name}`
-    }
-
-    // Same generation but not siblings — cousins
-    if (genGap === 0) {
-        return `${person1.full_name} và ${person2.full_name} là **anh/chị em họ** (cùng thế hệ F${person1.generation_level})`
-    }
-
-    // Uncle/Aunt relationship (gap = 1, not parent-child)
-    if (genGap === 1) {
-        return elder.gender === 'male'
-            ? `${elder.full_name} là **chú/bác** của ${younger.full_name}`
-            : `${elder.full_name} là **cô/dì** của ${younger.full_name}`
-    }
-
-    return `${person1.full_name} và ${person2.full_name} cách nhau ${genGap} thế hệ trong gia phả`
-}
-
-async function findRelationship(name1: string, name2: string): Promise<RelationshipResult> {
-    const members = await getAllMembers()
-    const byId = new Map(members.map(m => [m.id, m]))
-
-    // Find both people by name
-    const p1 = members.find(m => m.full_name.toLowerCase().includes(name1.toLowerCase()))
-    const p2 = members.find(m => m.full_name.toLowerCase().includes(name2.toLowerCase()))
-
-    if (!p1) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name1}" trong gia phả` }
-    if (!p2) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name2}" trong gia phả` }
-    if (p1.id === p2.id) return { person1: name1, person2: name2, path: [{ id: p1.id, name: p1.full_name, generation: p1.generation_level }], relationship: 'self', description: 'Đó là cùng một người' }
-
-    // Build adjacency list (undirected: parent↔child via father_id)
-    const adj = new Map<string, string[]>()
-    for (const m of members) {
-        if (!adj.has(m.id)) adj.set(m.id, [])
-        if (m.father_id && byId.has(m.father_id)) {
-            adj.get(m.id)!.push(m.father_id)
-            if (!adj.has(m.father_id)) adj.set(m.father_id, [])
-            adj.get(m.father_id)!.push(m.id)
+    // Direct spouse
+    if (path.length === 2 && path.some(n => n.type === 'spouse')) {
+        const p1 = path[0]
+        const p2 = path[1]
+        if (p1.spouse_of === p2.id) {
+            return p1.role_type === 'chong' ? `${p1.name} là **chồng** của ${p2.name}` : `${p1.name} là **vợ** của ${p2.name}`
+        }
+        if (p2.spouse_of === p1.id) {
+            return p2.role_type === 'chong' ? `${p2.name} là **chồng** của ${p1.name}` : `${p2.name} là **vợ** của ${p1.name}`
         }
     }
 
-    // BFS from p1 to p2
+    // Step-by-step description for complex mixed paths
+    const steps: string[] = []
+    for (let i = 0; i < path.length - 1; i++) {
+        const a = path[i]
+        const b = path[i + 1]
+        let stepDesc = ''
+
+        if (a.father_id === b.id) stepDesc = `${b.name} là cha/mẹ của ${a.name}`
+        else if (b.father_id === a.id) stepDesc = `${a.name} là cha/mẹ của ${b.name}`
+        else if (a.spouse_of === b.id) stepDesc = `${a.name} là ${a.role_type === 'chong' ? 'chồng' : 'vợ'} của ${b.name}`
+        else if (b.spouse_of === a.id) stepDesc = `${b.name} là ${b.role_type === 'chong' ? 'chồng' : 'vợ'} của ${a.name}`
+        else stepDesc = `${a.name} nối với ${b.name}`
+
+        steps.push(stepDesc)
+    }
+
+    return `Quan hệ gián tiếp thông qua ${path.length - 2} người nối trung gian. Các bước:\n` + steps.map((s, idx) => `  ${idx + 1}. ${s}`).join('\n')
+}
+
+async function findRelationship(name1: string, name2: string): Promise<RelationshipResult> {
+    const supabase = await createClient()
+    const [membersRes, spousesRes] = await Promise.all([
+        supabase.from('members').select('*'),
+        supabase.from('spouses').select('*'),
+    ])
+
+    const members = membersRes.data || []
+    const spouses = spousesRes.data || []
+
+    const nodes: GraphNode[] = [
+        ...members.map(m => ({
+            id: m.id, name: m.full_name, generation: m.generation_level,
+            gender: m.gender, type: 'member' as const, father_id: m.father_id
+        })),
+        ...spouses.map(s => ({
+            id: s.id, name: s.full_name, generation: null,
+            gender: s.role_type === 'chong' ? 'male' : 'female', type: 'spouse' as const,
+            spouse_of: s.member_id, role_type: s.role_type
+        })),
+    ]
+
+    const byId = new Map(nodes.map(n => [n.id, n]))
+
+    // Find both people by name
+    const p1 = nodes.find(n => n.name.toLowerCase().includes(name1.toLowerCase()))
+    const p2 = nodes.find(n => n.name.toLowerCase().includes(name2.toLowerCase()))
+
+    if (!p1) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name1}" trong gia phả` }
+    if (!p2) return { person1: name1, person2: name2, path: [], relationship: 'unknown', description: `Không tìm thấy "${name2}" trong gia phả` }
+    if (p1.id === p2.id) return { person1: name1, person2: name2, path: [{ id: p1.id, name: p1.name, generation: p1.generation }], relationship: 'self', description: 'Đó là cùng một người' }
+
+    // Build adjacency list
+    const adj = new Map<string, string[]>()
+    for (const n of nodes) {
+        if (!adj.has(n.id)) adj.set(n.id, [])
+        if (n.type === 'member' && n.father_id && byId.has(n.father_id)) {
+            adj.get(n.id)!.push(n.father_id)
+            if (!adj.has(n.father_id)) adj.set(n.father_id, [])
+            adj.get(n.father_id)!.push(n.id)
+        }
+        if (n.type === 'spouse' && n.spouse_of && byId.has(n.spouse_of)) {
+            adj.get(n.id)!.push(n.spouse_of)
+            if (!adj.has(n.spouse_of)) adj.set(n.spouse_of, [])
+            adj.get(n.spouse_of)!.push(n.id)
+        }
+    }
+
+    // BFS
     const visited = new Set<string>()
     const parent = new Map<string, string | null>()
     const queue: string[] = [p1.id]
@@ -239,11 +282,11 @@ async function findRelationship(name1: string, name2: string): Promise<Relations
 
     if (!visited.has(p2.id)) {
         return {
-            person1: p1.full_name,
-            person2: p2.full_name,
+            person1: p1.name,
+            person2: p2.name,
             path: [],
             relationship: 'none',
-            description: `Không tìm thấy đường nối giữa ${p1.full_name} và ${p2.full_name} trong gia phả`,
+            description: `Không tìm thấy đường nối giữa ${p1.name} và ${p2.name} trong gia phả`,
         }
     }
 
@@ -255,13 +298,13 @@ async function findRelationship(name1: string, name2: string): Promise<Relations
         cur = parent.get(cur) ?? null
     }
 
-    const pathMembers = pathIds.map(id => byId.get(id)!).filter(Boolean)
-    const description = describeRelationship(pathMembers, p1, p2)
+    const pathNodes = pathIds.map(id => byId.get(id)!).filter(Boolean)
+    const description = describePath(pathNodes)
 
     return {
-        person1: p1.full_name,
-        person2: p2.full_name,
-        path: pathMembers.map(m => ({ id: m.id, name: m.full_name, generation: m.generation_level })),
+        person1: p1.name,
+        person2: p2.name,
+        path: pathNodes.map(n => ({ id: n.id, name: n.name, generation: n.generation })),
         relationship: description,
         description,
     }
