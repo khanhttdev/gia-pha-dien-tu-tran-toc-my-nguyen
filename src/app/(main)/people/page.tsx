@@ -10,9 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, Trash2, Loader2, Users, Heart } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Loader2, Users, Heart, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase-client'
+import Link from 'next/link'
 
 type MemberFormData = {
     full_name: string
@@ -259,15 +260,17 @@ export default function PeoplePage() {
                                                 meta.is_alive === false && 'opacity-60'
                                             )}>
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <Link href={`/people/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                                                         <div className={cn(
-                                                            'w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border',
+                                                            'w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border overflow-hidden',
                                                             m.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' : 'bg-rose-400/10 border-rose-400/30'
                                                         )}>
-                                                            {m.gender === 'male' ? '👨' : '👩'}
+                                                            {meta.avatar_url
+                                                                ? <img src={meta.avatar_url} alt={m.full_name} className="w-full h-full object-cover" />
+                                                                : (m.gender === 'male' ? '👨' : '👩')}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="font-semibold text-sm truncate">{m.full_name}</p>
+                                                            <p className="font-semibold text-sm truncate group-hover:text-amber-500 transition-colors">{m.full_name}</p>
                                                             <p className={cn('text-xs', m.gender === 'male' ? 'text-blue-500' : 'text-rose-400')}>
                                                                 {m.gender === 'male' ? '♂ Nam' : '♀ Nữ'}
                                                             </p>
@@ -277,17 +280,22 @@ export default function PeoplePage() {
                                                                 </p>
                                                             )}
                                                         </div>
+                                                    </Link>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button aria-label="Xem hồ sơ" variant="ghost" size="icon" className="h-7 w-7 hover:text-amber-500" asChild>
+                                                            <Link href={`/people/${m.id}`}><Eye className="w-3.5 h-3.5" /></Link>
+                                                        </Button>
+                                                        {isAdmin && (
+                                                            <>
+                                                                <Button aria-label="Edit member" variant="ghost" size="icon" className="h-7 w-7 hover:text-amber-500" onClick={() => openEditMember(m)}>
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                                <Button aria-label="Delete member" variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => handleDeleteMember(m)}>
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                            </>
+                                                        )}
                                                     </div>
-                                                    {isAdmin && (
-                                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button aria-label="Edit member" variant="ghost" size="icon" className="h-7 w-7 hover:text-amber-500" onClick={() => openEditMember(m)}>
-                                                                <Pencil className="w-3.5 h-3.5" />
-                                                            </Button>
-                                                            <Button aria-label="Delete member" variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => handleDeleteMember(m)}>
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </Button>
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 {meta.is_alive === false && <Badge variant="secondary" className="mt-2 text-[10px]">Đã mất</Badge>}
                                                 {meta.notes && <p className="text-xs text-muted-foreground mt-2 italic line-clamp-2">{meta.notes}</p>}

@@ -1,27 +1,44 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Bell, MessageSquare, Users, Calendar } from 'lucide-react'
 import { createClient } from '@/lib/supabase-client'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
-import { format, isAfter, isBefore, addDays } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { format, addDays, formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
-type AppEvent = {
+type NotifEvent = {
     id: string
     title: string
     event_date: string
     type: string | null
 }
 
-export function NotificationMenu() {
-    const [events, setEvents] = useState<AppEvent[]>([])
-    const [unread, setUnread] = useState(0)
-    const [open, setOpen] = useState(false)
+type RealtimeNotif = {
+    id: string
+    message: string
+    type: 'board' | 'member' | 'system'
+    timestamp: Date
+    read: boolean
+}
 
+export function NotificationMenu() {
+    const [events, setEvents] = useState<NotifEvent[]>([])
+    const [realtimeNotifs, setRealtimeNotifs] = useState<RealtimeNotif[]>([])
+    const [open, setOpen] = useState(false)
+    const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+
+    const totalUnread = realtimeNotifs.filter(n => !n.read).length +
+        (() => {
+            const seen: string[] = JSON.parse(localStorage.getItem('seen_notifications') || '[]')
+            return events.filter(e => !seen.includes(e.id)).length
+        })()
+
+    // ── Fetch upcoming events (one-time) ──────────────────────────────────────
     useEffect(() => {
-        const fetchUpcomingEvents = async () => {
+        const fetchEvents = async () => {
             const sb = createClient()
             const today = new Date()
             const next30Days = addDays(today, 30)
@@ -34,82 +51,178 @@ export function NotificationMenu() {
                 .order('event_date', { ascending: true })
                 .limit(5)
 
-            if (data) {
-                setEvents(data)
-                // We'll just mark them all as "unread" for demo purposes 
-                // Alternatively, could use localStorage to track seen event IDs
-                const seenState = localStorage.getItem('seen_notifications')
-                const seenIds: string[] = seenState ? JSON.parse(seenState) : []
-                const unreadCount = data.filter(e => !seenIds.includes(e.id)).length
-                setUnread(unreadCount)
-            }
+            if (data) setEvents(data)
         }
-
-        fetchUpcomingEvents()
+        fetchEvents()
     }, [])
+
+    // ── Supabase Realtime: listen to new board posts ───────────────────────────
+    useEffect(() => {
+        const sb = createClient()
+
+        const channel = sb
+            .channel('realtime-notifications')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'contributions',
+                    filter: 'status=eq.approved'
+                },
+                (payload) => {
+                    const row = payload.new as any
+                    const msg = row.content?.length > 60
+                        ? row.content.slice(0, 60) + '...'
+                        : (row.content ?? 'Bài đăng mới')
+                    addRealtimeNotif({
+                        id: `board-${row.id}`,
+                        message: `📢 Bảng tin mới: ${msg}`,
+                        type: 'board',
+                        timestamp: new Date(),
+                        read: false,
+                    })
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'members',
+                },
+                (payload) => {
+                    const row = payload.new as any
+                    addRealtimeNotif({
+                        id: `member-${row.id}`,
+                        message: `👤 Thêm thành viên mới: ${row.full_name}`,
+                        type: 'member',
+                        timestamp: new Date(),
+                        read: false,
+                    })
+                }
+            )
+            .subscribe()
+
+        channelRef.current = channel
+
+        return () => {
+            sb.removeChannel(channel)
+        }
+    }, [])
+
+    function addRealtimeNotif(notif: RealtimeNotif) {
+        setRealtimeNotifs(prev => {
+            if (prev.some(n => n.id === notif.id)) return prev
+            return [notif, ...prev].slice(0, 10) // keep max 10
+        })
+    }
 
     const handleOpen = (isOpen: boolean) => {
         setOpen(isOpen)
-        if (isOpen && unread > 0) {
-            setUnread(0)
+        if (isOpen) {
+            // Mark all realtime as read
+            setRealtimeNotifs(prev => prev.map(n => ({ ...n, read: true })))
+            // Mark events as seen
             const seenIds = events.map(e => e.id)
             localStorage.setItem('seen_notifications', JSON.stringify(seenIds))
         }
     }
 
+    const allNotifications = [
+        ...realtimeNotifs.map(n => ({
+            id: n.id,
+            icon: n.type === 'board' ? <MessageSquare className="w-4 h-4 text-amber-500" />
+                : n.type === 'member' ? <Users className="w-4 h-4 text-blue-500" />
+                    : <Bell className="w-4 h-4 text-muted-foreground" />,
+            title: n.message,
+            subtitle: formatDistanceToNow(n.timestamp, { addSuffix: true, locale: vi }),
+            unread: !n.read,
+        })),
+        ...events.map(e => {
+            const seen: string[] = JSON.parse(localStorage.getItem('seen_notifications') || '[]')
+            return {
+                id: e.id,
+                icon: <Calendar className="w-4 h-4 text-amber-500" />,
+                title: e.title,
+                subtitle: format(new Date(e.event_date), 'EEEE, dd/MM/yyyy', { locale: vi }),
+                unread: !seen.includes(e.id),
+            }
+        }),
+    ]
+
     return (
         <Popover open={open} onOpenChange={handleOpen}>
             <PopoverTrigger asChild>
-                <Button aria-label="Action Button" variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-white/10 text-white group">
+                <Button
+                    aria-label="Thông báo"
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9 hover:bg-white/10 text-white group"
+                >
                     <Bell className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" />
-                    {unread > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
+                    {totalUnread > 0 && (
+                        <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 ring-2 ring-background text-[9px] font-bold text-white animate-pulse">
+                            {totalUnread > 9 ? '9+' : totalUnread}
+                        </span>
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0 glass border-border/50 shadow-2xl" align="end" sideOffset={8}>
+            <PopoverContent
+                className="w-80 p-0 glass border-border/50 shadow-2xl"
+                align="end"
+                sideOffset={8}
+            >
+                {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                     <h3 className="font-semibold text-sm">Thông báo</h3>
-                    <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-500 rounded-full">
-                        {events.length} Mới
-                    </span>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto">
-                    {events.length === 0 ? (
-                        <div className="px-4 py-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                            <Bell className="w-8 h-8 opacity-20" />
-                            <p>Không có sự kiện nào sắp diễn ra.</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col">
-                            {events.map((e) => {
-                                const eventDate = new Date(e.event_date)
-                                const isSoon = isBefore(eventDate, addDays(new Date(), 3))
-
-                                return (
-                                    <div key={e.id} className="flex gap-3 px-4 py-3 border-b border-border/30 hover:bg-white/5 transition-colors cursor-default">
-                                        <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-                                            <span className="text-xl">📅</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium leading-tight mb-1">{e.title}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {format(eventDate, "EEEE, dd/MM/yyyy", { locale: vi })}
-                                            </p>
-                                            {isSoon && (
-                                                <p className="text-[10px] text-red-400 font-medium mt-1">Sắp diễn ra!</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                    {totalUnread > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-medium bg-red-500/10 text-red-500 rounded-full">
+                            {totalUnread} chưa đọc
+                        </span>
                     )}
                 </div>
+
+                {/* List */}
+                <div className="max-h-[360px] overflow-y-auto divide-y divide-border/30">
+                    {allNotifications.length === 0 ? (
+                        <div className="px-4 py-10 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
+                            <Bell className="w-8 h-8 opacity-20" />
+                            <p>Không có thông báo nào.</p>
+                        </div>
+                    ) : (
+                        allNotifications.map(n => (
+                            <div
+                                key={n.id}
+                                className={cn(
+                                    "flex gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-default",
+                                    n.unread && "bg-amber-500/5"
+                                )}
+                            >
+                                <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full bg-background/50 border border-border/40 flex items-center justify-center">
+                                    {n.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm leading-snug">{n.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{n.subtitle}</p>
+                                </div>
+                                {n.unread && (
+                                    <div className="shrink-0 mt-1 w-2 h-2 rounded-full bg-amber-500" />
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Footer */}
                 {events.length > 0 && (
                     <div className="p-2 border-t border-border/50 bg-black/20">
-                        <Button variant="ghost" className="w-full text-xs h-8 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10" onClick={() => window.location.href = '/events'}>
-                            Xem lịch sự kiện
+                        <Button
+                            variant="ghost"
+                            className="w-full text-xs h-8 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                            onClick={() => window.location.href = '/events'}
+                        >
+                            Xem lịch sự kiện →
                         </Button>
                     </div>
                 )}
