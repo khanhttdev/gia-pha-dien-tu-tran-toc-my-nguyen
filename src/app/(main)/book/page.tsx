@@ -117,33 +117,38 @@ export default function BookPage() {
             const html2canvas = (await import('html2canvas')).default
             const { jsPDF } = await import('jspdf')
 
-            toast.info('Đang tạo file PDF, vui lòng đợi...', { duration: 3000 })
+            toast.info('Đang chuẩn bị trang in, vui lòng đợi...', { duration: 3000 })
 
-            // Create a clean clone for capturing
+            // Chụp canvas với thiết lập chất lượng cao
             const canvas = await html2canvas(printRef.current, {
-                scale: 1.5, // Giảm nhẹ tỉ lệ để an toàn hơn cho bộ nhớ
+                scale: 2, // Tăng độ phân giải
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#31090A', // Fix cứng màu nền thay vì dùng biến CSS
-                windowWidth: 1024,
+                backgroundColor: '#31090A',
+                windowWidth: 1200, // Giả lập màn hình rộng để dàn trang đẹp
                 onclone: (clonedDoc) => {
-                    // Xử lý triệt để các hệ màu hiện đại (lab, oklch) mà html2canvas chưa hỗ trợ
+                    // Ép độ rộng cho container in để không bị bó hẹp kiểu mobile
+                    const printEl = clonedDoc.querySelector('[data-print-container]') as HTMLElement
+                    if (printEl) {
+                        printEl.style.width = '1150px'
+                        printEl.style.padding = '80px'
+                        printEl.style.maxWidth = 'none'
+                        printEl.style.margin = '0 auto'
+                    }
+
+                    // Xử lý các hệ màu hiện đại (lab, oklch) mà html2canvas chưa hỗ trợ
                     const allElements = clonedDoc.getElementsByTagName('*')
                     for (let i = 0; i < allElements.length; i++) {
                         const el = allElements[i] as HTMLElement
                         const style = window.getComputedStyle(el)
-
-                        // Danh sách các thuộc tính màu cần kiểm tra
                         const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor']
 
                         colorProps.forEach(prop => {
                             const val = (style as any)[prop]
-                            // Nếu trình duyệt trả về lab(), oklch() hoặc các hệ màu L4
                             if (val && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                                // Ép về màu an toàn (fallback)
                                 if (prop === 'color') el.style.color = '#ffffff'
                                 if (prop === 'backgroundColor') {
-                                    if (el.classList.contains('glass')) el.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                                    if (el.classList.contains('glass')) el.style.backgroundColor = 'rgba(255,255,255,0.08)'
                                     else el.style.backgroundColor = 'transparent'
                                 }
                                 if (prop.includes('Color')) el.style.borderColor = 'rgba(255,255,255,0.1)'
@@ -151,46 +156,53 @@ export default function BookPage() {
                         })
                     }
 
-                    // Xử lý các thành phần CSS không được html2canvas hỗ trợ
+                    // Tinh chỉnh hiệu ứng glass cho bản in
                     const glasses = clonedDoc.querySelectorAll('.glass')
                     glasses.forEach(el => {
                         (el as HTMLElement).style.backdropFilter = 'none';
-                        (el as HTMLElement).style.background = 'rgba(255, 255, 255, 0.05)';
+                        (el as HTMLElement).style.background = 'rgba(255, 255, 255, 0.1)';
+                        (el as HTMLElement).style.border = '1px solid rgba(255, 255, 255, 0.12)';
                     })
 
+                    // Tinh chỉnh hiệu ứng chữ vàng (tránh bị mất chữ do clipping)
                     const goldTexts = clonedDoc.querySelectorAll('.gold-text')
                     goldTexts.forEach(el => {
                         (el as HTMLElement).style.webkitBackgroundClip = 'initial';
                         (el as HTMLElement).style.webkitTextFillColor = 'initial';
-                        (el as HTMLElement).style.color = '#f59e0b'; // Amber-500
+                        (el as HTMLElement).style.color = '#f59e0b';
                     })
                 }
             })
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.9)
+            const imgData = canvas.toDataURL('image/jpeg', 0.95)
             const pdf = new jsPDF('p', 'mm', 'a4')
 
             const pdfWidth = pdf.internal.pageSize.getWidth()
-            const pageHeight = pdf.internal.pageSize.getHeight()
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width
+            const pdfHeight = pdf.internal.pageSize.getHeight()
 
-            let heightLeft = imgHeight
-            let position = 0
+            // Tính toán kích thước ảnh để phủ kín chiều ngang A4 (có lề 10mm mỗi bên)
+            const margin = 10
+            const contentWidth = pdfWidth - (margin * 2)
+            const imgProps = pdf.getImageProperties(imgData)
+            const imgHeightInPdf = (imgProps.height * contentWidth) / imgProps.width
 
-            // Add first page
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight)
-            heightLeft -= pageHeight
+            let heightLeft = imgHeightInPdf
+            let position = margin
 
-            // Add subsequent pages if content overflows
+            // Trang đầu tiên
+            pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, imgHeightInPdf)
+            heightLeft -= (pdfHeight - margin * 2)
+
+            // Các trang tiếp theo nếu nội dung dài hơn 1 trang A4
             while (heightLeft > 0) {
-                position = heightLeft - imgHeight
+                position = heightLeft - imgHeightInPdf + margin
                 pdf.addPage()
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight)
-                heightLeft -= pageHeight
+                pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, imgHeightInPdf)
+                heightLeft -= (pdfHeight - margin * 2)
             }
 
-            pdf.save('Gia-Pha-Tran-Toc.pdf')
-            toast.success('Xuất file PDF thành công!')
+            pdf.save('Sách-Gia-Phả-Trần-Tộc.pdf')
+            toast.success('Đã xuất file PDF thành công!')
         } catch (error: any) {
             console.error('Error exporting PDF:', error)
             toast.error(`Có lỗi xảy ra khi xuất PDF: ${error?.message || 'Lỗi không xác định'}`)
@@ -244,13 +256,13 @@ export default function BookPage() {
                 {loading ? (
                     <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                 ) : (
-                    <div ref={printRef} className="pb-8 rounded-xl" style={{ backgroundColor: 'var(--background)' }}>
+                    <div ref={printRef} data-print-container className="pb-8 rounded-xl" style={{ backgroundColor: 'var(--background)' }}>
                         {/* Header */}
-                        <div className="text-center mb-10 p-8 glass rounded-2xl border border-border/60">
-                            <div className="text-5xl mb-4">📖</div>
-                            <h2 className="text-2xl font-bold gold-text mb-2">GIA PHẢ TRẦN TỘC MỸ NGUYÊN</h2>
-                            <p className="text-sm text-muted-foreground">Lưu giữ và truyền thừa qua các thế hệ</p>
-                            <div className="grid grid-cols-3 gap-4 mt-6">
+                        <div className="text-center mb-10 p-10 glass rounded-3xl border border-border/60">
+                            <div className="text-6xl mb-6">📖</div>
+                            <h2 className="text-3xl font-extrabold gold-text mb-3 tracking-tight">GIA PHẢ TRẦN TỘC MỸ NGUYÊN</h2>
+                            <p className="text-base text-muted-foreground italic">Lưu giữ và truyền thừa qua các thế hệ</p>
+                            <div className="grid grid-cols-3 gap-8 mt-10">
                                 <div className="text-center">
                                     <div className="text-xl font-bold text-amber-500">{stats.total}</div>
                                     <div className="text-xs text-muted-foreground">Thành viên</div>
@@ -267,42 +279,44 @@ export default function BookPage() {
                         </div>
 
                         {/* Family tree book format */}
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Phả Hệ</h3>
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Phả Hệ</h3>
                             {roots.map(branch => (
                                 <BranchSection key={branch.member.id} branch={branch} depth={0} />
                             ))}
                         </div>
 
                         {/* All members by generation */}
-                        <div className="mt-10 pt-6 border-t border-border">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Danh Sách Theo Thế Hệ</h3>
-                            {Array.from(new Set(members.map(m => m.generation_level))).sort().map(gen => {
-                                const genMembers = members.filter(m => m.generation_level === gen)
-                                return (
-                                    <div key={gen} className="glass rounded-xl p-4 border border-border/60">
-                                        <p className="text-sm font-semibold text-amber-700 mb-1">Thế hệ thứ {gen}</p>
-                                        <p className="text-xs text-muted-foreground">{genMembers.length} thành viên ({genMembers.filter(m => (m.metadata as MemberMetadata)?.is_alive === false).length} đã mất)</p>
-                                        <div className="space-y-1 mt-2">
-                                            {genMembers.map(m => {
-                                                const mMeta = (m.metadata as MemberMetadata) || {}
-                                                return (
-                                                    <div key={m.id} className="flex items-center gap-2 text-sm text-foreground/80 pl-3">
-                                                        <span>{m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '—'}</span>
-                                                        <span className="font-medium">{m.full_name}</span>
-                                                        {(mMeta.birth_year || mMeta.death_year) && (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                ({[mMeta.birth_year, mMeta.death_year].filter(Boolean).join('–')})
-                                                            </span>
-                                                        )}
-                                                        {mMeta.is_alive === false && <span className="text-xs text-muted-foreground">✝</span>}
-                                                    </div>
-                                                )
-                                            })}
+                        <div className="mt-12 pt-10 border-t border-border/40">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-6">Danh Sách Theo Thế Hệ</h3>
+                            <div className="space-y-6">
+                                {Array.from(new Set(members.map(m => m.generation_level))).sort().map(gen => {
+                                    const genMembers = members.filter(m => m.generation_level === gen)
+                                    return (
+                                        <div key={gen} className="glass rounded-2xl p-6 border border-border/60">
+                                            <p className="text-base font-semibold text-amber-500 mb-1">Thế hệ thứ {gen}</p>
+                                            <p className="text-xs text-muted-foreground mb-4 uppercase tracking-widest">{genMembers.length} thành viên ({genMembers.filter(m => (m.metadata as MemberMetadata)?.is_alive === false).length} đã mất)</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mt-2">
+                                                {genMembers.map(m => {
+                                                    const mMeta = (m.metadata as MemberMetadata) || {}
+                                                    return (
+                                                        <div key={m.id} className="flex items-center gap-2 text-sm text-foreground/80">
+                                                            <span className="text-muted-foreground/40">{m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '—'}</span>
+                                                            <span className="font-medium">{m.full_name}</span>
+                                                            {(mMeta.birth_year || mMeta.death_year) && (
+                                                                <span className="text-[10px] text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">
+                                                                    {[mMeta.birth_year, mMeta.death_year].filter(Boolean).join('–')}
+                                                                </span>
+                                                            )}
+                                                            {mMeta.is_alive === false && <span className="text-xs text-muted-foreground/50">✝</span>}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}
