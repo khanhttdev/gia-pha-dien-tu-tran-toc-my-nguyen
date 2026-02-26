@@ -167,9 +167,9 @@ export default function BookPage() {
                         const htmlEl = el as HTMLElement;
                         htmlEl.style.backgroundImage = 'none'
                         htmlEl.style.background = 'transparent'
-                        htmlEl.style.webkitBackgroundClip = 'initial'
+                        htmlEl.style.setProperty('-webkit-background-clip', 'initial')
                         htmlEl.style.backgroundClip = 'initial'
-                        htmlEl.style.webkitTextFillColor = 'initial'
+                        htmlEl.style.setProperty('-webkit-text-fill-color', 'initial')
                         if (el.classList.contains('gold-text')) {
                             htmlEl.style.color = '#FFB411'
                         } else {
@@ -182,7 +182,7 @@ export default function BookPage() {
                     glasses.forEach(el => {
                         const htmlEl = el as HTMLElement;
                         htmlEl.style.backdropFilter = 'none'
-                        htmlEl.style.webkitBackdropFilter = 'none'
+                        htmlEl.style.setProperty('-webkit-backdrop-filter', 'none')
                         htmlEl.style.background = 'rgba(255, 255, 255, 0.08)'
                         htmlEl.style.border = '1px solid rgba(255, 255, 255, 0.15)'
                     })
