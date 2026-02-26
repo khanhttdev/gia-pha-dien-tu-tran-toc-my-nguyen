@@ -30,6 +30,7 @@ export function NotificationMenu() {
     const [events, setEvents] = useState<NotifEvent[]>([])
     const [realtimeNotifs, setRealtimeNotifs] = useState<RealtimeNotif[]>([])
     const [open, setOpen] = useState(false)
+    const [seenEventIds, setSeenEventIds] = useState<string[]>([])
     const [pushStatus, setPushStatus] = useState<NotificationPermission>('default')
     const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
@@ -37,6 +38,10 @@ export function NotificationMenu() {
         if ('Notification' in window) {
             setPushStatus(Notification.permission)
         }
+        try {
+            const storedSeen = JSON.parse(localStorage.getItem('seen_notifications') || '[]')
+            setSeenEventIds(storedSeen)
+        } catch (e) { console.error('Error parsing seen_notifications', e) }
     }, [])
 
     const handleSubscribePush = async () => {
@@ -58,10 +63,7 @@ export function NotificationMenu() {
     }
 
     const totalUnread = realtimeNotifs.filter(n => !n.read).length +
-        (() => {
-            const seen: string[] = JSON.parse(localStorage.getItem('seen_notifications') || '[]')
-            return events.filter(e => !seen.includes(e.id)).length
-        })()
+        events.filter(e => !seenEventIds.includes(e.id)).length
 
     // ── Fetch upcoming events (one-time) ──────────────────────────────────────
     useEffect(() => {
@@ -151,8 +153,9 @@ export function NotificationMenu() {
             // Mark all realtime as read
             setRealtimeNotifs(prev => prev.map(n => ({ ...n, read: true })))
             // Mark events as seen
-            const seenIds = events.map(e => e.id)
-            localStorage.setItem('seen_notifications', JSON.stringify(seenIds))
+            const currentEventIds = events.map(e => e.id)
+            localStorage.setItem('seen_notifications', JSON.stringify(currentEventIds))
+            setSeenEventIds(currentEventIds)
         }
     }
 
@@ -167,13 +170,12 @@ export function NotificationMenu() {
             unread: !n.read,
         })),
         ...events.map(e => {
-            const seen: string[] = JSON.parse(localStorage.getItem('seen_notifications') || '[]')
             return {
                 id: e.id,
                 icon: <Calendar className="w-4 h-4 text-amber-500" />,
                 title: e.title,
                 subtitle: format(new Date(e.event_date), 'EEEE, dd/MM/yyyy', { locale: vi }),
-                unread: !seen.includes(e.id),
+                unread: !seenEventIds.includes(e.id),
             }
         }),
     ]
