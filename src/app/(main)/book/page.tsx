@@ -141,22 +141,28 @@ export default function BookPage() {
                     for (let i = 0; i < allElements.length; i++) {
                         const el = allElements[i] as HTMLElement
                         const style = window.getComputedStyle(el)
-                        const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor']
+                        const colorProps = [
+                            'color', 'backgroundColor', 'borderColor',
+                            'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor',
+                            'fill', 'stroke', 'stopColor', 'columnRuleColor',
+                            'outlineColor', 'boxShadow', 'textShadow'
+                        ]
 
                         colorProps.forEach(prop => {
                             const val = (style as any)[prop]
-                            if (val && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                                // Replacement for Print-Safe Colors
+                            if (val && typeof val === 'string' && /(lab|oklch|oklab|color\(.+?\))/.test(val)) {
                                 if (prop === 'color') {
-                                    if (el.classList.contains('gold-text')) el.style.color = '#FFB411'
-                                    else el.style.color = '#FFFFFF'
+                                    el.style.setProperty('color', el.classList.contains('gold-text') ? '#FFB411' : '#FFFFFF', 'important')
+                                } else if (prop === 'backgroundColor') {
+                                    if (el.classList.contains('glass')) el.style.setProperty('background-color', 'rgba(255,255,255,0.08)', 'important')
+                                    else if (el.classList.contains('gold-gradient')) el.style.setProperty('background-color', '#FFB411', 'important')
+                                    else el.style.setProperty('background-color', 'transparent', 'important')
+                                } else if (prop === 'boxShadow' || prop === 'textShadow') {
+                                    el.style.setProperty(prop === 'boxShadow' ? 'box-shadow' : 'text-shadow', 'none', 'important')
+                                } else if (prop.includes('Color') || prop === 'fill' || prop === 'stroke') {
+                                    const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase()
+                                    el.style.setProperty(cssProp, 'rgba(255,255,255,0.12)', 'important')
                                 }
-                                if (prop === 'backgroundColor') {
-                                    if (el.classList.contains('glass')) el.style.backgroundColor = 'rgba(255,255,255,0.08)'
-                                    else if (el.classList.contains('gold-gradient')) el.style.backgroundColor = '#FFB411'
-                                    else el.style.backgroundColor = 'transparent'
-                                }
-                                if (prop.includes('Color')) el.style.borderColor = 'rgba(255,255,255,0.12)'
                             }
                         })
                     }
