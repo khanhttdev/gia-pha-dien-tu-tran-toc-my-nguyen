@@ -165,10 +165,26 @@ const PDF_OVERRIDE_CSS = `
 }
 /* Hide interactive-only elements */
 .no-print { display: none !important; }
-/* Ensure all text is white by default */
-body, p, span, div, h1, h2, h3, h4, h5, h6, li, a, td, th, label, button {
-    color: inherit;
-}
+/* Print-optimized typography */
+body { font-size: 18px !important; line-height: 1.6 !important; }
+h2 { font-size: 48px !important; }
+h3 { font-size: 24px !important; }
+.text-sm { font-size: 16px !important; }
+.text-xs { font-size: 14px !important; }
+.text-\[10px\] { font-size: 13px !important; }
+.text-\[9px\] { font-size: 12px !important; }
+.text-\[8px\] { font-size: 11px !important; }
+.text-2xl { font-size: 32px !important; }
+.text-lg { font-size: 22px !important; }
+.text-base { font-size: 18px !important; }
+/* Better spacing for print */
+.space-y-6 > * + * { margin-top: 24px !important; }
+.pl-4 { padding-left: 20px !important; }
+.border-l-2 { border-left-width: 3px !important; }
+/* Cards need more padding */
+.rounded-3xl { padding: 32px !important; }
+.gap-x-12 { column-gap: 48px !important; }
+.gap-y-3 { row-gap: 12px !important; }
 `
 
 export default function BookPage() {
@@ -192,7 +208,7 @@ export default function BookPage() {
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#2A0708',
-                windowWidth: 1200,
+                windowWidth: 900,
                 onclone: (clonedDoc) => {
                     // STEP 0: Inject the nuclear CSS override into cloned DOM
                     const overrideStyle = clonedDoc.createElement('style')
@@ -218,13 +234,14 @@ export default function BookPage() {
                         }
                     } catch { /* StyleSheets API unavailable */ }
 
-                    // STEP 2: Force Desktop Layout
+                    // STEP 2: Force Readable Print Layout
                     const printEl = clonedDoc.querySelector('[data-print-container]') as HTMLElement
                     if (printEl) {
-                        printEl.style.width = '1150px'
-                        printEl.style.padding = '100px 80px'
+                        printEl.style.width = '800px'
+                        printEl.style.padding = '60px 50px'
                         printEl.style.maxWidth = 'none'
                         printEl.style.margin = '0 auto'
+                        printEl.style.fontSize = '18px'
                     }
 
                     // STEP 3: Belt-and-suspenders — Walk every element and force-override
