@@ -473,10 +473,52 @@ export default function AdminPage() {
                                                         {new Date(log.created_at).toLocaleString('vi-VN')}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs flex-wrap">
-                                                    <span className="font-bold text-foreground bg-background/50 px-1.5 py-0.5 rounded">{user?.full_name || 'System'}</span>
-                                                    <span className="text-muted-foreground">đã {log.action === 'INSERT' ? 'thêm mới' : log.action === 'UPDATE' ? 'cập nhật' : 'xoá'} record ID</span>
-                                                    <span className="font-mono text-[10px] bg-secondary/30 px-1.5 py-0.5 rounded text-muted-foreground">{log.record_id}</span>
+                                                <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-2">
+                                                    <span className="font-bold text-foreground bg-background/50 px-1.5 py-0.5 rounded shrink-0">{user?.full_name || 'System'}</span>
+                                                    <div className="text-muted-foreground break-words">
+                                                        {(() => {
+                                                            const { action, table_name, old_data, new_data, record_id } = log as any
+                                                            const data = new_data || old_data || {}
+
+                                                            if (table_name === 'funds') {
+                                                                const amount = data.amount?.toLocaleString('vi-VN')
+                                                                const type = data.transaction_type === 'income' ? 'Thu' : 'Chi'
+                                                                if (action === 'INSERT') return `đã thêm giao dịch ${type}: ${amount}đ - "${data.description}"`
+                                                                if (action === 'DELETE') return `đã xóa giao dịch ${type}: ${amount}đ - "${data.description}"`
+                                                                if (action === 'UPDATE') {
+                                                                    const oldAmt = old_data?.amount?.toLocaleString('vi-VN')
+                                                                    if (old_data?.amount !== new_data?.amount) {
+                                                                        return `đã sửa số tiền giao dịch: ${oldAmt}đ → ${amount}đ ("${data.description}")`
+                                                                    }
+                                                                    return `đã cập nhật thông tin giao dịch: "${data.description}"`
+                                                                }
+                                                            }
+
+                                                            if (table_name === 'profiles') {
+                                                                const target = data.full_name || data.email || record_id
+                                                                if (action === 'UPDATE') {
+                                                                    if (old_data?.role !== new_data?.role) return `đã đổi quyền của ${target}: ${old_data?.role} → ${new_data?.role}`
+                                                                    if (old_data?.status !== new_data?.status) return `đã đổi trạng thái ${target}: ${old_data?.status} → ${new_data?.status}`
+                                                                }
+                                                                return `đã ${action === 'INSERT' ? 'tạo' : action === 'DELETE' ? 'xóa' : 'cập nhật'} tài khoản: ${target}`
+                                                            }
+
+                                                            if (table_name === 'members') {
+                                                                const name = data.full_name || record_id
+                                                                return `đã ${action === 'INSERT' ? 'thêm' : action === 'DELETE' ? 'xóa' : 'sửa'} thành viên gia phả: ${name}`
+                                                            }
+
+                                                            if (table_name === 'events' || table_name === 'contributions') {
+                                                                const title = data.title || data.full_name || record_id
+                                                                const label = table_name === 'events' ? 'bài viết' : 'đóng góp'
+                                                                if (action === 'INSERT') return `đã gửi/tạo ${label} mới: "${title}"`
+                                                                if (action === 'UPDATE') return `đã duyệt/cập nhật ${label}: "${title}"`
+                                                                return `đã xóa ${label}: "${title}"`
+                                                            }
+
+                                                            return `đã ${action === 'INSERT' ? 'thêm mới' : action === 'UPDATE' ? 'cập nhật' : 'xoá'} bản ghi ID: ${record_id}`
+                                                        })()}
+                                                    </div>
                                                 </div>
                                             </div>
                                         )

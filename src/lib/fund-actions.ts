@@ -52,7 +52,7 @@ export async function addTransaction(formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
-    const { data: newFund, error } = await supabase
+    const { error } = await supabase
         .from('funds')
         .insert({
             transaction_type: transactionType,
@@ -62,23 +62,10 @@ export async function addTransaction(formData: FormData) {
             member_id: memberId || null,
             created_by: user.id
         })
-        .select()
-        .single()
 
     if (error) {
         console.error('Error adding transaction:', error)
         return { error: error.message }
-    }
-
-    if (newFund) {
-        const { error: logError } = await supabase.from('activity_logs').insert({
-            user_id: user.id,
-            action: 'INSERT',
-            table_name: 'funds',
-            record_id: newFund.id,
-            new_data: newFund
-        })
-        if (logError) console.error('Error logging add transaction:', logError)
     }
 
     revalidatePath('/admin')
@@ -92,13 +79,6 @@ export async function deleteTransaction(id: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    // Lấy dữ liệu cũ để ghi log
-    const { data: oldData } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('id', id)
-        .single()
-
     const { error } = await supabase
         .from('funds')
         .delete()
@@ -107,17 +87,6 @@ export async function deleteTransaction(id: string) {
     if (error) {
         console.error('Error deleting transaction:', error)
         return { error: error.message }
-    }
-
-    if (oldData) {
-        const { error: logError } = await supabase.from('activity_logs').insert({
-            user_id: user.id,
-            action: 'DELETE',
-            table_name: 'funds',
-            record_id: id,
-            old_data: oldData
-        })
-        if (logError) console.error('Error logging delete transaction:', logError)
     }
 
     revalidatePath('/admin')
@@ -153,17 +122,6 @@ export async function updateTransaction(id: string, formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
-    // Lấy dữ liệu cũ để so sánh và ghi log
-    const { data: oldData } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-    if (!oldData) {
-        return { error: 'Không tìm thấy giao dịch này' }
-    }
-
     const newData = {
         transaction_type: transactionType,
         amount,
@@ -182,17 +140,6 @@ export async function updateTransaction(id: string, formData: FormData) {
         console.error('Error updating transaction:', updateError)
         return { error: updateError.message }
     }
-
-    // Ghi log
-    const { error: logError } = await supabase.from('activity_logs').insert({
-        user_id: user.id,
-        action: 'UPDATE',
-        table_name: 'funds',
-        record_id: id,
-        old_data: oldData,
-        new_data: newData
-    })
-    if (logError) console.error('Error logging update transaction:', logError)
 
     revalidatePath('/admin')
     revalidatePath('/fund')
