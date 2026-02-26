@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 (2026-02-27)
+
+### Features
+
+* **admin:** implement comprehensive activity logging with DB triggers and detailed UI descriptions (Sprint 8)
+* **fund:** redesign fund management with edit/delete modals and auditor trail (Sprint 7)
+* **book:** implement PDF export with professional layout and pagination (Sprint 6)
+* **gedcom:** add GEDCOM import support for international genealogy standards (Sprint 6)
+* **pwa:** enhance offline support and push notifications with service workers (Sprint 6)
+
+### Bug Fixes
+
+* **notifications:** fix localStorage error during SSR in notification menu
+* **admin:** resolve `is_active` field error when creating/approving users
+* **ui:** replace window.confirm with accessible Shadcn UI AlertDialog across admin features
+
 ## 1.0.0 (2026-02-26)
 
 
