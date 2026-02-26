@@ -52,7 +52,7 @@ export async function addTransaction(formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
-    const { error } = await supabase
+    const { data: newFund, error } = await supabase
         .from('funds')
         .insert({
             transaction_type: transactionType,
@@ -62,10 +62,23 @@ export async function addTransaction(formData: FormData) {
             member_id: memberId || null,
             created_by: user.id
         })
+        .select()
+        .single()
 
     if (error) {
         console.error('Error adding transaction:', error)
         return { error: error.message }
+    }
+
+    if (newFund) {
+        const { error: logError } = await supabase.from('activity_logs').insert({
+            user_id: user.id,
+            action: 'INSERT',
+            table_name: 'funds',
+            record_id: newFund.id,
+            new_data: newFund
+        })
+        if (logError) console.error('Error logging add transaction:', logError)
     }
 
     revalidatePath('/admin')
@@ -97,13 +110,14 @@ export async function deleteTransaction(id: string) {
     }
 
     if (oldData) {
-        await supabase.from('activity_logs').insert({
+        const { error: logError } = await supabase.from('activity_logs').insert({
             user_id: user.id,
             action: 'DELETE',
             table_name: 'funds',
             record_id: id,
             old_data: oldData
         })
+        if (logError) console.error('Error logging delete transaction:', logError)
     }
 
     revalidatePath('/admin')
@@ -170,7 +184,7 @@ export async function updateTransaction(id: string, formData: FormData) {
     }
 
     // Ghi log
-    await supabase.from('activity_logs').insert({
+    const { error: logError } = await supabase.from('activity_logs').insert({
         user_id: user.id,
         action: 'UPDATE',
         table_name: 'funds',
@@ -178,6 +192,7 @@ export async function updateTransaction(id: string, formData: FormData) {
         old_data: oldData,
         new_data: newData
     })
+    if (logError) console.error('Error logging update transaction:', logError)
 
     revalidatePath('/admin')
     revalidatePath('/fund')
