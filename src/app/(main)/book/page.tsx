@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { getAllMembers, getAllSpouses } from '@/lib/supabase-data'
 import { Member, Spouse, MemberMetadata } from '@/lib/types'
-import { BookOpen, ChevronDown, ChevronRight, Loader2, Download, Printer } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronRight, Loader2, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -49,11 +49,14 @@ function BranchSection({ branch, depth = 0 }: { branch: FamilyBranch; depth?: nu
     const yearRange = [meta.birth_year, meta.death_year].filter(Boolean).join('–')
 
     return (
-        <div className={cn('border-l-2 pl-4 mb-4', depth === 0 ? 'border-amber-500' : depth === 1 ? 'border-amber-400/50' : 'border-border')}>
+        <div className={cn(
+            'border-l-2 pl-4 mb-4 break-inside-avoid',
+            depth === 0 ? 'border-amber-500/60' : depth === 1 ? 'border-amber-400/30' : 'border-border/40'
+        )}>
             {/* Person header */}
             <div className="flex items-start gap-3 mb-2">
                 <button
-                    className="mt-0.5 text-muted-foreground hover:text-foreground"
+                    className="mt-0.5 text-muted-foreground hover:text-foreground no-print"
                     onClick={() => setOpen(!open)}
                 >
                     {children.length > 0
@@ -78,9 +81,6 @@ function BranchSection({ branch, depth = 0 }: { branch: FamilyBranch; depth?: nu
                             </p>
                         )
                     })}
-                    {meta.notes && depth === 0 && (
-                        <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">{meta.notes}</p>
-                    )}
                 </div>
                 <div className={cn(
                     'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5',
@@ -117,26 +117,26 @@ export default function BookPage() {
             const html2canvas = (await import('html2canvas')).default
             const { jsPDF } = await import('jspdf')
 
-            toast.info('Đang chuẩn bị trang in, vui lòng đợi...', { duration: 3000 })
+            toast.info('Đang chuẩn bị trang in nghệ thuật, vui lòng đợi...', { duration: 3000 })
 
-            // Chụp canvas với thiết lập chất lượng cao
+            // Capture high-quality canvas
             const canvas = await html2canvas(printRef.current, {
-                scale: 2, // Tăng độ phân giải
+                scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#31090A',
-                windowWidth: 1200, // Giả lập màn hình rộng để dàn trang đẹp
+                backgroundColor: '#2A0708', // Darker maroon for print background
+                windowWidth: 1200,
                 onclone: (clonedDoc) => {
-                    // Ép độ rộng cho container in để không bị bó hẹp kiểu mobile
+                    // 1. Forcing Desktop Layout
                     const printEl = clonedDoc.querySelector('[data-print-container]') as HTMLElement
                     if (printEl) {
                         printEl.style.width = '1150px'
-                        printEl.style.padding = '80px'
+                        printEl.style.padding = '100px 80px'
                         printEl.style.maxWidth = 'none'
                         printEl.style.margin = '0 auto'
                     }
 
-                    // Xử lý các hệ màu hiện đại (lab, oklch) mà html2canvas chưa hỗ trợ
+                    // 2. Eradicate Modern Color Functions (LAB/OKLCH)
                     const allElements = clonedDoc.getElementsByTagName('*')
                     for (let i = 0; i < allElements.length; i++) {
                         const el = allElements[i] as HTMLElement
@@ -146,41 +146,59 @@ export default function BookPage() {
                         colorProps.forEach(prop => {
                             const val = (style as any)[prop]
                             if (val && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                                if (prop === 'color') el.style.color = '#ffffff'
+                                // Replacement for Print-Safe Colors
+                                if (prop === 'color') {
+                                    if (el.classList.contains('gold-text')) el.style.color = '#FFB411'
+                                    else el.style.color = '#FFFFFF'
+                                }
                                 if (prop === 'backgroundColor') {
                                     if (el.classList.contains('glass')) el.style.backgroundColor = 'rgba(255,255,255,0.08)'
+                                    else if (el.classList.contains('gold-gradient')) el.style.backgroundColor = '#FFB411'
                                     else el.style.backgroundColor = 'transparent'
                                 }
-                                if (prop.includes('Color')) el.style.borderColor = 'rgba(255,255,255,0.1)'
+                                if (prop.includes('Color')) el.style.borderColor = 'rgba(255,255,255,0.12)'
                             }
                         })
                     }
 
-                    // Tinh chỉnh hiệu ứng glass cho bản in
-                    const glasses = clonedDoc.querySelectorAll('.glass')
-                    glasses.forEach(el => {
-                        (el as HTMLElement).style.backdropFilter = 'none';
-                        (el as HTMLElement).style.background = 'rgba(255, 255, 255, 0.1)';
-                        (el as HTMLElement).style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    // 3. Fix Gradient Overlays (The "Orange Box" Issue)
+                    const fixGradients = clonedDoc.querySelectorAll('.gold-text, .gold-gradient')
+                    fixGradients.forEach(el => {
+                        const htmlEl = el as HTMLElement;
+                        htmlEl.style.backgroundImage = 'none'
+                        htmlEl.style.background = 'transparent'
+                        htmlEl.style.webkitBackgroundClip = 'initial'
+                        htmlEl.style.backgroundClip = 'initial'
+                        htmlEl.style.webkitTextFillColor = 'initial'
+                        if (el.classList.contains('gold-text')) {
+                            htmlEl.style.color = '#FFB411'
+                        } else {
+                            htmlEl.style.backgroundColor = '#FFB411'
+                        }
                     })
 
-                    // Tinh chỉnh hiệu ứng chữ vàng (tránh bị mất chữ do clipping)
-                    const goldTexts = clonedDoc.querySelectorAll('.gold-text')
-                    goldTexts.forEach(el => {
-                        (el as HTMLElement).style.webkitBackgroundClip = 'initial';
-                        (el as HTMLElement).style.webkitTextFillColor = 'initial';
-                        (el as HTMLElement).style.color = '#f59e0b';
+                    // 4. Refine Glass Effects for Print
+                    const glasses = clonedDoc.querySelectorAll('.glass')
+                    glasses.forEach(el => {
+                        const htmlEl = el as HTMLElement;
+                        htmlEl.style.backdropFilter = 'none'
+                        htmlEl.style.webkitBackdropFilter = 'none'
+                        htmlEl.style.background = 'rgba(255, 255, 255, 0.08)'
+                        htmlEl.style.border = '1px solid rgba(255, 255, 255, 0.15)'
                     })
+
+                    // 5. Hide Interactive Components
+                    const toHide = clonedDoc.querySelectorAll('.no-print')
+                    toHide.forEach(el => (el as HTMLElement).style.display = 'none')
                 }
             })
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.95)
+            const imgData = canvas.toDataURL('image/jpeg', 0.98)
             const pdf = new jsPDF('p', 'mm', 'a4')
 
             const pdfWidth = pdf.internal.pageSize.getWidth()
             const pdfHeight = pdf.internal.pageSize.getHeight()
 
-            // Tính toán kích thước ảnh để phủ kín chiều ngang A4 (có lề 10mm mỗi bên)
             const margin = 10
             const contentWidth = pdfWidth - (margin * 2)
             const imgProps = pdf.getImageProperties(imgData)
@@ -189,23 +207,26 @@ export default function BookPage() {
             let heightLeft = imgHeightInPdf
             let position = margin
 
-            // Trang đầu tiên
+            // Add Pages with Header/Footer Padding
             pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, imgHeightInPdf)
             heightLeft -= (pdfHeight - margin * 2)
 
-            // Các trang tiếp theo nếu nội dung dài hơn 1 trang A4
             while (heightLeft > 0) {
-                position = heightLeft - imgHeightInPdf + margin
+                // Adjust position for new page with slightly more padding at top
+                position = heightLeft - imgHeightInPdf + (margin * 2)
                 pdf.addPage()
+                // Recolor background of new page to match maroon
+                pdf.setFillColor(42, 7, 8) // #2A0708
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F')
                 pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, imgHeightInPdf)
                 heightLeft -= (pdfHeight - margin * 2)
             }
 
-            pdf.save('Sách-Gia-Phả-Trần-Tộc.pdf')
-            toast.success('Đã xuất file PDF thành công!')
+            pdf.save('Sách-Gia-Phả-Trần-Tộc-Mỹ-Nguyên.pdf')
+            toast.success('Đã xuất Sách Gia Phả nghệ thuật thành công!')
         } catch (error: any) {
             console.error('Error exporting PDF:', error)
-            toast.error(`Có lỗi xảy ra khi xuất PDF: ${error?.message || 'Lỗi không xác định'}`)
+            toast.error(`Lỗi xuất PDF: ${error?.message || 'Không xác định'}`)
         } finally {
             setIsExporting(false)
         }
@@ -226,7 +247,7 @@ export default function BookPage() {
 
     return (
         <div className="h-full flex flex-col">
-            <div className="shrink-0 px-6 py-4 border-b border-border glass">
+            <div className="shrink-0 px-6 py-4 border-b border-border glass no-print">
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
@@ -257,58 +278,86 @@ export default function BookPage() {
                     <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                 ) : (
                     <div ref={printRef} data-print-container className="pb-8 rounded-xl" style={{ backgroundColor: 'var(--background)' }}>
-                        {/* Header */}
-                        <div className="text-center mb-10 p-10 glass rounded-3xl border border-border/60">
-                            <div className="text-6xl mb-6">📖</div>
-                            <h2 className="text-3xl font-extrabold gold-text mb-3 tracking-tight">GIA PHẢ TRẦN TỘC MỸ NGUYÊN</h2>
-                            <p className="text-base text-muted-foreground italic">Lưu giữ và truyền thừa qua các thế hệ</p>
-                            <div className="grid grid-cols-3 gap-8 mt-10">
-                                <div className="text-center">
-                                    <div className="text-xl font-bold text-amber-500">{stats.total}</div>
-                                    <div className="text-xs text-muted-foreground">Thành viên</div>
+                        {/* Elegant Header for Print */}
+                        <div className="text-center mb-16 relative">
+                            <div className="text-7xl mb-8 opacity-90 hero-logo">📖</div>
+                            <div className="relative inline-block px-12 py-4">
+                                <div className="absolute top-0 left-0 w-12 h-0.5 bg-amber-500/40" />
+                                <div className="absolute top-0 right-0 w-12 h-0.5 bg-amber-500/40" />
+                                <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-amber-500/40" />
+                                <div className="absolute bottom-0 right-0 w-12 h-0.5 bg-amber-500/40" />
+                                <h2 className="text-4xl font-serif font-extrabold gold-text tracking-[0.15em] uppercase">GIA PHẢ</h2>
+                                <h3 className="text-lg font-serif font-medium text-amber-200/60 mt-2 tracking-widest italic">TRẦN TỘC MỸ NGUYÊN</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-8 uppercase tracking-[0.3em] opacity-40">Lưu giữ — Truyền thừa — Phát triển</p>
+
+                            <div className="grid grid-cols-3 gap-12 mt-16 max-w-xl mx-auto">
+                                <div className="space-y-1">
+                                    <div className="text-2xl font-serif font-bold text-amber-500/80">{stats.total}</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Thành viên</div>
                                 </div>
-                                <div className="text-center">
-                                    <div className="text-xl font-bold text-amber-500">{stats.gens}</div>
-                                    <div className="text-xs text-muted-foreground">Thế hệ</div>
+                                <div className="space-y-1">
+                                    <div className="text-2xl font-serif font-bold text-amber-500/80">{stats.gens}</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Thế hệ</div>
                                 </div>
-                                <div className="text-center">
-                                    <div className="text-xl font-bold text-amber-500">{stats.alive}</div>
-                                    <div className="text-xs text-muted-foreground">Còn sống</div>
+                                <div className="space-y-1">
+                                    <div className="text-2xl font-serif font-bold text-amber-500/80">{stats.alive}</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Còn sống</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Family tree book format */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Phả Hệ</h3>
+                        {/* Family Tree Section */}
+                        <div className="space-y-6 mt-16">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-border/40" />
+                                <h3 className="text-[10px] font-semibold text-amber-500/40 uppercase tracking-[0.4em]">Phả Hệ Dòng Tộc</h3>
+                                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-border/40" />
+                            </div>
                             {roots.map(branch => (
                                 <BranchSection key={branch.member.id} branch={branch} depth={0} />
                             ))}
                         </div>
 
-                        {/* All members by generation */}
-                        <div className="mt-12 pt-10 border-t border-border/40">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-6">Danh Sách Theo Thế Hệ</h3>
-                            <div className="space-y-6">
+                        {/* Genealogy Statistics Section */}
+                        <div className="mt-24 pt-16 border-t border-border/20">
+                            <div className="flex items-center gap-4 mb-10">
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-border/40" />
+                                <h3 className="text-[10px] font-semibold text-amber-500/40 uppercase tracking-[0.4em]">Thống kê Thế hệ</h3>
+                                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-border/40" />
+                            </div>
+                            <div className="grid grid-cols-1 gap-8">
                                 {Array.from(new Set(members.map(m => m.generation_level))).sort().map(gen => {
                                     const genMembers = members.filter(m => m.generation_level === gen)
                                     return (
-                                        <div key={gen} className="glass rounded-2xl p-6 border border-border/60">
-                                            <p className="text-base font-semibold text-amber-500 mb-1">Thế hệ thứ {gen}</p>
-                                            <p className="text-xs text-muted-foreground mb-4 uppercase tracking-widest">{genMembers.length} thành viên ({genMembers.filter(m => (m.metadata as MemberMetadata)?.is_alive === false).length} đã mất)</p>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mt-2">
+                                        <div key={gen} className="glass rounded-3xl p-8 border border-border/40 break-inside-avoid shadow-2xl">
+                                            <div className="flex justify-between items-end mb-6 border-b border-border/10 pb-4">
+                                                <div>
+                                                    <p className="text-lg font-serif font-semibold text-amber-500">Thế hệ thứ {gen}</p>
+                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Giai đoạn lưu danh</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-2xl font-serif font-bold text-foreground/20">{genMembers.length}</span>
+                                                    <span className="text-[8px] text-muted-foreground ml-2 uppercase tracking-tighter">Nhân khẩu</span>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
                                                 {genMembers.map(m => {
                                                     const mMeta = (m.metadata as MemberMetadata) || {}
                                                     return (
-                                                        <div key={m.id} className="flex items-center gap-2 text-sm text-foreground/80">
-                                                            <span className="text-muted-foreground/40">{m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '—'}</span>
-                                                            <span className="font-medium">{m.full_name}</span>
-                                                            {(mMeta.birth_year || mMeta.death_year) && (
-                                                                <span className="text-[10px] text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">
-                                                                    {[mMeta.birth_year, mMeta.death_year].filter(Boolean).join('–')}
-                                                                </span>
-                                                            )}
-                                                            {mMeta.is_alive === false && <span className="text-xs text-muted-foreground/50">✝</span>}
+                                                        <div key={m.id} className="flex items-center justify-between group">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-muted-foreground/30 text-[10px]">{m.gender === 'male' ? '♂' : '♀'}</span>
+                                                                <span className="text-sm font-medium text-foreground/80">{m.full_name}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {(mMeta.birth_year || mMeta.death_year) && (
+                                                                    <span className="text-[9px] font-mono text-muted-foreground/50 tabular-nums">
+                                                                        {[mMeta.birth_year, mMeta.death_year].filter(Boolean).join('–')}
+                                                                    </span>
+                                                                )}
+                                                                {mMeta.is_alive === false && <span className="text-[10px] text-amber-600/40">✝</span>}
+                                                            </div>
                                                         </div>
                                                     )
                                                 })}
@@ -318,9 +367,24 @@ export default function BookPage() {
                                 })}
                             </div>
                         </div>
+
+                        {/* Footer for Print */}
+                        <div className="mt-32 text-center opacity-20 no-screen">
+                            <p className="text-[10px] tracking-[0.5em] uppercase">Gia Phả Trần Tộc Mỹ Nguyên — Bản in di sản</p>
+                            <p className="text-[8px] mt-2">© {new Date().getFullYear()} — Lưu giữ bởi con cháu đời đời</p>
+                        </div>
                     </div>
                 )}
             </div>
+
+            <style jsx global>{`
+                @media screen {
+                    .no-screen { display: none; }
+                }
+                @media print {
+                    .no-print { display: none !important; }
+                }
+            `}</style>
         </div>
     )
 }
