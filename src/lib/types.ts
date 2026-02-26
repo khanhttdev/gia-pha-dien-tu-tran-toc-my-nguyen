@@ -23,15 +23,46 @@ export type MemberMetadata = {
     [key: string]: Json | undefined
 }
 
-// Legacy alias for backward compatibility during migration
-export type Person = Member
-export type PersonInsert = MemberInsert
-export type PersonUpdate = MemberUpdate
+// ─── Author Profile (for joined queries) ─────────────────────────────────────
 
-// Other tables
+export type AuthorProfile = {
+    full_name: string | null
+    avatar_url: string | null
+}
+
+// ─── Board Feed Item ─────────────────────────────────────────────────────────
+
+export type Contribution = Database['public']['Tables']['contributions']['Row']
+
+/** A board feed item returned by getBoardFeed: contribution + nested author + comment count */
+export type BoardFeedItem = Contribution & {
+    author: AuthorProfile | null
+    comments: [{ count: number }] | []
+}
+
+// ─── Comment with Author ─────────────────────────────────────────────────────
+
+export type Comment = Database['public']['Tables']['comments']['Row']
+
+/** A comment with nested author profile, returned by getComments */
+export type CommentWithAuthor = Comment & {
+    author: AuthorProfile | null
+}
+
+// ─── Other tables ─────────────────────────────────────────────────────────────
+
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Event = Database['public']['Tables']['events']['Row']
 export type Media = Database['public']['Tables']['media']['Row']
 export type Contact = Database['public']['Tables']['contacts']['Row']
-export type Contribution = Database['public']['Tables']['contributions']['Row']
 export type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
+
+// ─── Legacy aliases (deprecated — do not use in new code) ────────────────────
+
+/** @deprecated Use Member instead */
+export type Person = Member
+/** @deprecated Use MemberInsert instead */
+export type PersonInsert = MemberInsert
+/** @deprecated Use MemberUpdate instead */
+export type PersonUpdate = MemberUpdate
+

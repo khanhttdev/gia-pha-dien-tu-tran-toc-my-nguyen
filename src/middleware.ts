@@ -39,22 +39,29 @@ export async function middleware(request: NextRequest) {
 
     // Check if user is 'pending' and restrict to homepage only
     if (user && isProtected && pathname !== '/home') {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('status, role')
-            .eq('id', user.id)
-            .single()
+        // ── Optimized: Read role/status from JWT app_metadata (no extra DB query) ──
+        // The sync_profile_to_jwt DB trigger keeps these in-sync automatically.
+        // Fallback to DB query only if claims are absent (e.g., legacy sessions).
+        let role = user.app_metadata?.role as string | undefined
+        let status = user.app_metadata?.status as string | undefined
 
-        if (profile && profile.status === 'pending') {
+        if (!role || !status) {
+            // Fallback: query DB for very old sessions without claims
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('status, role')
+                .eq('id', user.id)
+                .single()
+            role = profile?.role ?? undefined
+            status = profile?.status ?? undefined
+        }
+
+        if (status === 'pending' || status === 'rejected') {
             return NextResponse.redirect(new URL('/home', request.url))
         }
 
-        if (profile && profile.status === 'rejected') {
-            return NextResponse.redirect(new URL('/home', request.url))
-        }
-
-        // Restrict non-admin & non-accountant from /admin (but accountant can access /fund route)
-        if (pathname.startsWith('/admin') && profile?.role !== 'admin') {
+        // Restrict non-admin from /admin route
+        if (pathname.startsWith('/admin') && role !== 'admin') {
             return NextResponse.redirect(new URL('/home', request.url))
         }
     }

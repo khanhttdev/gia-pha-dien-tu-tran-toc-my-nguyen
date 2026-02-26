@@ -2,23 +2,24 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { Contribution } from '@/lib/types'
+import { BoardFeedItem, CommentWithAuthor } from '@/lib/types'
 
 /**
  * Lấy danh sách đóng góp hợp lệ hiển thị lên Bảng tin (Newsfeed).
- * Chỉ trả về những items có status 'approved', hoặc trả về toàn bộ của User hiện tại (xem được cả pending/rejected).
+ * Hỗ trợ offset-based pagination thông qua page + pageSize.
  */
-export async function getBoardFeed() {
+export async function getBoardFeed(page = 0, pageSize = 20) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        return { error: 'Không tìm thấy thông tin đăng nhập', data: null }
+        return { error: 'Không tìm thấy thông tin đăng nhập', data: null, hasMore: false }
     }
 
-    // Vì RLS policy cho phép mọi user xem được "approved" VÀ những cái của chính "auth.uid()", 
-    // chúng ta chỉ cần select là Supabase sẽ tự động lọc theo Rule đó, nhưng để rõ ràng hơn ta có thể lọc explicitly hoặc để RLS lo.
-    // Ở đây ta cứ fetch, RLS sẽ chặn những bài "pending" hoặc "rejected" của NGƯỜI KHÁC.
+    const from = page * pageSize
+    const to = from + pageSize - 1
+
+    // RLS sẽ tự lọc: user chỉ thấy "approved" hoặc bài của chính mình (pending/rejected)
     const { data, error } = await supabase
         .from('contributions')
         .select(`
@@ -27,14 +28,17 @@ export async function getBoardFeed() {
             comments(count)
         `)
         .order('created_at', { ascending: false })
-        .limit(100)
+        .range(from, to + 1) // fetch 1 extra để detect hasMore
 
     if (error) {
         console.error('Error fetching board feed:', error)
-        return { error: error.message, data: null }
+        return { error: error.message, data: null, hasMore: false }
     }
 
-    return { error: null, data: data as any[] }
+    const hasMore = (data?.length ?? 0) > pageSize
+    const items = hasMore ? data!.slice(0, pageSize) : (data ?? [])
+
+    return { error: null, data: items as BoardFeedItem[], hasMore }
 }
 
 /**
@@ -93,7 +97,7 @@ export async function getComments(contributionId: string) {
         return { error: error.message, data: null }
     }
 
-    return { error: null, data: data as any[] }
+    return { error: null, data: data as CommentWithAuthor[] }
 }
 
 /**

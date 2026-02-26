@@ -88,7 +88,6 @@ export async function adminCreateUser(formData: FormData) {
 
     const supabase = await createClient()
 
-    // @ts-ignore RPC not in generated types
     const { data, error } = await supabase.rpc('admin_create_user', {
         new_email: email,
         new_password: password,
@@ -108,7 +107,6 @@ export async function adminCreateUser(formData: FormData) {
 export async function setUserActiveStatus(userId: string, newStatus: boolean) {
     const supabase = await createClient()
 
-    // @ts-ignore RPC not in generated types
     const { error } = await supabase.rpc('set_user_active_status', {
         target_user_id: userId,
         new_status: newStatus
@@ -135,3 +133,4 @@ export async function getDemographicStats() {
 
     return { error: null, data: stats as any }
 }
+

@@ -573,6 +573,19 @@ export type Database = {
         Args: { new_status: string; target_user_id: string }
         Returns: undefined
       }
+      set_user_active_status: {
+        Args: { target_user_id: string; new_status: boolean }
+        Returns: undefined
+      }
+      admin_create_user: {
+        Args: {
+          new_email: string
+          new_password: string
+          new_role: string
+          new_active?: boolean
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

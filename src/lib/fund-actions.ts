@@ -3,10 +3,12 @@
 import { createClient } from './supabase-server'
 import { revalidatePath } from 'next/cache'
 
-export async function getFunds() {
+const DEFAULT_PAGE_SIZE = 20
+
+export async function getFunds(cursor?: string, pageSize = DEFAULT_PAGE_SIZE) {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
+    let query = supabase
         .from('funds')
         .select(`
       *,
@@ -14,14 +16,25 @@ export async function getFunds() {
     `)
         .order('transaction_date', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(pageSize + 1) // +1 để detect hasMore
+
+    // Cursor pagination: lấy các record cũ hơn cursor (transaction_date)
+    if (cursor) {
+        query = query.lt('transaction_date', cursor)
+    }
+
+    const { data, error } = await query
 
     if (error) {
         console.error('Error fetching funds:', error)
-        return { error: error.message, data: null }
+        return { error: error.message, data: null, hasMore: false }
     }
 
-    return { error: null, data }
+    const hasMore = (data?.length ?? 0) > pageSize
+    const items = hasMore ? data!.slice(0, pageSize) : (data ?? [])
+    const nextCursor = hasMore ? items[items.length - 1]?.transaction_date : undefined
+
+    return { error: null, data: items, hasMore, nextCursor }
 }
 
 export async function addTransaction(formData: FormData) {
