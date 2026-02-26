@@ -119,16 +119,31 @@ export default function BookPage() {
 
             toast.info('Đang tạo file PDF, vui lòng đợi...', { duration: 3000 })
 
-            // Hide some interactive elements during print if needed
-            // Currently we just capture the div
+            // Create a clean clone for capturing
             const canvas = await html2canvas(printRef.current, {
-                scale: 2,
+                scale: 1.5, // Giảm nhẹ tỉ lệ để an toàn hơn cho bộ nhớ
                 useCORS: true,
                 logging: false,
-                windowWidth: 1024 // Giữ độ rộng để tránh vỡ layout trên mobile
+                backgroundColor: '#31090A', // Fix cứng màu nền thay vì dùng biến CSS
+                windowWidth: 1024,
+                onclone: (clonedDoc) => {
+                    // Xử lý các thành phần CSS không được html2canvas hỗ trợ
+                    const glasses = clonedDoc.querySelectorAll('.glass')
+                    glasses.forEach(el => {
+                        (el as HTMLElement).style.backdropFilter = 'none';
+                        (el as HTMLElement).style.background = 'rgba(255, 255, 255, 0.05)';
+                    })
+
+                    const goldTexts = clonedDoc.querySelectorAll('.gold-text')
+                    goldTexts.forEach(el => {
+                        (el as HTMLElement).style.webkitBackgroundClip = 'initial';
+                        (el as HTMLElement).style.webkitTextFillColor = 'initial';
+                        (el as HTMLElement).style.color = '#f59e0b'; // Amber-500
+                    })
+                }
             })
 
-            const imgData = canvas.toDataURL('image/jpeg', 1.0)
+            const imgData = canvas.toDataURL('image/jpeg', 0.9)
             const pdf = new jsPDF('p', 'mm', 'a4')
 
             const pdfWidth = pdf.internal.pageSize.getWidth()
@@ -138,9 +153,11 @@ export default function BookPage() {
             let heightLeft = imgHeight
             let position = 0
 
+            // Add first page
             pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight)
             heightLeft -= pageHeight
 
+            // Add subsequent pages if content overflows
             while (heightLeft > 0) {
                 position = heightLeft - imgHeight
                 pdf.addPage()
@@ -150,9 +167,9 @@ export default function BookPage() {
 
             pdf.save('Gia-Pha-Tran-Toc.pdf')
             toast.success('Xuất file PDF thành công!')
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error exporting PDF:', error)
-            toast.error('Có lỗi xảy ra khi xuất PDF')
+            toast.error(`Có lỗi xảy ra khi xuất PDF: ${error?.message || 'Lỗi không xác định'}`)
         } finally {
             setIsExporting(false)
         }
