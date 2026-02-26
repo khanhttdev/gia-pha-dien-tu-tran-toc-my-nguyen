@@ -23,9 +23,7 @@ import { Member, Spouse, MemberMetadata } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Search, X, Users, GitBranch, Share2, Download, Loader2 } from 'lucide-react'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+import { Search, X, Users, GitBranch, Share2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -191,82 +189,6 @@ function TreeContent({ members, spouses }: { members: Member[]; spouses: Spouse[
         gens: new Set(displayMembers.map(m => m.generation_level)).size,
     }), [displayMembers])
 
-    const handleExportPDF = async () => {
-        const element = document.querySelector('.react-flow') as HTMLElement
-        if (!element) return
-
-        toast.loading('Đang xử lý PDF...', { id: 'pdf' })
-        try {
-            const canvas = await html2canvas(element, {
-                backgroundColor: '#2A0708',
-                scale: 2,
-                ignoreElements: (el) => el.classList.contains('react-flow__controls') || el.classList.contains('react-flow__minimap'),
-                onclone: (clonedDoc) => {
-                    // Inject CSS override to force all colors to sRGB
-                    const style = clonedDoc.createElement('style')
-                    style.setAttribute('data-pdf-override', 'true')
-                    style.textContent = `
-                        :root, *, *::before, *::after {
-                            color-scheme: light !important;
-                            --background: 351 69% 11% !important;
-                            --foreground: 0 0% 100% !important;
-                            --card: 351 45% 16% !important;
-                            --card-foreground: 0 0% 100% !important;
-                            --primary: 40 100% 66% !important;
-                            --primary-foreground: 0 0% 11% !important;
-                            --secondary: 351 40% 20% !important;
-                            --muted: 351 40% 20% !important;
-                            --muted-foreground: 0 0% 70% !important;
-                            --border: 351 30% 24% !important;
-                            --ring: 40 100% 66% !important;
-                            --tw-ring-color: rgba(251,191,36,0.5) !important;
-                            --tw-shadow-color: transparent !important;
-                            --tw-ring-offset-color: #2A0708 !important;
-                            --tw-gradient-from: transparent !important;
-                            --tw-gradient-to: transparent !important;
-                        }
-                        .glass {
-                            backdrop-filter: none !important;
-                            -webkit-backdrop-filter: none !important;
-                            background: rgba(255,255,255,0.08) !important;
-                        }
-                        .gold-text { background: transparent !important; background-image: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; -webkit-text-fill-color: initial !important; color: #FFB411 !important; }
-                        .gold-gradient { background: #FFB411 !important; background-image: none !important; }
-                    `
-                    clonedDoc.head.appendChild(style)
-
-                    // Delete CSS rules containing oklab/oklch
-                    try {
-                        for (const sheet of Array.from(clonedDoc.styleSheets)) {
-                            if ((sheet.ownerNode as Element)?.getAttribute?.('data-pdf-override') === 'true') continue
-                            try {
-                                const rules = sheet.cssRules || sheet.rules
-                                if (!rules) continue
-                                for (let i = rules.length - 1; i >= 0; i--) {
-                                    if (rules[i].cssText && /(oklab|oklch|lab\(|color\(|color-mix)/.test(rules[i].cssText)) {
-                                        sheet.deleteRule(i)
-                                    }
-                                }
-                            } catch { /* cross-origin */ }
-                        }
-                    } catch { /* */ }
-                }
-            })
-            const imgData = canvas.toDataURL('image/png')
-            const pdf = new jsPDF({
-                orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
-            })
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height)
-            pdf.save('gia-pha-tran-toc.pdf')
-            toast.success('Tải PDF thành công!', { id: 'pdf' })
-        } catch (e) {
-            console.error(e)
-            toast.error('Lỗi khi xuất PDF', { id: 'pdf' })
-        }
-    }
-
     return (
         <div className="relative w-full h-full">
             {/* Toolbar */}
@@ -291,9 +213,6 @@ function TreeContent({ members, spouses }: { members: Member[]; spouses: Spouse[
                             Xem toàn bộ
                         </Button>
                     )}
-                    <Button variant="outline" size="sm" className="h-8 px-2 glass" onClick={handleExportPDF} title="Xuất PDF">
-                        <Download className="w-4 h-4" />
-                    </Button>
                 </div>
                 <div className="glass rounded-lg px-3 py-2 space-y-1">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

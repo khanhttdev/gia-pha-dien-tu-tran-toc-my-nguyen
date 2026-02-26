@@ -88,7 +88,6 @@ export default function AdminPage() {
         formData.append('email', newEmail)
         formData.append('password', newPassword)
         formData.append('role', newRole)
-        formData.append('is_active', 'true')
 
         const res = await adminCreateUser(formData)
         if (res.error) {

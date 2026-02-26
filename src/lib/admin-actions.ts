@@ -8,13 +8,11 @@ export interface AdminUserData {
     email: string
     role: 'admin' | 'member' | 'accountant'
     created_at: string
-    is_active: boolean
     status: 'pending' | 'approved' | 'rejected'
 }
 
 export async function getAdminUsers() {
     const supabase = await createClient()
-
 
     const { data, error } = await supabase.rpc('get_admin_users')
 
@@ -80,7 +78,6 @@ export async function adminCreateUser(formData: FormData) {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const role = formData.get('role') as string || 'member'
-    const isActive = formData.get('is_active') === 'true'
 
     if (!email || !password) {
         return { error: 'Email and password are required' }
@@ -92,7 +89,7 @@ export async function adminCreateUser(formData: FormData) {
         new_email: email,
         new_password: password,
         new_role: role,
-        new_active: isActive
+        new_active: true
     })
 
     if (error) {
@@ -102,23 +99,6 @@ export async function adminCreateUser(formData: FormData) {
 
     revalidatePath('/admin')
     return { error: null, data }
-}
-
-export async function setUserActiveStatus(userId: string, newStatus: boolean) {
-    const supabase = await createClient()
-
-    const { error } = await supabase.rpc('set_user_active_status', {
-        target_user_id: userId,
-        new_status: newStatus
-    })
-
-    if (error) {
-        console.error('Error setting active status:', error)
-        return { error: error.message }
-    }
-
-    revalidatePath('/admin')
-    return { error: null }
 }
 
 export async function getDemographicStats() {
@@ -133,4 +113,3 @@ export async function getDemographicStats() {
 
     return { error: null, data: stats as any }
 }
-
