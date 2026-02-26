@@ -5,13 +5,16 @@ import { getFunds, addTransaction, deleteTransaction, getFundBalance } from '@/l
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, Plus, ArrowUpRight, ArrowDownRight, Trash2 } from 'lucide-react'
+import { Loader2, Plus, ArrowUpRight, ArrowDownRight, Trash2, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function FundManagerTab() {
     const [funds, setFunds] = useState<any[]>([])
     const [balance, setBalance] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(false)
+    const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
     const [isAdding, setIsAdding] = useState(false)
 
     // form
@@ -24,15 +27,24 @@ export function FundManagerTab() {
         load()
     }, [])
 
-    const load = async () => {
-        setLoading(true)
+    const load = async (cursor?: string, append = false) => {
+        if (append) setLoadingMore(true)
+        else setLoading(true)
+
         const [resFunds, resBal] = await Promise.all([
-            getFunds(),
-            getFundBalance()
+            getFunds(cursor, 20),
+            append ? Promise.resolve({ error: null, balance: balance }) : getFundBalance()
         ])
-        if (resFunds.data) setFunds(resFunds.data)
-        if (!resBal.error) setBalance(resBal.balance)
-        setLoading(false)
+
+        if (resFunds.data) {
+            setFunds(prev => append ? [...prev, ...resFunds.data!] : resFunds.data!)
+            setHasMore(resFunds.hasMore)
+            setNextCursor(resFunds.nextCursor)
+        }
+        if (!append && !resBal.error) setBalance((resBal as any).balance)
+
+        if (append) setLoadingMore(false)
+        else setLoading(false)
     }
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -53,7 +65,7 @@ export function FundManagerTab() {
             toast.success('Đã ghi nhận giao dịch')
             setAmount('')
             setDesc('')
-            await load()
+            await load() // reset
         }
         setIsAdding(false)
     }
@@ -64,7 +76,7 @@ export function FundManagerTab() {
         if (res.error) toast.error(res.error)
         else {
             toast.success('Đã xóa')
-            load()
+            load() // reset
         }
     }
 
@@ -149,6 +161,22 @@ export function FundManagerTab() {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Load More */}
+                        {hasMore && (
+                            <div className="flex justify-center pt-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => load(nextCursor, true)}
+                                    disabled={loadingMore}
+                                    className="gap-2 rounded-full text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                                >
+                                    {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                                    {loadingMore ? 'Đang tải...' : 'Tải thêm giao dịch'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -1,18 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getBoardFeed, submitContribution } from '@/lib/board-actions'
 import { createClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { MessageSquare, Send, Loader2, Info, Clock, CheckCircle2, UserCircle2, MessageCircle } from 'lucide-react'
+import { MessageSquare, Send, Loader2, Info, Clock, CheckCircle2, UserCircle2, MessageCircle, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CommentSection } from '@/components/board/comment-section'
+import type { BoardFeedItem } from '@/lib/types'
 
 export default function BoardPage() {
-    const [feed, setFeed] = useState<any[]>([])
+    const [feed, setFeed] = useState<BoardFeedItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(false)
+    const [page, setPage] = useState(0)
     const [submitting, setSubmitting] = useState(false)
     const [content, setContent] = useState('')
     const [type, setType] = useState('news')
@@ -26,12 +30,26 @@ export default function BoardPage() {
         }))
     }
 
-    const loadFeed = async () => {
-        setLoading(true)
-        const res = await getBoardFeed()
-        if (res.data) setFeed(res.data)
-        setLoading(false)
-    }
+    const loadFeed = useCallback(async (reset = true) => {
+        if (reset) {
+            setLoading(true)
+            setPage(0)
+        } else {
+            setLoadingMore(true)
+        }
+
+        const currentPage = reset ? 0 : page + 1
+        const res = await getBoardFeed(currentPage, 20)
+
+        if (res.data) {
+            setFeed(prev => reset ? res.data! : [...prev, ...res.data!])
+            setHasMore(res.hasMore)
+            if (!reset) setPage(currentPage)
+        }
+
+        if (reset) setLoading(false)
+        else setLoadingMore(false)
+    }, [page])
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -40,7 +58,8 @@ export default function BoardPage() {
             if (user) setCurrentUserId(user.id)
         }
         fetchUser()
-        loadFeed()
+        loadFeed(true)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -58,7 +77,7 @@ export default function BoardPage() {
         } else {
             toast.success('Gửi đóng góp thành công! Đang chờ BQT duyệt.')
             setContent('')
-            await loadFeed() // Auto-reload the feed to show their pending post
+            await loadFeed(true) // Reset về trang 1
         }
         setSubmitting(false)
     }
@@ -125,11 +144,11 @@ export default function BoardPage() {
                         Dòng Thời Gian
                         {feed.length > 0 && (
                             <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20 px-2 py-0 h-5 text-[10px]">
-                                {feed.length} bài đăng
+                                {feed.length}{hasMore ? '+' : ''} bài đăng
                             </Badge>
                         )}
                     </h2>
-                    <Button variant="ghost" size="sm" onClick={loadFeed} disabled={loading} className="text-muted-foreground">
+                    <Button variant="ghost" size="sm" onClick={() => loadFeed(true)} disabled={loading} className="text-muted-foreground">
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Làm mới'}
                     </Button>
                 </div>
@@ -172,7 +191,7 @@ export default function BoardPage() {
                                                 )}
                                                 <span className="text-xs text-muted-foreground px-1 hidden sm:inline">•</span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {new Date(item.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                    {new Date(item.created_at!).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
@@ -204,8 +223,8 @@ export default function BoardPage() {
                                                 >
                                                     <MessageCircle className="w-3.5 h-3.5" />
                                                     {expandedComments[item.id] ? 'Đóng bình luận' : 'Xem bình luận'}
-                                                    {!expandedComments[item.id] && item.comments?.[0]?.count > 0 && (
-                                                        <span className="ml-1 opacity-60">({item.comments[0].count})</span>
+                                                    {!expandedComments[item.id] && (item.comments?.[0] as any)?.count > 0 && (
+                                                        <span className="ml-1 opacity-60">({(item.comments?.[0] as any)?.count})</span>
                                                     )}
                                                 </Button>
                                             </div>
@@ -219,6 +238,24 @@ export default function BoardPage() {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <div className="flex justify-center pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => loadFeed(false)}
+                                    disabled={loadingMore}
+                                    className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50 rounded-full px-8"
+                                >
+                                    {loadingMore
+                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                        : <ChevronDown className="w-4 h-4" />
+                                    }
+                                    {loadingMore ? 'Đang tải...' : 'Tải thêm bài'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
