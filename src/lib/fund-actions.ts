@@ -69,11 +69,22 @@ export async function addTransaction(formData: FormData) {
     }
 
     revalidatePath('/admin')
+    revalidatePath('/fund')
     return { error: null }
 }
 
 export async function deleteTransaction(id: string) {
     const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    // Lấy dữ liệu cũ để ghi log
+    const { data: oldData } = await supabase
+        .from('funds')
+        .select('*')
+        .eq('id', id)
+        .single()
 
     const { error } = await supabase
         .from('funds')
@@ -85,7 +96,18 @@ export async function deleteTransaction(id: string) {
         return { error: error.message }
     }
 
+    if (oldData) {
+        await supabase.from('activity_logs').insert({
+            user_id: user.id,
+            action: 'DELETE',
+            table_name: 'funds',
+            record_id: id,
+            old_data: oldData
+        })
+    }
+
     revalidatePath('/admin')
+    revalidatePath('/fund')
     return { error: null }
 }
 
@@ -100,4 +122,64 @@ export async function getFundBalance() {
     }
 
     return { error: null, balance: Number(data) || 0 }
+}
+
+export async function updateTransaction(id: string, formData: FormData) {
+    const supabase = await createClient()
+
+    const transactionType = formData.get('transaction_type') as string
+    const amountStr = formData.get('amount') as string
+    const amount = Number(amountStr.replace(/,/g, ''))
+    const description = formData.get('description') as string
+    const transactionDate = formData.get('transaction_date') as string
+    const memberId = formData.get('member_id') as string | null
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Lấy dữ liệu cũ để so sánh và ghi log
+    const { data: oldData } = await supabase
+        .from('funds')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (!oldData) {
+        return { error: 'Không tìm thấy giao dịch này' }
+    }
+
+    const newData = {
+        transaction_type: transactionType,
+        amount,
+        description,
+        transaction_date: transactionDate,
+        member_id: memberId || null,
+    }
+
+    // Update fund
+    const { error: updateError } = await supabase
+        .from('funds')
+        .update(newData)
+        .eq('id', id)
+
+    if (updateError) {
+        console.error('Error updating transaction:', updateError)
+        return { error: updateError.message }
+    }
+
+    // Ghi log
+    await supabase.from('activity_logs').insert({
+        user_id: user.id,
+        action: 'UPDATE',
+        table_name: 'funds',
+        record_id: id,
+        old_data: oldData,
+        new_data: newData
+    })
+
+    revalidatePath('/admin')
+    revalidatePath('/fund')
+    return { error: null }
 }
