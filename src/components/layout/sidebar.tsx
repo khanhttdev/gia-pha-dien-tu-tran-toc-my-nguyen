@@ -66,8 +66,8 @@ export function Sidebar({ profile }: SidebarProps) {
             <div className="px-6 py-5 border-b border-white/10">
                 <div className="flex items-center justify-between">
                     <Link href="/home" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
-                        <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
-                            <span className="text-lg drop-shadow-sm">🌳</span>
+                        <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg overflow-hidden p-0.5">
+                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white leading-none tracking-wide">Trần Tộc</p>
@@ -186,8 +186,8 @@ export function Sidebar({ profile }: SidebarProps) {
             {/* Mobile top bar */}
             <div className="md:hidden fixed top-0 left-0 right-0 z-40 glass border-b border-border/50 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-md gold-gradient flex items-center justify-center shadow-sm">
-                        <span className="text-sm drop-shadow-sm">🌳</span>
+                    <div className="w-7 h-7 rounded-md gold-gradient flex items-center justify-center shadow-sm overflow-hidden p-[1px]">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <span className="font-bold text-sm">Trần Tộc</span>
                 </div>

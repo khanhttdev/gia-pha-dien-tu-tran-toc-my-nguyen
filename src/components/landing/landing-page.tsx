@@ -137,8 +137,8 @@ export function LandingPage({ authState = 'unauthenticated' }: { authState?: 'un
 
                 <div aria-label="landing-wrapper" className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
                     {/* Logo */}
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 mb-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl hero-logo">
-                        <span className="text-5xl sm:text-6xl drop-shadow-lg">🌳</span>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 mb-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl hero-logo overflow-hidden p-1">
+                        <img src="/logo.png" alt="Trần Tộc Logo" className="w-full h-full object-contain" />
                     </div>
 
                     {/* Title */}
