@@ -116,8 +116,8 @@ describe('buildTreeLayout', () => {
         const result = buildTreeLayout([member], [spouse])
 
         const node = result.nodes.find(n => n.id === 'm1')
-        expect(node?.data.spouse?.id).toBe('s1')
-        expect(node?.data.spouse?.full_name).toBe('Nguyễn Thị B')
+        expect(node?.data.spouses?.[0]?.id).toBe('s1')
+        expect(node?.data.spouses?.[0]?.full_name).toBe('Nguyễn Thị B')
     })
 
     it('marks hasChildren correctly', () => {

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import TreeClient from './tree-client'
+import { getAllMembers, getAllSpouses } from '@/lib/supabase-data'
 
 export const metadata = {
     title: 'Cây Gia Phả | Trần Tộc Mỹ Nguyên',
@@ -31,5 +32,10 @@ export default async function TreePage() {
         }
     }
 
-    return <TreeClient defaultRootId={defaultRootId} />
+    const [members, spouses] = await Promise.all([
+        getAllMembers(),
+        getAllSpouses()
+    ])
+
+    return <TreeClient defaultRootId={defaultRootId} initialMembers={members} initialSpouses={spouses} />
 }

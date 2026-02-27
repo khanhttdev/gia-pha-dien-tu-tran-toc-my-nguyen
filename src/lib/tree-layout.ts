@@ -3,27 +3,36 @@ import { Node, Edge } from '@xyflow/react'
 
 export type PersonNode = Node<{
     member: Member
-    spouse?: Spouse
+    spouses: Spouse[] // Update to support multiple spouses
     hasChildren: boolean
     isHighlighted: boolean
 }, 'person'>
 
-const NODE_WIDTH = 280 // Tăng chiều rộng để chứa 2 người (member + spouse)
-const NODE_HEIGHT = 120
-const H_GAP = 40      // Thu hẹp khoảng cách ngang một chút
+const NODE_HEIGHT = 160
+const H_GAP = 60
 const V_GAP = 100
 
 interface LayoutNode {
     member: Member
+    spouses: Spouse[]
     x: number
     y: number
+    width: number
     children: string[]
+}
+
+export function getNodeWidth(spousesCount: number) {
+    // 1 base member
+    const totalPeople = 1 + spousesCount
+    // Each person block is ~120px wide
+    // Plus 32px padding (16px left + 16px right)
+    // Plus 28px for each ring badge between people
+    return 32 + (totalPeople * 120) + (Math.max(0, totalPeople - 1) * 28)
 }
 
 /**
  * Build a tree layout using a simple top-down algorithm.
  * Positions nodes by generation row, distributing horizontally per family.
- * Uses father_id as the backbone for tree traversal (members table only).
  */
 export function buildTreeLayout(
     members: Member[],
@@ -32,7 +41,6 @@ export function buildTreeLayout(
     if (!members.length) return { nodes: [], edges: [] }
 
     const map = new Map<string, Member>(members.map(m => [m.id, m]))
-    const spouseMap = new Map<string, Spouse>(spouses.map(s => [s.id, s]))
     const spouseByMember = new Map<string, Spouse[]>()
     spouses.forEach(s => {
         if (!spouseByMember.has(s.member_id)) spouseByMember.set(s.member_id, [])
@@ -64,16 +72,32 @@ export function buildTreeLayout(
     // Position nodes row by row
     sortedGens.forEach((gen, rowIdx) => {
         const genMembers = byGen.get(gen)!.sort((a, b) => (a.birth_order ?? 0) - (b.birth_order ?? 0))
-        const totalWidth = genMembers.length * NODE_WIDTH + (genMembers.length - 1) * H_GAP
+
+        let totalWidth = 0;
+        const memberWidths = genMembers.map(m => {
+            const spCount = spouseByMember.get(m.id)?.length || 0;
+            const width = getNodeWidth(spCount);
+            totalWidth += width;
+            return width;
+        });
+
+        // Add gaps between members
+        totalWidth += (genMembers.length - 1) * H_GAP
+
         const startX = -totalWidth / 2
+        let currentX = startX;
 
         genMembers.forEach((m, colIdx) => {
+            const w = memberWidths[colIdx];
             layoutMap.set(m.id, {
                 member: m,
-                x: startX + colIdx * (NODE_WIDTH + H_GAP),
+                spouses: spouseByMember.get(m.id) || [],
+                x: currentX + w / 2, // Centered X
                 y: rowIdx * (NODE_HEIGHT + V_GAP),
+                width: w,
                 children: childrenMap.get(m.id) ?? [],
             })
+            currentX += w + H_GAP;
         })
     })
 
@@ -84,22 +108,23 @@ export function buildTreeLayout(
                 id: `${m.father_id}->${m.id}`,
                 source: m.father_id,
                 target: m.id,
-                type: 'smoothstep', // Dùng smoothstep/step để tạo đường kẻ vuông góc
-                style: { stroke: 'rgba(214, 211, 209, 0.5)', strokeWidth: 2 }, // Màu xám nhạt Stone-300 (giống bản gốc) pha thêm độ mờ của kính
+                type: 'step', // Đường kẻ vuông góc 90 độ
+                style: { stroke: '#F59E0B', strokeWidth: 2.5, opacity: 0.85 }, // Vàng Amber rực rỡ Heritage
                 animated: false,
             })
         }
     })
 
+    // Prepare Node configurations
     const nodes: PersonNode[] = Array.from(layoutMap.values()).map(ln => {
-        const memberSpouses = spouseByMember.get(ln.member.id)
         return {
             id: ln.member.id,
             type: 'person',
-            position: { x: ln.x, y: ln.y },
+            // ReactFlow anchor is top-left by default, but we calculated center X. We shift it by half width.
+            position: { x: ln.x - ln.width / 2, y: ln.y },
             data: {
                 member: ln.member,
-                spouse: memberSpouses?.[0],
+                spouses: ln.spouses,
                 hasChildren: ln.children.length > 0,
                 isHighlighted: false,
             },
