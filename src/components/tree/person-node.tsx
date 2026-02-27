@@ -18,34 +18,38 @@ function ProfileBlock({
     const yearRange = [meta.birth_year, meta.death_year].filter(Boolean).join(' – ')
 
     return (
-        <div className={cn("flex flex-col items-center w-[110px] text-center", !isAlive && 'opacity-70 grayscale-[30%]')}>
+        <div className={cn(
+            "flex flex-row items-center gap-3 px-3 py-2 w-[180px] group/profile transition-all duration-300",
+            !isAlive && 'opacity-70'
+        )}>
+            {/* Avatar Circle with Gold Ring */}
             <div className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0 transition-transform group-hover:scale-110 duration-500 ring-2 ring-offset-2 ring-offset-[#31090A]',
-                'bg-[#1B0506] overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.5)]',
-                isMale ? 'ring-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.3)]' :
-                    isFemale ? 'ring-pink-400 shadow-[0_0_10px_rgba(244,114,182,0.3)]' :
-                        'ring-amber-200/50'
+                'w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 transition-all duration-500 ring-1 ring-offset-2 ring-offset-[#1B0506]',
+                'bg-[#0D0202] overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)]',
+                isMale ? 'ring-blue-400/40' : isFemale ? 'ring-pink-400/40' : 'ring-amber-500/30'
             )}>
                 {meta.avatar_url
-                    ? <img src={meta.avatar_url} alt={member.full_name} width={56} height={56} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+                    ? <img src={meta.avatar_url} alt={member.full_name} width={48} height={48} className="w-full h-full object-cover grayscale-[20%] group-hover/profile:grayscale-0 transition-all" />
                     : isMale ? '👨' : isFemale ? '👩' : '👤'
                 }
             </div>
 
-            <div className="mt-2.5 flex flex-col items-center">
-                <h3 className="text-[11px] font-bold text-amber-50 leading-tight tracking-tight line-clamp-2 px-1 drop-shadow-sm">
+            <div className="flex flex-col items-start min-w-0">
+                <h3 className="text-[11px] font-bold text-amber-200/90 leading-tight tracking-wide line-clamp-1 drop-shadow-sm uppercase font-serif">
                     {member.full_name}
                 </h3>
 
                 {yearRange && (
-                    <p className="text-[9px] text-amber-500/90 mt-0.5 font-bold">
+                    <p className="text-[9px] text-amber-500/60 mt-0.5 font-medium tracking-tighter">
                         {yearRange}
                     </p>
                 )}
 
-                {!isAlive && (
-                    <span className="text-[8px] text-amber-200/40 uppercase tracking-tighter mt-0.5 font-black">đã mất</span>
-                )}
+                <div className="mt-1 px-1.5 py-px rounded bg-white/5 border border-white/5">
+                    <span className="text-[8px] text-amber-100/30 font-bold uppercase tracking-widest leading-none">
+                        {isAlive ? 'Member' : 'Ancestor'}
+                    </span>
+                </div>
             </div>
         </div>
     )
@@ -60,36 +64,38 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
 
     return (
         <div className={cn(
-            'rounded-2xl border-2 transition-all duration-500 cursor-pointer group flex flex-col p-4 relative',
-            'bg-[#31090A] border-amber-600/40 shadow-[0_8px_30px_rgba(0,0,0,0.8)]',
+            'rounded-lg border-[1.5px] transition-all duration-500 cursor-pointer group flex flex-col relative',
+            'bg-[#1B0506] border-amber-600/30 shadow-[0_10px_40px_rgba(0,0,0,0.9)]',
             selected
-                ? 'border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.5)] z-20 scale-[1.05] bg-[#4A0D0E]'
+                ? 'border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.4)] z-20 scale-[1.05] bg-[#2A0809]'
                 : isHighlighted
                     ? 'border-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.3)] z-10 scale-[1.03]'
-                    : 'hover:border-amber-500/60 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)]',
+                    : 'hover:border-amber-500/50 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)]',
             !isAlive && spouses?.length === 0 && 'opacity-90'
         )}>
+            {/* Ornamental Corners - Giống ảnh mẫu */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-amber-500/40 rounded-tl-[2px]" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-amber-500/40 rounded-tr-[2px]" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-amber-500/40 rounded-bl-[2px]" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-amber-500/40 rounded-br-[2px]" />
+
             <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-amber-500 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
 
-            {/* Generation badge */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                <div className="text-[10px] font-black tracking-[0.2em] px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-600 to-amber-400 text-[#31090A] border border-amber-200/30 shadow-[0_2px_10px_rgba(0,0,0,0.5)] uppercase">
-                    Đời {member.generation_level}
+            {/* Generation badge - Bo góc vuông chuẩn Chronicle */}
+            <div className="absolute -top-3 left-3 z-10">
+                <div className="text-[8px] font-black tracking-[0.2em] px-2 py-0.5 bg-[#F59E0B] text-[#1B0506] shadow-lg uppercase">
+                    GEN {member.generation_level}
                 </div>
             </div>
 
-            <div className="flex flex-row items-center justify-center pt-2">
+            <div className="flex flex-row items-center justify-start p-1.5 min-h-[64px]">
                 {familyMembers.map((person, index) => (
-                    <div key={person.id} className="flex flex-row items-center">
+                    <div key={person.id} className="flex flex-row items-center border-r border-amber-500/10 last:border-r-0">
                         <ProfileBlock member={person} />
 
-                        {/* Nhẫn cưới vàng giữa cặp đôi */}
-                        {index < familyMembers.length - 1 && (
-                            <div className="w-8 shrink-0 flex items-center justify-center -mt-6">
-                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-200 via-amber-500 to-amber-700 shadow-[0_2px_8px_rgba(251,191,36,0.4)] ring-2 ring-[#31090A] z-10 transform hover:rotate-12 transition-transform">
-                                    <span className="text-[12px] filter drop-shadow-md">💍</span>
-                                </div>
-                            </div>
+                        {/* Ring separator between primary member and spouses */}
+                        {index === 0 && familyMembers.length > 1 && (
+                            <div className="w-1 h-8 bg-gradient-to-b from-transparent via-amber-500/20 to-transparent mx-1" />
                         )}
                     </div>
                 ))}

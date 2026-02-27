@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
     ReactFlowProvider,
@@ -149,90 +149,106 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
     }), [displayMembers])
 
     return (
-        <div className="flex flex-col w-full h-full bg-background overflow-hidden relative">
-            <header className="sticky top-0 left-0 right-0 w-full bg-[#18181A] text-white border-b border-white/10 z-[500] shadow-md shrink-0">
-                <div className="p-3 sm:p-4 flex flex-col gap-4 max-w-7xl mx-auto">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/40 shrink-0">
-                                <span className="text-lg">🌳</span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="text-sm font-black leading-none tracking-tight text-white uppercase">
-                                    Gia Phả <span className="text-amber-500">Mỹ Nguyên</span>
-                                </h1>
-                            </div>
+        <div className="flex flex-col w-full h-full bg-[#1B0506] overflow-hidden relative font-serif">
+            {/* Chronicles Central Header */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] w-full max-w-2xl px-4 pointer-events-none">
+                <header className="pointer-events-auto bg-[#1B0506]/90 backdrop-blur-md border-[1.5px] border-amber-600/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] p-4 flex flex-col items-center relative overflow-hidden group">
+                    {/* Decorative Header Border */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
 
-                            <div className="relative group shadow-sm rounded-xl ml-2 shrink-0 sm:shrink">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 group-focus-within:text-amber-500 transition-colors" />
-                                <Input
-                                    placeholder="Tìm người..."
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="pl-9 h-9 w-32 sm:w-48 lg:w-64 bg-white/5 border-white/10 focus-visible:ring-amber-500/20 rounded-xl font-bold text-xs text-white placeholder:text-white/30"
-                                />
-                                {search && (
-                                    <button className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-0.5 rounded-full" onClick={() => setSearch('')}>
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                )}
+                    <div className="flex items-center gap-6">
+                        {/* Golden Tree Logo - Heritage Icon */}
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-200 via-amber-500 to-amber-700 p-0.5 shadow-[0_0_25px_rgba(251,191,36,0.3)] group-hover:shadow-[0_0_40px_rgba(251,191,36,0.5)] transition-all duration-700">
+                            <div className="w-full h-full rounded-full bg-[#1B0506] flex items-center justify-center">
+                                <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">🌳</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 ml-auto">
-                            <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-                                <span className="text-[10px] font-black text-white/90">
-                                    {stats.total} thành viên <span className="text-white/30">/</span> {stats.gens} đời
-                                </span>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] font-bold tracking-[0.4em] text-amber-500/60 uppercase leading-none mb-1">THE CHRONICLES OF</span>
+                            <h1 className="text-2xl font-black tracking-tight text-amber-50 uppercase leading-none drop-shadow-md">
+                                GIA PHẢ <span className="text-amber-500 font-serif lowercase italic font-normal">họ</span> TRẦN
+                            </h1>
+                            <div className="flex items-center gap-3 mt-2">
+                                <div className="w-12 h-px bg-gradient-to-r from-transparent to-amber-500/40" />
+                                <span className="text-[10px] font-medium text-amber-500/40 italic tracking-widest">Legacy & Lineage</span>
+                                <div className="w-12 h-px bg-gradient-to-l from-transparent to-amber-500/40" />
                             </div>
-
-                            {(urlRootId || (defaultRootId && activeRootId !== defaultRootId)) && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 px-3 text-[10px] font-black rounded-lg border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400 bg-transparent"
-                                    onClick={() => window.location.href = '/tree'}
-                                >
-                                    <Waypoints className="w-3 h-3 mr-1.5" /> Thủy tổ
-                                </Button>
-                            )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 border-t border-white/10 mt-1">
-                        <span className="shrink-0 text-[10px] font-bold uppercase text-amber-500 tracking-tighter">
-                            Phả hệ ({ancestryTrail.length}):
-                        </span>
-                        <div className="flex items-center gap-1.5 min-w-max">
-                            {ancestryTrail.length > 0 ? ancestryTrail.map((m, idx) => (
-                                <div key={m.id} className="flex items-center gap-1.5">
-                                    <button
-                                        onClick={() => window.location.href = `/tree?root=${m.id}`}
-                                        className={cn(
-                                            "text-[11px] px-3 py-1 rounded-full transition-all border font-semibold shadow-sm whitespace-nowrap",
-                                            m.id === (selected?.id || activeRootId)
-                                                ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
-                                                : "bg-white/5 border-white/10 text-white/70 hover:border-amber-500/40 hover:text-amber-400"
-                                        )}
-                                    >
-                                        {m.full_name}
-                                    </button>
-                                    {idx < ancestryTrail.length - 1 && (
-                                        <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                                    )}
-                                </div>
-                            )) : (
-                                <div className="text-[10px] font-medium text-white/40 italic">Chọn người để lộ diện phả hệ...</div>
-                            )}
+                    {/* Stats & Search Floating Bar */}
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/5 w-full justify-center">
+                        <div className="flex items-center gap-2 group/search shadow-sm rounded-lg shrink-0">
+                            <Search className="w-3.5 h-3.5 text-amber-500/40 group-focus-within/search:text-amber-500 transition-colors" />
+                            <Input
+                                placeholder="Truy tìm tiên tổ..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="h-7 w-40 bg-white/5 border-white/10 focus-visible:ring-amber-500/20 rounded-lg font-medium text-[10px] text-amber-50 placeholder:text-white/20 border-none outline-none"
+                            />
                         </div>
+                        <div className="px-3 py-1 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                            <span className="text-[9px] font-black text-amber-500/70 uppercase tracking-tighter">
+                                {stats.total} THÀNH VIÊN • {stats.gens} ĐỜI
+                            </span>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            {/* Ancestry Breadcrumbs - Floating Bottom Left */}
+            <div className="absolute bottom-6 left-6 z-[400] max-w-[320px]">
+                <div className="bg-[#1B0506]/90 backdrop-blur-md border border-amber-600/30 rounded-xl p-3 shadow-2xl flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-black uppercase text-amber-500/60 tracking-widest flex items-center gap-2">
+                            <Waypoints size={10} /> Phả Hệ Đang Xem
+                        </span>
+                        {(urlRootId || (defaultRootId && activeRootId !== defaultRootId)) && (
+                            <button onClick={() => window.location.href = '/tree'} className="text-[8px] text-amber-400 hover:text-amber-300 font-bold uppercase transition-colors">Về Thủy Tổ</button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {ancestryTrail.length > 0 ? ancestryTrail.map((m, idx) => (
+                            <React.Fragment key={m.id}>
+                                <button
+                                    onClick={() => window.location.href = `/tree?root=${m.id}`}
+                                    className={cn(
+                                        "text-[9px] px-2 py-0.5 rounded transition-all border font-bold uppercase tracking-tighter whitespace-nowrap",
+                                        m.id === (selected?.id || activeRootId)
+                                            ? "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+                                            : "bg-white/5 border-white/5 text-amber-50/40 hover:border-amber-500/40 hover:text-amber-400"
+                                    )}
+                                >
+                                    {m.full_name.split(' ').pop()}
+                                </button>
+                                {idx < ancestryTrail.length - 1 && <ChevronRight size={10} className="text-amber-500/20" />}
+                            </React.Fragment>
+                        )) : (
+                            <div className="text-[9px] text-white/20 italic">Chọn một nút để xem dòng tộc...</div>
+                        )}
                     </div>
                 </div>
-            </header>
+            </div>
 
-            <main className="flex-1 relative overflow-hidden bg-dot-pattern bg-[length:32px_32px] pt-4 sm:pt-6 z-0">
-                <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center"><p className="text-white opacity-50 text-sm">Đang tải biểu đồ...</p></div>}>
+            <main className="flex-1 relative overflow-hidden z-0">
+                {/* Subtle Background Ornament Pattern */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/black-paper.png')] mix-blend-overlay" />
+
+                {/* Vertical Timeline - Left Side Indicator */}
+                <div className="absolute top-0 left-4 bottom-0 w-12 z-20 flex flex-col items-center py-60 gap-40 pointer-events-none select-none">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(g => (
+                        <div key={g} className="flex flex-col items-center gap-3 group">
+                            <div className="text-[10px] font-black text-amber-600/30 rotate-180 [writing-mode:vertical-lr] tracking-[0.5em] transition-all duration-700">GEN 0{g}</div>
+                            <div className="w-[1px] h-32 bg-gradient-to-b from-transparent via-amber-600/20 to-transparent" />
+                        </div>
+                    ))}
+                </div>
+
+                <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center bg-[#1B0506]"><div className="w-12 h-12 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" /></div>}>
                     <ReactFlow
-                        colorMode="light" // Force light component rendering inside dark mode map
+                        colorMode="dark"
                         className="bg-transparent"
                         nodes={nodes}
                         edges={edges}
@@ -242,20 +258,21 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                         onPaneClick={() => setSelected(null)}
                         nodeTypes={nodeTypes}
                         fitView
-                        fitViewOptions={{ padding: 0.15 }}
+                        fitViewOptions={{ padding: 0.2 }}
                         minZoom={0.05}
-                        maxZoom={3}
+                        maxZoom={2}
                         proOptions={{ hideAttribution: true }}
                     >
-                        <Controls className="!bg-white !border-gray-200 shadow-xl rounded-xl overflow-hidden p-1 [&>button]:!bg-white hover:[&>button]:!bg-gray-50 [&>button]:!border-none [&>button]:!fill-slate-700" />
+                        <Controls className="!bg-[#1B0506]/80 !border-amber-600/30 shadow-2xl rounded-xl overflow-hidden p-1 [&>button]:!bg-transparent [&>button]:!border-none [&>button]:!fill-amber-500/50 hover:[&>button]:!fill-amber-400" />
                         <MiniMap
                             nodeColor={(n: Node) => {
                                 const m = (n.data as any)?.member
-                                return m?.gender === 'male' ? '#60a5fa' : m?.gender === 'female' ? '#f472b6' : '#cbd5e1'
+                                return m?.gender === 'male' ? '#3B82F6' : m?.gender === 'female' ? '#EC4899' : '#D97706'
                             }}
-                            className="!bg-white/90 !border-gray-200 rounded-xl shadow-xl overflow-hidden hidden sm:block"
-                            maskColor="rgba(255,255,255,0.7)"
+                            className="!bg-[#1B0506]/90 !border-amber-600/30 rounded-xl shadow-2xl overflow-hidden hidden md:block"
+                            maskColor="rgba(27, 5, 6, 0.8)"
                         />
+                        <Background color="#F59E0B" gap={40} size={1} variant={undefined as any} className="opacity-[0.03]" />
                     </ReactFlow>
                 </Suspense>
             </main>

@@ -8,9 +8,9 @@ export type PersonNode = Node<{
     isHighlighted: boolean
 }, 'person'>
 
-const NODE_HEIGHT = 160
-const H_GAP = 60
-const V_GAP = 100
+const NODE_HEIGHT = 80
+const H_GAP = 50
+const V_GAP = 80
 
 interface LayoutNode {
     member: Member
@@ -22,12 +22,11 @@ interface LayoutNode {
 }
 
 export function getNodeWidth(spousesCount: number) {
-    // 1 base member
+    // Every ProfileBlock is 180px wide
     const totalPeople = 1 + spousesCount
-    // Each person block is ~120px wide
-    // Plus 32px padding (16px left + 16px right)
-    // Plus 28px for each ring badge between people
-    return 32 + (totalPeople * 120) + (Math.max(0, totalPeople - 1) * 28)
+    // Each person block is 180px
+    // Spouses are separated by a tiny 4px divider
+    return (totalPeople * 180) + (Math.max(0, totalPeople - 1) * 8) + 12 // 12 for padding
 }
 
 /**
