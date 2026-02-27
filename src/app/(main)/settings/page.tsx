@@ -13,6 +13,8 @@ import { Loader2, UserCog } from 'lucide-react'
 
 export default function SettingsPage() {
     const [profile, setProfile] = useState<Profile | null>(null)
+    const [userEmail, setUserEmail] = useState<string>('')
+    const [userId, setUserId] = useState<string>('')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [form, setForm] = useState({ full_name: '', avatar_url: '' })
@@ -22,8 +24,15 @@ export default function SettingsPage() {
         const loadProfile = async () => {
             const sb = createClient()
             const { data } = await sb.auth.getUser()
-            if (!data.user) return
+            if (!data.user) {
+                setLoading(false)
+                return
+            }
+            setUserEmail(data.user.email || '')
+            setUserId(data.user.id)
+
             try {
+                // If single() fails (e.g., no row), it throws logic to catch or returns data as null
                 const { data: p } = await sb.from('profiles').select('*').eq('id', data.user.id).single()
                 if (p) {
                     setProfile(p as Profile)
@@ -32,6 +41,8 @@ export default function SettingsPage() {
                         avatar_url: p.avatar_url || ''
                     })
                 }
+            } catch (err) {
+                console.log("Profile not found or error:", err)
             } finally {
                 setLoading(false)
             }
@@ -40,13 +51,15 @@ export default function SettingsPage() {
     }, [])
 
     const handleSave = async () => {
-        if (!profile) return
+        if (!userId) return
         setSaving(true)
         const sb = createClient()
-        const { error } = await sb.from('profiles').update({
+        const { error } = await sb.from('profiles').upsert({
+            id: userId,
             full_name: form.full_name,
-            avatar_url: form.avatar_url
-        }).eq('id', profile.id)
+            avatar_url: form.avatar_url,
+            updated_at: new Date().toISOString()
+        })
 
         if (error) {
             toast.error('Lỗi khi lưu: ' + error.message)
@@ -65,7 +78,7 @@ export default function SettingsPage() {
         )
     }
 
-    if (!profile) return null
+    if (!userId) return null
 
     return (
         <div className="max-w-2xl mx-auto py-8">
@@ -90,7 +103,7 @@ export default function SettingsPage() {
 
                     <div className="space-y-2">
                         <Label>Email <span className="text-muted-foreground font-normal">(Chỉ đọc)</span></Label>
-                        <Input value={profile.email || ''} readOnly className="opacity-70 bg-muted/50" />
+                        <Input value={userEmail} readOnly className="opacity-70 bg-muted/50" />
                     </div>
 
                     <div className="space-y-2">
