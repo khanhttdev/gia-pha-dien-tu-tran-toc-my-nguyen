@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2026-02-27)
+
+### Features
+
+* **data:** perform global database seed for Tran Toc My Nguyen with over 260 members across 7 generations, 33 living male descendants (Sprint 9)
+* **ui:** upgrade Landing Page with Zolina font, new heritage content, and route pending users to landing page instead of home (Sprint 10)
+* **guide:** add comprehensive User Guide page and interlink from landing page (Sprint 10)
+
 ## 1.2.0 (2026-02-27)
 
 ### Features
