@@ -61,7 +61,7 @@ export default function MemberProfilePage() {
     // ── Family relationships ───────────────────────────────────────────────────
     const father = allMembers.find(m => m.id === member.father_id)
     const mother = allSpouses.find(s => s.id === member.mother_id)
-    const spouse = allSpouses.find(s => s.member_id === member.id)
+    const spouses = allSpouses.filter(s => s.member_id === member.id)
     const children = allMembers.filter(m => m.father_id === member.id)
     const siblings = allMembers.filter(m =>
         m.id !== member.id && m.father_id && m.father_id === member.father_id
@@ -217,23 +217,27 @@ export default function MemberProfilePage() {
                         )}
                     </div>
 
-                    {/* Spouse Card */}
+                    {/* Spouses Card */}
                     <div className="glass rounded-xl border border-border/50 p-5 space-y-3">
                         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                            <Heart className="w-3.5 h-3.5 text-rose-400" /> Phối Ngẫu
+                            <Heart className="w-3.5 h-3.5 text-rose-400" /> Phối Ngẫu ({spouses.length})
                         </h2>
-                        {spouse ? (
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-rose-400/10 border border-rose-400/30 flex items-center justify-center shrink-0">
-                                    <Heart className="w-4 h-4 text-rose-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium">{spouse.full_name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {roleLabel(spouse.role_type ?? '')} ·
-                                        {spouse.status === 'married' ? ' Đang kết hôn' : spouse.status === 'divorced' ? ' Đã ly hôn' : ' Đã mất'}
-                                    </p>
-                                </div>
+                        {spouses.length > 0 ? (
+                            <div className="flex flex-col gap-3">
+                                {spouses.map(sp => (
+                                    <div key={sp.id} className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-white/5 transition-colors">
+                                        <div className="w-9 h-9 rounded-lg bg-rose-400/10 border border-rose-400/30 flex items-center justify-center shrink-0">
+                                            <Heart className="w-4 h-4 text-rose-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">{sp.full_name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {roleLabel(sp.role_type ?? '')} ·
+                                                {sp.status === 'married' ? ' Đang kết hôn' : sp.status === 'divorced' ? ' Đã ly hôn' : ' Đã mất'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <p className="text-xs text-muted-foreground italic">Chưa có thông tin phối ngẫu</p>

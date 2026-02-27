@@ -61,7 +61,7 @@ export default function RegisterPage() {
                 <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]" />
 
                 <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center h-full w-full">
-                    <div className="w-24 h-24 mb-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl overflow-hidden p-1">
+                    <div className="w-24 h-24 mb-6 flex items-center justify-center p-1 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                         <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight tracking-tight font-serif">
@@ -95,7 +95,7 @@ export default function RegisterPage() {
 
                     {/* Mobile internal logo */}
                     <div className="lg:hidden text-center mb-8">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl gold-gradient flex items-center justify-center shadow-lg overflow-hidden p-1">
+                        <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center p-1">
                             <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
