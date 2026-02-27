@@ -54,12 +54,22 @@ export default function SettingsPage() {
         if (!userId) return
         setSaving(true)
         const sb = createClient()
-        const { error } = await sb.from('profiles').upsert({
+        // Prevent violating profiles_role_check constraint when upserting a new row.
+        const upsertData: any = {
             id: userId,
             full_name: form.full_name,
             avatar_url: form.avatar_url,
             updated_at: new Date().toISOString()
-        })
+        }
+
+        // If it's a completely new profile, we must provide the required fields like role
+        if (!profile) {
+            upsertData.role = 'member'
+            upsertData.email = userEmail
+            upsertData.is_active = false
+        }
+
+        const { error } = await sb.from('profiles').upsert(upsertData)
 
         if (error) {
             toast.error('Lỗi khi lưu: ' + error.message)
