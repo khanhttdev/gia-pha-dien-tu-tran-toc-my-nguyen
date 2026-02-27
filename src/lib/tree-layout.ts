@@ -8,9 +8,9 @@ export type PersonNode = Node<{
     isHighlighted: boolean
 }, 'person'>
 
-const NODE_WIDTH = 180
-const NODE_HEIGHT = 80
-const H_GAP = 60
+const NODE_WIDTH = 280 // Tăng chiều rộng để chứa 2 người (member + spouse)
+const NODE_HEIGHT = 120
+const H_GAP = 40      // Thu hẹp khoảng cách ngang một chút
 const V_GAP = 100
 
 interface LayoutNode {
@@ -84,8 +84,8 @@ export function buildTreeLayout(
                 id: `${m.father_id}->${m.id}`,
                 source: m.father_id,
                 target: m.id,
-                type: 'step',
-                style: { stroke: 'rgba(251, 191, 36, 0.4)', strokeWidth: 1.5 },
+                type: 'smoothstep', // Dùng smoothstep/step để tạo đường kẻ vuông góc
+                style: { stroke: 'rgba(214, 211, 209, 0.5)', strokeWidth: 2 }, // Màu xám nhạt Stone-300 (giống bản gốc) pha thêm độ mờ của kính
                 animated: false,
             })
         }

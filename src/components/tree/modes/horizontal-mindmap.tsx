@@ -1,7 +1,9 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import { Member, Spouse, MemberMetadata } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { ChevronRight, ChevronDown } from 'lucide-react'
+import { ChevronRight, ChevronDown, User, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 
@@ -29,20 +31,16 @@ function buildMindmapTree(displayMembers: Member[], spouses: Spouse[], rootId: s
     displayMembers.forEach(m => {
         const node = memberMap.get(m.id)!
         if (m.father_id && memberMap.has(m.father_id)) {
-            // Có cha trong danh sách hiển thị
             memberMap.get(m.father_id)!.children.push(node)
         } else {
-            // Không có cha = Rễ của cây con này
             roots.push(node)
         }
     })
 
-    // Sắp xếp các con theo đúng thứ tự (birth_order)
     memberMap.forEach(node => {
         node.children.sort((a, b) => (a.birth_order || 99) - (b.birth_order || 99))
     })
 
-    // Lọc lấy Root từ người khởi tạo thay vì chùm roots rải rác nếu được cấp rootId
     if (rootId && memberMap.has(rootId)) {
         return [memberMap.get(rootId)!]
     }
@@ -50,7 +48,7 @@ function buildMindmapTree(displayMembers: Member[], spouses: Spouse[], rootId: s
     return roots
 }
 
-// 2. Component Hiện 1 Nút trên Cây ngang (Mindmap Node) đệ quy
+// 2. Component Node Đơn lẻ (Gia Phả OS Style)
 function MindmapNode({
     node,
     depth = 0,
@@ -64,98 +62,100 @@ function MindmapNode({
     selectedId: string | null,
     onSelect: (m: Member) => void
 }) {
-    // Mặc định cây sẽ mở ra 2 đời, đời 3 trở đi đóng lại cho gọn
     const [isExpanded, setIsExpanded] = useState(depth < 2)
     const hasChildren = node.children.length > 0
     const meta = (node.metadata as MemberMetadata) || {}
     const isSelected = selectedId === node.id
 
     return (
-        <div className="relative flex flex-col items-start mt-2">
-            <div className="flex items-center group relative z-10 w-max pr-8">
+        <div className="flex flex-col w-full">
+            {/* ROW: Chứa thông tin thành viên */}
+            <div className="relative flex items-center h-12 group/row">
 
-                {/* Nút bấm +/- nếu có con cháu */}
-                {hasChildren ? (
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className={cn(
-                            "absolute -left-3 z-20 w-5 h-5 rounded flex items-center justify-center text-[10px] sm:text-xs transition-colors shadow-sm",
-                            isExpanded ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20" : "bg-muted text-muted-foreground hover:bg-accent"
-                        )}
-                    >
-                        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    </button>
-                ) : (
-                    // Dấu tròn điểm mù nếu hết đời
-                    <div className="absolute -left-1.5 z-20 w-2 h-2 rounded-full bg-border" />
+                {/* CONNECTORS: Đường kẻ chữ L */}
+                {depth > 0 && (
+                    <>
+                        {/* Đường dọc từ trên xuống (chỉ hiện nếu không phải Root) */}
+                        <div className={cn(
+                            "absolute left-[-24px] top-[-24px] w-px bg-border group-hover/row:bg-amber-500/50 transition-colors",
+                            isLast ? "h-[48px]" : "h-[72px]"
+                        )} />
+                        {/* Đường ngang nối vào Node */}
+                        <div className="absolute left-[-24px] top-1/2 w-4 h-px bg-border group-hover/row:bg-amber-500/50 transition-colors" />
+                    </>
                 )}
 
-                {/* Khối Thông tin Thành viên chính */}
+                {/* THẺ THÀNH VIÊN: Tối giản, Gọn gàng */}
                 <div
                     onClick={() => onSelect(node)}
                     className={cn(
-                        "ml-4 pl-2 pr-4 py-2 flex items-center gap-3 rounded-xl border transition-all cursor-pointer shadow-sm min-w-48 sm:min-w-56",
+                        "flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-xl border transition-all cursor-pointer select-none",
                         isSelected
-                            ? "bg-amber-500/10 border-amber-500/40 ring-2 ring-amber-500/20"
-                            : "bg-card border-border hover:border-amber-500/30 hover:bg-accent/40"
+                            ? "bg-amber-500/10 border-amber-500 shadow-sm"
+                            : "bg-background border-transparent hover:bg-muted/50 hover:border-border/60"
                     )}
                 >
+                    {/* Giới tính Icon */}
                     <div className={cn(
-                        'w-8 h-8 rounded-lg flex items-center justify-center text-sm border shrink-0',
-                        node.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' :
-                            node.gender === 'female' ? 'bg-rose-400/10 border-rose-400/30' : 'bg-muted border-border'
+                        "w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 border",
+                        node.gender === 'male' ? "bg-blue-500/10 border-blue-200 text-blue-600" :
+                            node.gender === 'female' ? "bg-rose-500/10 border-rose-200 text-rose-600" : "bg-muted border-border"
                     )}>
-                        {node.gender === 'male' ? '👨' : node.gender === 'female' ? '👩' : '👤'}
+                        {node.gender === 'male' ? '♂' : node.gender === 'female' ? '♀' : '?'}
                     </div>
 
-                    <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center gap-1.5">
-                            <h4 className="font-semibold text-sm truncate">{node.full_name}</h4>
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-normal shrink-0">Đ.{node.generation_level}</Badge>
+                    {/* Tên & Đời */}
+                    <div className="flex items-center gap-2">
+                        <span className={cn(
+                            "text-sm font-black whitespace-nowrap tracking-tight",
+                            isSelected ? "text-amber-600" : "text-foreground"
+                        )}>
+                            {node.full_name}
+                        </span>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40">
+                            Đ.{node.generation_level}
+                        </span>
+                    </div>
+
+                    {/* Vợ/Chồng Badge (Mini) */}
+                    {node.spouses.length > 0 && (
+                        <div className="flex bg-rose-500/5 items-center gap-1.5 px-2 py-0.5 rounded-full border border-rose-200/50">
+                            <Heart className="w-2.5 h-2.5 text-rose-400 fill-rose-400/20" />
+                            <span className="text-[10px] font-bold text-rose-600/80 max-w-[80px] truncate">
+                                {node.spouses[0].full_name}
+                                {node.spouses.length > 1 && ` +${node.spouses.length - 1}`}
+                            </span>
                         </div>
-                        <div className="flex text-[10px] text-muted-foreground gap-1.5 mt-0.5">
-                            {meta.birth_year ? <span>{meta.birth_year}</span> : <span>Chưa rõ</span>}
-                            <span>-</span>
-                            {meta.is_alive !== false ? (
-                                <span className="text-green-600 font-medium">Đang sống</span>
-                            ) : (
-                                <span>{meta.death_year || 'Đã mất'}</span>
+                    )}
+
+                    {/* Nút Đóng/Mở (Gia Phả OS Style) */}
+                    {hasChildren && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setIsExpanded(!isExpanded)
+                            }}
+                            className={cn(
+                                "ml-2 p-1 rounded-md hover:bg-muted transition-colors",
+                                isExpanded ? "text-amber-600" : "text-muted-foreground"
                             )}
-                        </div>
-                    </div>
+                        >
+                            {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </button>
+                    )}
                 </div>
-
-                {/* Render List Spouses Nằm kế bên nếu tồn tại (Icon thu nhỏ) */}
-                {node.spouses.length > 0 && (
-                    <div className="ml-3 flex gap-2">
-                        {node.spouses.map(s => {
-                            const smeta = (s.metadata as MemberMetadata) || {}
-                            return (
-                                <div key={s.id}
-                                    title={`Phối ngẫu: ${s.full_name} ${smeta.birth_year ? `(${smeta.birth_year})` : ''}`}
-                                    className="flex items-center gap-1.5 px-2 py-1.5 bg-secondary/60 border border-border/60 rounded-lg text-xs hover:bg-secondary cursor-help transition-colors shadow-sm"
-                                >
-                                    <span className="text-rose-400">💍</span>
-                                    <span className="font-medium whitespace-nowrap max-w-24 truncate">{s.full_name}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
             </div>
 
-            {/* Các nhánh con - Bọc trong AnimatePresence cho mượt */}
+            {/* CHILDREN: Thụt lề và render đệ quy */}
             <AnimatePresence initial={false}>
                 {hasChildren && isExpanded && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden ml-8 pt-2 relative border-l-2 border-border/40 pl-6 w-full"
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="pl-12 overflow-hidden flex flex-col"
                     >
-                        {/* Đường nối rễ từ Cha sang Con (Nằm chìm) */}
-                        <div className="absolute top-0 bottom-6 left-0 w-4 border-b-2 gap-y border-border/40 rounded-bl-xl pointer-events-none" />
-
                         {node.children.map((child, idx) => (
                             <MindmapNode
                                 key={child.id}
@@ -173,7 +173,7 @@ function MindmapNode({
     )
 }
 
-// 3. Container Bọc Ngoài Cây Mindmap
+// 3. Container Bọc Ngoài (Gia Phả OS Style)
 export function HorizontalMindmap({
     members,
     spouses,
@@ -191,15 +191,15 @@ export function HorizontalMindmap({
 
     if (trees.length === 0) {
         return (
-            <div className="w-full h-full flex items-center justify-center p-8 text-muted-foreground text-sm">
-                Không có dữ liệu thuộc nhánh cây này.
+            <div className="w-full h-full flex items-center justify-center p-8 text-muted-foreground text-sm font-bold uppercase tracking-widest opacity-40">
+                Không tìm thấy dữ liệu cây
             </div>
         )
     }
 
     return (
-        <div className="absolute inset-0 overflow-auto cursor-grab active:cursor-grabbing p-6 sm:p-12 no-scrollbar bg-dot-pattern bg-[length:24px_24px]">
-            <div className="min-w-max pb-32">
+        <div className="w-full h-full p-8 md:p-16 overflow-auto bg-background selection:bg-amber-500/20">
+            <div className="max-w-4xl">
                 {trees.map((tree, i) => (
                     <div key={tree.id} className={cn(i > 0 && "mt-12")}>
                         <MindmapNode
@@ -211,6 +211,8 @@ export function HorizontalMindmap({
                     </div>
                 ))}
             </div>
+            {/* Safe space at bottom */}
+            <div className="h-64 w-full" />
         </div>
     )
 }
