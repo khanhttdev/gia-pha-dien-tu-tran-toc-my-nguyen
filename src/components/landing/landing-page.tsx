@@ -292,8 +292,8 @@ export function LandingPage({ authState = 'unauthenticated' }: { authState?: 'un
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                         <AnimatedCounter target="7+" label="Thế hệ" />
-                        <AnimatedCounter target="260+" label="Thành viên" />
-                        <AnimatedCounter target="100+" label="Năm lịch sử" />
+                        <AnimatedCounter target="1300+" label="Thành viên" />
+                        <AnimatedCounter target="200+" label="Năm lịch sử" />
                     </div>
                 </div>
             </section>
