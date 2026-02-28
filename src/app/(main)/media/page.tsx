@@ -23,6 +23,7 @@ import { Media } from "@/lib/types";
 import Image from "next/image";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { deleteMedia } from "@/lib/admin-actions";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const EMPTY_FORM = {
   title: "",
@@ -42,6 +43,9 @@ export default function MediaPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<Media | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [mediaToDelete, setMediaToDelete] = useState<Media | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const sb = createClient();
 
   const load = async () => {
@@ -108,15 +112,24 @@ export default function MediaPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (m: Media) => {
-    if (!confirm(`Xoá "${m.title}"?`)) return;
-    const res = await deleteMedia(m.id);
+  const handleDelete = (m: Media) => {
+    setMediaToDelete(m);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!mediaToDelete) return;
+    setDeleting(true);
+    const res = await deleteMedia(mediaToDelete.id);
     if (res.error) {
       toast.error("Lỗi khi xoá: " + res.error);
     } else {
-      toast.success("Đã xoá");
+      toast.success("Đã xoá thành công");
       await load();
+      setDeleteConfirmOpen(false);
+      setMediaToDelete(null);
     }
+    setDeleting(false);
   };
 
   const images = filtered.filter((m) => m.type === "image");
@@ -333,6 +346,18 @@ export default function MediaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Xác nhận xóa"
+        description={`Bạn có chắc chắn muốn xóa "${mediaToDelete?.title}" khỏi thư viện?`}
+        variant="destructive"
+        confirmText="Xóa vĩnh viễn"
+        cancelText="Hủy"
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

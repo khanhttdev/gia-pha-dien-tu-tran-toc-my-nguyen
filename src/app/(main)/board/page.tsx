@@ -23,6 +23,7 @@ import { CommentSection } from "@/components/board/comment-section";
 import type { BoardFeedItem } from "@/lib/types";
 import { ImageUpload } from "@/components/ui/image-upload";
 import Image from "next/image";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 // Helper to safely extract media URL
 const getFeedMediaUrl = (proposed_data: any) => {
@@ -61,6 +62,10 @@ export default function BoardPage() {
   const [expandedComments, setExpandedComments] = useState<
     Record<string, boolean>
   >({});
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [postIdToDelete, setPostIdToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const toggleComments = (id: string) => {
     setExpandedComments((prev) => ({
@@ -113,15 +118,24 @@ export default function BoardPage() {
     loadFeed(true);
   }, []);
 
-  const handleDeletePost = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) return;
-    const res = await deleteContribution(id);
+  const handleDeletePost = (id: string) => {
+    setPostIdToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postIdToDelete) return;
+    setDeleting(true);
+    const res = await deleteContribution(postIdToDelete);
     if (res.error) {
       toast.error(res.error);
     } else {
-      toast.success("Đã xóa bài đăng");
+      toast.success("Đã xóa bài đăng thành công");
       await loadFeed(true);
+      setDeleteConfirmOpen(false);
+      setPostIdToDelete(null);
     }
+    setDeleting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -473,6 +487,18 @@ export default function BoardPage() {
           </div>
         )}
       </div>
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Xác nhận xóa bài đăng"
+        description="Bạn có chắc chắn muốn xóa bài đăng này? Mọi bình luận liên quan cũng sẽ bị gỡ bỏ."
+        variant="destructive"
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy"
+        loading={deleting}
+        onConfirm={confirmDeletePost}
+      />
     </div>
   );
 }
