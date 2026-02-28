@@ -37,4 +37,4 @@ Gia phả sử dụng 2 bảng chính:
 
 ## Lời chào mở đầu
 Khi user bắt đầu chat, hãy chào: "Xin chào! Mei là trợ lý AI của Gia Phả Trần Tộc Mỹ Nguyên 🌸 Bạn muốn hỏi gì về dòng họ nhà mình nào? 😊"
-`
+`;

@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-
-
 /* ============================================================
    GIA PHẢ ĐIỆN TỬ — DESIGN SYSTEM
    Tông màu: Ấm áp + Quý phái + Hiện đại
@@ -10,8 +8,8 @@
    ============================================================ */
 
 @font-face {
-  font-family: 'Zolina';
-  src: url('/fonts/zolina/ZolinaVariableGX.ttf') format('truetype');
+  font-family: "Zolina";
+  src: url("/fonts/zolina/ZolinaVariableGX.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -112,8 +110,10 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: var(--font-inter), "Inter", "Be Vietnam Pro", system-ui, sans-serif;
-  --font-serif: "Zolina", var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans:
+    var(--font-inter), "Inter", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-serif:
+    "Zolina", var(--font-playfair), "Playfair Display", Georgia, serif;
 }
 
 /* ============================================================
@@ -127,9 +127,21 @@
 body {
   background-color: hsl(var(--background));
   background-image:
-    radial-gradient(ellipse at 20% 50%, hsl(351 69% 15% / 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, hsl(40 100% 66% / 0.03) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 100%, hsl(351 69% 8% / 0.6) 0%, transparent 50%),
+    radial-gradient(
+      ellipse at 20% 50%,
+      hsl(351 69% 15% / 0.4) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 20%,
+      hsl(40 100% 66% / 0.03) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 50% 100%,
+      hsl(351 69% 8% / 0.6) 0%,
+      transparent 50%
+    ),
     url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   background-attachment: fixed;
   color: hsl(var(--foreground));
@@ -249,7 +261,9 @@ h6,
 .reveal-section {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 
 .reveal-section.animate-in {
@@ -259,7 +273,8 @@ h6,
 
 /* Scroll indicator dot */
 @keyframes scroll-dot {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
     opacity: 1;
   }
@@ -279,7 +294,8 @@ h6,
 }
 
 @keyframes logo-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

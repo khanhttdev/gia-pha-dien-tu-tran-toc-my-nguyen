@@ -1,0 +1,12 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm start",
+      "url": ["http://localhost:3000/home"],
+      "numberOfRuns": 1
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
