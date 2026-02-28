@@ -76,7 +76,7 @@ export async function submitContribution(formData: FormData) {
     author_id: user.id,
     content: content.trim() || "Có đính kèm hình ảnh.",
     type: type,
-    status: "pending",
+    status: "approved",
     proposed_data: proposed_data,
   });
 
