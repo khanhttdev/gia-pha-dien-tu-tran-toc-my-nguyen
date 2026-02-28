@@ -40,7 +40,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
     const [selected, setSelected] = useState<Member | null>(null)
     const [isPanelOpen, setIsPanelOpen] = useState(false)
     const [search, setSearch] = useState('')
-    const [nodeLimit, setNodeLimit] = useState(82)
+    const [nodeLimit, setNodeLimit] = useState(15)
 
     const searchParams = useSearchParams()
     const focusId = searchParams.get('focus')
@@ -174,6 +174,13 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         }
     }, [displayMembers])
 
+    // Infinite Scroll handler - Tự động tải thêm khi cuộn chuột
+    const handleMoveEnd = useCallback(() => {
+        if (hasMore) {
+            setNodeLimit(prev => Math.min(prev + 15, totalInTree))
+        }
+    }, [hasMore, totalInTree])
+
     const stats = useMemo(() => ({
         total: totalInTree,
         gens: displayMembers.length > 0 ? new Set(displayMembers.map(m => m.generation_level)).size : 0,
@@ -226,12 +233,9 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                             </span>
                         </div>
                         {hasMore && (
-                            <Button
-                                onClick={() => setNodeLimit(l => l + 50)}
-                                className="h-7 px-3 text-[9px] font-black tracking-widest uppercase bg-amber-500 text-[#1B0506] hover:bg-amber-400 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all"
-                            >
-                                Gánh thêm (+50)
-                            </Button>
+                            <div className="text-[9px] text-amber-500/50 animate-pulse uppercase tracking-wider font-bold">
+                                Cuộn để tải thêm...
+                            </div>
                         )}
                     </div>
                 </header>
@@ -295,6 +299,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                         onEdgesChange={onEdgesChange}
                         onNodeClick={onNodeClick}
                         onPaneClick={() => setSelected(null)}
+                        onMoveEnd={handleMoveEnd}
                         nodeTypes={nodeTypes}
                         fitView
                         fitViewOptions={{ padding: 0.2 }}
