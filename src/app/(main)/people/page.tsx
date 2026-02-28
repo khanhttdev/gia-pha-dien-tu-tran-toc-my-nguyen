@@ -125,7 +125,7 @@ export default function PeoplePage() {
     sb.auth.getUser().then(({ data }) => {
       if (!data.user) return;
       sb.from("profiles")
-        .select("*")
+        .select("role")
         .eq("id", data.user.id)
         .single()
         .then(({ data: p }) => {
@@ -138,13 +138,13 @@ export default function PeoplePage() {
     tab === "members"
       ? query.trim()
         ? members.filter((m) =>
-            m.full_name.toLowerCase().includes(query.toLowerCase()),
-          )
+          m.full_name.toLowerCase().includes(query.toLowerCase()),
+        )
         : members
       : query.trim()
         ? spouses.filter((s) =>
-            s.full_name.toLowerCase().includes(query.toLowerCase()),
-          )
+          s.full_name.toLowerCase().includes(query.toLowerCase()),
+        )
         : spouses;
 
   // Member CRUD

@@ -44,7 +44,7 @@ export default function MediaPage() {
     setLoading(true);
     const { data } = await sb
       .from("media")
-      .select("*")
+      .select("id, title, description, url, type, year, created_at, person_ids, uploaded_by")
       .order("created_at", { ascending: false });
     setMedia(data ?? []);
     setFiltered(data ?? []);
@@ -58,7 +58,7 @@ export default function MediaPage() {
     sb.auth.getUser().then(({ data }: any) => {
       if (!data.user) return;
       sb.from("profiles")
-        .select("*")
+        .select("role")
         .eq("id", data.user.id)
         .single()
         .then(({ data: p }: any) => setIsAdmin(p?.role === "admin"));

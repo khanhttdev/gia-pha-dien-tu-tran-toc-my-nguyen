@@ -20,13 +20,13 @@ export default async function MainLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, full_name, avatar_url, role")
     .eq("id", user.id)
     .single();
 
   return (
     <div className="flex h-screen overflow-hidden bg-transparent">
-      <Sidebar profile={profile} />
+      <Sidebar profile={profile as any} />
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0 flex flex-col">
         <div className="page-enter flex-1 h-full min-h-0">{children}</div>
       </main>

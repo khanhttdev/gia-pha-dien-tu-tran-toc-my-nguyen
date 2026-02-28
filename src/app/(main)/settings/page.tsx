@@ -35,7 +35,7 @@ export default function SettingsPage() {
         // If single() fails (e.g., no row), it throws logic to catch or returns data as null
         const { data: p } = await sb
           .from("profiles")
-          .select("*")
+          .select("id, full_name, avatar_url, role")
           .eq("id", data.user.id)
           .single();
         if (p) {
