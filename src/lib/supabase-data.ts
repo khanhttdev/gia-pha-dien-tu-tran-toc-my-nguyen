@@ -14,7 +14,7 @@ const db = () => createClient();
 export async function getAllMembers(): Promise<Member[]> {
   const { data, error } = await db()
     .from("members")
-    .select("*")
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .order("generation_level", { ascending: true })
     .order("birth_order", { ascending: true });
 
@@ -23,14 +23,14 @@ export async function getAllMembers(): Promise<Member[]> {
 }
 
 export async function getMemberById(id: string): Promise<Member | null> {
-  const { data } = await db().from("members").select("*").eq("id", id).single();
+  const { data } = await db().from("members").select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata").eq("id", id).single();
   return data as Member | null;
 }
 
 export async function searchMembers(query: string): Promise<Member[]> {
   const { data, error } = await db()
     .from("members")
-    .select("*")
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .ilike("full_name", `%${query}%`)
     .limit(20);
   if (error) throw error;
@@ -70,7 +70,7 @@ export async function deleteMember(id: string): Promise<void> {
 export async function getAllSpouses(): Promise<Spouse[]> {
   const { data, error } = await db()
     .from("spouses")
-    .select("*")
+    .select("id, full_name, member_id, role_type, status, metadata")
     .order("created_at", { ascending: true });
 
   if (error) throw error;
@@ -82,7 +82,7 @@ export async function getSpousesByMemberId(
 ): Promise<Spouse[]> {
   const { data, error } = await db()
     .from("spouses")
-    .select("*")
+    .select("id, full_name, member_id, role_type, status, metadata")
     .eq("member_id", memberId)
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -121,7 +121,7 @@ export async function deleteSpouse(id: string): Promise<void> {
 export async function searchSpouses(query: string): Promise<Spouse[]> {
   const { data, error } = await db()
     .from("spouses")
-    .select("*")
+    .select("id, full_name, member_id, role_type, status, metadata")
     .ilike("full_name", `%${query}%`)
     .limit(20);
   if (error) throw error;

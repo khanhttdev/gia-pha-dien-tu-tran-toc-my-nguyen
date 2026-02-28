@@ -87,7 +87,7 @@ async function getAllMembers(): Promise<Member[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("members")
-    .select("*")
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .order("generation_level", { ascending: true })
     .order("birth_order", { ascending: true });
 
@@ -99,7 +99,7 @@ async function searchMember(query: string): Promise<Member[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("members")
-    .select("*")
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .ilike("full_name", `%${query}%`)
     .limit(20);
 
@@ -111,7 +111,7 @@ async function getMemberById(id: string): Promise<Member | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("members")
-    .select("*")
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .eq("id", id)
     .single();
 
@@ -250,8 +250,8 @@ async function findRelationship(
 ): Promise<RelationshipResult> {
   const supabase = await createClient();
   const [membersRes, spousesRes] = await Promise.all([
-    supabase.from("members").select("*"),
-    supabase.from("spouses").select("*"),
+    supabase.from("members").select("id, full_name, gender, generation_level, father_id"),
+    supabase.from("spouses").select("id, full_name, member_id, role_type"),
   ]);
 
   const members = membersRes.data || [];
