@@ -40,6 +40,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
     const [selected, setSelected] = useState<Member | null>(null)
     const [isPanelOpen, setIsPanelOpen] = useState(false)
     const [search, setSearch] = useState('')
+    const [nodeLimit, setNodeLimit] = useState(82)
 
     const searchParams = useSearchParams()
     const focusId = searchParams.get('focus')
@@ -74,8 +75,9 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         return trail
     }, [members, activeRootId, selected])
 
-    const displayMembers = useMemo(() => {
-        if (!activeRootId) return members
+    const { displayMembers, hasMore, totalInTree } = useMemo(() => {
+        if (!activeRootId) return { displayMembers: members, hasMore: false, totalInTree: members.length }
+        
         const childrenMap = new Map<string, string[]>()
         members.forEach(m => {
             if (m.father_id) {
@@ -83,17 +85,44 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                 childrenMap.get(m.father_id)!.push(m.id)
             }
         })
-        const result = new Set<string>()
+        
+        const orderedNodes: string[] = []
+        const visited = new Set<string>()
         const queue = [activeRootId]
+        
         while (queue.length > 0) {
             const curr = queue.shift()!
-            if (result.has(curr)) continue
-            result.add(curr)
+            if (visited.has(curr)) continue
+            visited.add(curr)
+            orderedNodes.push(curr)
             const children = childrenMap.get(curr) || []
             queue.push(...children)
         }
-        return members.filter(m => result.has(m.id))
-    }, [members, activeRootId])
+        
+        let effectiveLimit = nodeLimit
+        
+        if (focusId && visited.has(focusId)) {
+            const idx = orderedNodes.indexOf(focusId)
+            if (idx >= effectiveLimit) effectiveLimit = idx + 1
+        }
+        
+        if (search.trim()) {
+            const q = search.toLowerCase()
+            const matches = members.filter(m => visited.has(m.id) && m.full_name.toLowerCase().includes(q))
+            if (matches.length > 0) {
+                const maxIdx = Math.max(...matches.map(m => orderedNodes.indexOf(m.id)))
+                if (maxIdx >= effectiveLimit) effectiveLimit = maxIdx + 1
+            }
+        }
+
+        const resultIds = new Set(orderedNodes.slice(0, effectiveLimit))
+        
+        return {
+            displayMembers: members.filter(m => resultIds.has(m.id)),
+            hasMore: effectiveLimit < orderedNodes.length,
+            totalInTree: orderedNodes.length
+        }
+    }, [members, activeRootId, nodeLimit, focusId, search])
 
     useEffect(() => {
         if (!focusId) return
@@ -101,15 +130,17 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         if (m) setSelected(m)
     }, [focusId, displayMembers])
 
-    const rawNodes = useRef<Node[]>([])
-    useEffect(() => { rawNodes.current = nodes }, [nodes])
-
+    const prevRootId = useRef<string | null>(null)
     useEffect(() => {
         const { nodes: n, edges: e } = buildTreeLayout(displayMembers, spouses)
         setNodes(n)
         setEdges(e)
-        setTimeout(() => fitView({ padding: 0.15 }), 300)
-    }, [displayMembers, spouses, setNodes, setEdges, fitView])
+        
+        if (prevRootId.current !== activeRootId) {
+            prevRootId.current = activeRootId
+            setTimeout(() => fitView({ padding: 0.2 }), 300)
+        }
+    }, [displayMembers, spouses, setNodes, setEdges, activeRootId, fitView])
 
     const filtered = useMemo(() => {
         if (!search.trim()) return new Set<string>()
@@ -125,14 +156,14 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                 isHighlighted: (filtered.size > 0 && filtered.has(n.id)) || n.id === focusId,
             },
         })))
-        if (filtered.size === 1 || focusId) {
+        if ((filtered.size === 1 || focusId) && (search.trim() || focusId)) {
             const idToFocus = focusId || Array.from(filtered)[0]
-            const node = rawNodes.current.find(n => n.id === idToFocus)
+            const node = rawNodes.current?.find(n => n.id === idToFocus) || nodes.find(n => n.id === idToFocus)
             if (node) {
                 setTimeout(() => setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1.2, duration: 600 }), 100)
             }
         }
-    }, [search, focusId, setNodes, setCenter])
+    }, [search, focusId, setNodes, setCenter, filtered, nodes])
 
     const onNodeClick: NodeMouseHandler<Node> = useCallback((_evt, node) => {
         const m = displayMembers.find(x => x.id === node.id)
@@ -143,10 +174,9 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
     }, [displayMembers])
 
     const stats = useMemo(() => ({
-        total: displayMembers.length,
-        alive: displayMembers.filter(m => (m.metadata as MemberMetadata)?.is_alive !== false).length,
-        gens: new Set(displayMembers.map(m => m.generation_level)).size,
-    }), [displayMembers])
+        total: totalInTree,
+        gens: displayMembers.length > 0 ? new Set(displayMembers.map(m => m.generation_level)).size : 0,
+    }), [totalInTree, displayMembers])
 
     return (
         <div className="flex flex-col w-full h-full bg-[#1B0506] overflow-hidden relative font-serif">
@@ -191,9 +221,17 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                         </div>
                         <div className="px-3 py-1 bg-amber-500/5 rounded-lg border border-amber-500/20">
                             <span className="text-[9px] font-black text-amber-500/70 uppercase tracking-tighter">
-                                {stats.total} THÀNH VIÊN • {stats.gens} ĐỜI
+                                {displayMembers.length} / {stats.total} THÀNH VIÊN
                             </span>
                         </div>
+                        {hasMore && (
+                            <Button 
+                                onClick={() => setNodeLimit(l => l + 50)}
+                                className="h-7 px-3 text-[9px] font-black tracking-widest uppercase bg-amber-500 text-[#1B0506] hover:bg-amber-400 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all"
+                            >
+                                Gánh thêm (+50)
+                            </Button>
+                        )}
                     </div>
                 </header>
             </div>
