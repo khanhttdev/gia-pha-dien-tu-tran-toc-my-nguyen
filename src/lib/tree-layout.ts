@@ -18,6 +18,7 @@ interface LayoutNode {
     x: number
     y: number
     width: number
+    subtreeWidth: number
     children: string[]
 }
 
@@ -57,47 +58,67 @@ export function buildTreeLayout(
         }
     })
 
-    // Group by generation_level
-    const byGen = new Map<number, Member[]>()
-    members.forEach(m => {
-        const gen = m.generation_level ?? 1
-        if (!byGen.has(gen)) byGen.set(gen, [])
-        byGen.get(gen)!.push(m)
-    })
-
-    const sortedGens = Array.from(byGen.keys()).sort((a, b) => a - b)
     const layoutMap = new Map<string, LayoutNode>()
 
-    // Position nodes row by row
-    sortedGens.forEach((gen, rowIdx) => {
-        const genMembers = byGen.get(gen)!.sort((a, b) => (a.birth_order ?? 0) - (b.birth_order ?? 0))
+    // Determine min generation for Y offset
+    const minGen = Math.min(...members.map(m => m.generation_level ?? 1))
 
-        let totalWidth = 0;
-        const memberWidths = genMembers.map(m => {
-            const spCount = spouseByMember.get(m.id)?.length || 0;
-            const width = getNodeWidth(spCount);
-            totalWidth += width;
-            return width;
-        });
-
-        // Add gaps between members
-        totalWidth += (genMembers.length - 1) * H_GAP
-
-        const startX = -totalWidth / 2
-        let currentX = startX;
-
-        genMembers.forEach((m, colIdx) => {
-            const w = memberWidths[colIdx];
-            layoutMap.set(m.id, {
-                member: m,
-                spouses: spouseByMember.get(m.id) || [],
-                x: currentX + w / 2, // Centered X
-                y: rowIdx * (NODE_HEIGHT + V_GAP),
-                width: w,
-                children: childrenMap.get(m.id) ?? [],
-            })
-            currentX += w + H_GAP;
+    // Initialize layout nodes
+    members.forEach(m => {
+        const spCount = spouseByMember.get(m.id)?.length || 0;
+        layoutMap.set(m.id, {
+            member: m,
+            spouses: spouseByMember.get(m.id) || [],
+            x: 0,
+            y: ((m.generation_level ?? 1) - minGen) * (NODE_HEIGHT + V_GAP),
+            width: getNodeWidth(spCount),
+            subtreeWidth: 0,
+            children: childrenMap.get(m.id) ?? []
         })
+    })
+
+    // Calculate subtree widths (bottom-up)
+    // Sort by generation descending to ensure children are processed before parents
+    const sortedDesc = [...members].sort((a, b) => (b.generation_level ?? 0) - (a.generation_level ?? 0))
+
+    sortedDesc.forEach(m => {
+        const node = layoutMap.get(m.id)!
+        if (node.children.length === 0) {
+            node.subtreeWidth = node.width
+        } else {
+            const childrenNodes = node.children.map(cid => layoutMap.get(cid)).filter(Boolean) as LayoutNode[]
+            const totalChildrenWidth = childrenNodes.reduce((sum, n) => sum + n.subtreeWidth, 0) + Math.max(0, childrenNodes.length - 1) * H_GAP
+            // Subtree is at least as wide as the node itself
+            node.subtreeWidth = Math.max(node.width, totalChildrenWidth)
+        }
+    })
+
+    // Calculate X positions (top-down)
+    const roots = members.filter(m => !m.father_id || !map.has(m.father_id))
+
+    let currentRootX = 0
+
+    function calculatePositions(node: LayoutNode, centerX: number) {
+        node.x = centerX
+
+        if (node.children.length > 0) {
+            const childrenNodes = node.children.map(cid => layoutMap.get(cid)).filter(Boolean) as LayoutNode[]
+            const totalChildrenWidth = childrenNodes.reduce((sum, n) => sum + n.subtreeWidth, 0) + Math.max(0, childrenNodes.length - 1) * H_GAP
+
+            let currentChildX = centerX - totalChildrenWidth / 2
+
+            childrenNodes.forEach(child => {
+                const childCenterX = currentChildX + child.subtreeWidth / 2
+                calculatePositions(child, childCenterX)
+                currentChildX += child.subtreeWidth + H_GAP
+            })
+        }
+    }
+
+    roots.forEach(r => {
+        const rootNode = layoutMap.get(r.id)!
+        calculatePositions(rootNode, currentRootX + rootNode.subtreeWidth / 2)
+        currentRootX += rootNode.subtreeWidth + H_GAP * 2 // Add extra gap between different root families
     })
 
     // Build edges from father_id
@@ -107,7 +128,7 @@ export function buildTreeLayout(
                 id: `${m.father_id}->${m.id}`,
                 source: m.father_id,
                 target: m.id,
-                type: 'step', // Đường kẻ vuông góc 90 độ
+                type: 'smoothstep', // Dùng smoothstep cho mượt mà, không bị gắt
                 style: { stroke: '#F59E0B', strokeWidth: 2.5, opacity: 0.85 }, // Vàng Amber rực rỡ Heritage
                 animated: false,
             })
