@@ -22,6 +22,7 @@ import { ImageIcon, Plus, Loader2, Trash2, Search, X, Play, Clock } from "lucide
 import { Media } from "@/lib/types";
 import Image from "next/image";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { deleteMedia } from "@/lib/admin-actions";
 
 const EMPTY_FORM = {
   title: "",
@@ -109,9 +110,13 @@ export default function MediaPage() {
 
   const handleDelete = async (m: Media) => {
     if (!confirm(`Xoá "${m.title}"?`)) return;
-    await sb.from("media").delete().eq("id", m.id);
-    toast.success("Đã xoá");
-    await load();
+    const res = await deleteMedia(m.id);
+    if (res.error) {
+      toast.error("Lỗi khi xoá: " + res.error);
+    } else {
+      toast.success("Đã xoá");
+      await load();
+    }
   };
 
   const images = filtered.filter((m) => m.type === "image");

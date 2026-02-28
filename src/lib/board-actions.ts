@@ -188,6 +188,9 @@ export async function deleteContribution(id: string) {
     return { error: "Bạn không có quyền thực hiện hành động này" };
   }
 
+  // Xóa các bình luận liên quan trước để tránh lỗi khóa ngoại (nếu không có cascade)
+  await supabase.from("comments").delete().eq("contribution_id", id);
+
   const { error } = await supabase.from("contributions").delete().eq("id", id);
 
   if (error) {

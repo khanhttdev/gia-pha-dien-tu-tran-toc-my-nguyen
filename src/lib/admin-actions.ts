@@ -107,6 +107,38 @@ export async function adminCreateUser(formData: FormData) {
   return { error: null, data };
 }
 
+/**
+ * Xóa media khỏi thư viện (Admin only)
+ */
+export async function deleteMedia(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Vui lòng đăng nhập" };
+
+  // Kiểm tra quyền admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Bạn không có quyền thực hiện hành động này" };
+  }
+
+  const { error } = await supabase.from("media").delete().eq("id", id);
+  if (error) {
+    console.error("Error deleting media:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/media");
+  return { error: null };
+}
+
 export async function getDemographicStats() {
   const supabase = await createClient();
 
