@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ImageIcon, Plus, Loader2, Trash2, Search, X } from "lucide-react";
+import { ImageIcon, Plus, Loader2, Trash2, Search, X, Play, Clock } from "lucide-react";
 
 import { Media } from "@/lib/types";
 import Image from "next/image";
@@ -177,7 +177,7 @@ export default function MediaPage() {
                   {images.map((m) => (
                     <div
                       key={m.id}
-                      className="relative group aspect-square rounded-xl overflow-hidden border border-border/60 cursor-pointer"
+                      className="relative group aspect-square rounded-xl overflow-hidden border border-border/60 cursor-pointer bg-black/5"
                       onClick={() => setSelected(m)}
                     >
                       <Image
@@ -187,21 +187,19 @@ export default function MediaPage() {
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-2">
-                          <p className="text-white text-xs font-medium truncate">
-                            {m.title}
-                          </p>
-                          {m.year && (
-                            <p className="text-white/70 text-[10px]">
-                              {m.year}
-                            </p>
-                          )}
+
+                      {/* Overlay for Info */}
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                        <p className="text-white text-[11px] font-medium truncate">{m.title}</p>
+                        <div className="flex items-center gap-1 text-[9px] text-white/70 mt-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {m.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : "Không rõ ngày"}
                         </div>
                       </div>
+
                       {isAdmin && (
                         <button
-                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600 z-10"
                           onClick={(ev) => {
                             ev.stopPropagation();
                             handleDelete(m);
@@ -224,39 +222,52 @@ export default function MediaPage() {
                   {videos.map((m) => (
                     <div
                       key={m.id}
-                      className="glass rounded-xl p-4 border border-border/60 group"
+                      className="relative group aspect-video rounded-xl overflow-hidden border border-border/60 cursor-pointer bg-black/5"
+                      onClick={() => setSelected(m)}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-2xl shrink-0">
-                          🎬
+                      {/* Video Preview */}
+                      <video
+                        src={m.url}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                      />
+
+                      {/* Play Icon Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                        <div className="w-12 h-12 rounded-full gold-gradient flex items-center justify-center text-amber-950 shadow-lg scale-90 group-hover:scale-100 transition-transform">
+                          <Play className="w-6 h-6 fill-current" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {m.title}
-                          </p>
-                          {m.year && (
-                            <p className="text-xs text-muted-foreground">
-                              {m.year}
-                            </p>
-                          )}
-                          {m.description && (
-                            <p className="text-xs text-muted-foreground italic truncate">
-                              {m.description}
-                            </p>
-                          )}
-                        </div>
-                        {isAdmin && (
-                          <Button
-                            aria-label="Action Button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-red-500"
-                            onClick={() => handleDelete(m)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
                       </div>
+
+                      {/* Info Overlay */}
+                      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                        <p className="text-white text-xs font-bold truncate">{m.title}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-white/80 mt-1">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Đăng lúc: {m.created_at ? new Date(m.created_at).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }) : "Không rõ ngày"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isAdmin && (
+                        <button
+                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600 z-10"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            handleDelete(m);
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -282,14 +293,23 @@ export default function MediaPage() {
             className="max-w-4xl w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative w-full h-[60vh] sm:h-[80vh]">
-              <Image
-                src={selected.url}
-                alt={selected.title}
-                fill
-                className="object-contain rounded-xl"
-                sizes="100vw"
-              />
+            <div className="relative w-full h-[60vh] sm:h-[80vh] flex items-center justify-center">
+              {selected.type === "video" ? (
+                <video
+                  src={selected.url}
+                  controls
+                  autoPlay
+                  className="max-w-full max-h-full rounded-xl shadow-2xl"
+                />
+              ) : (
+                <Image
+                  src={selected.url}
+                  alt={selected.title}
+                  fill
+                  className="object-contain rounded-xl"
+                  sizes="100vw"
+                />
+              )}
             </div>
             <div className="text-center mt-4">
               <p className="text-white font-semibold">{selected.title}</p>

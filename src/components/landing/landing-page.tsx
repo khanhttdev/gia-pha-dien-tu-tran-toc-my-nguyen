@@ -173,8 +173,6 @@ export function LandingPage({
               src="/logo.png"
               alt="Trần Tộc Logo"
               className="w-full h-full object-contain"
-              // @ts-ignore
-              priority="true"
             />
           </div>
 

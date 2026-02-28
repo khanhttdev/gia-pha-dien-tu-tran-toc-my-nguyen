@@ -87,7 +87,7 @@ export function CommentSection({
                     {comment.author?.full_name || "Thành viên"}
                   </span>
                   <span className="text-[9px] text-muted-foreground">
-                    {new Date(comment.created_at).toLocaleDateString("vi-VN")}
+                    {comment.created_at ? new Date(comment.created_at).toLocaleDateString("vi-VN") : ""}
                   </span>
                 </div>
                 <p className="text-xs text-foreground/90 mt-0.5">

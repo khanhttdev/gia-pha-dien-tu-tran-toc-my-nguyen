@@ -289,13 +289,13 @@ export default function BoardPage() {
                           •
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(item.created_at!).toLocaleString("vi-VN", {
+                          {item.created_at ? new Date(item.created_at).toLocaleString("vi-VN", {
                             hour: "2-digit",
                             minute: "2-digit",
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
-                          })}
+                          }) : ""}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
