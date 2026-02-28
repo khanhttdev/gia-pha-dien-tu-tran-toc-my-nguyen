@@ -18,29 +18,29 @@ function ProfileBlock({ member }: { member: any }) {
   return (
     <div
       className={cn(
-        "flex flex-row items-center gap-4 px-4 py-3 w-[240px] group/profile transition-all duration-300",
+        "flex flex-row items-center gap-6 px-6 py-5 w-[300px] group/profile transition-all duration-500",
         !isAlive && "opacity-70",
       )}
     >
-      {/* Avatar Circle with Gold Ring - Larger size */}
+      {/* Avatar Circle with Premium Gold Ring - 80x80 Retina Size */}
       <div
         className={cn(
-          "w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0 transition-all duration-500 ring-[1.5px] ring-offset-2 ring-offset-[#1B0506]",
-          "bg-[#0D0202] overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]",
+          "w-20 h-20 rounded-full flex items-center justify-center text-4xl shrink-0 transition-all duration-700 ring-[2px] ring-offset-4 ring-offset-[#1B0506]",
+          "bg-[#0D0202] overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)]",
           isMale
-            ? "ring-blue-400/40"
+            ? "ring-blue-400/50"
             : isFemale
-              ? "ring-pink-400/40"
-              : "ring-amber-500/30",
+              ? "ring-pink-400/50"
+              : "ring-amber-500/40",
         )}
       >
         {meta.avatar_url ? (
           <img
             src={meta.avatar_url}
             alt={member.full_name}
-            width={64}
-            height={64}
-            className="w-full h-full object-cover grayscale-[15%] group-hover/profile:grayscale-0 transition-all"
+            width={80}
+            height={80}
+            className="w-full h-full object-cover grayscale-[10%] group-hover/profile:grayscale-0 transition-all duration-700 scale-105 group-hover/profile:scale-110"
           />
         ) : isMale ? (
           "👨"
@@ -52,20 +52,25 @@ function ProfileBlock({ member }: { member: any }) {
       </div>
 
       <div className="flex flex-col items-start min-w-0 justify-center">
-        <h3 className="text-[13px] font-bold text-amber-100/90 leading-tight tracking-wide drop-shadow-sm uppercase font-serif line-clamp-2">
+        <h3 className="text-[15px] md:text-base font-black text-amber-50 leading-tight tracking-wide drop-shadow-md uppercase font-serif line-clamp-2 mb-1">
           {member.full_name}
         </h3>
 
         {yearRange && (
-          <p className="text-[11px] text-amber-500/70 mt-1 font-medium tracking-widest font-mono">
+          <p className="text-[12px] text-amber-500/80 font-bold tracking-[0.1em] font-mono mb-2">
             {yearRange}
           </p>
         )}
 
-        <div className="mt-1 px-1.5 py-px rounded bg-white/5 border border-white/5">
-          <span className="text-[8px] text-amber-100/30 font-bold uppercase tracking-widest leading-none">
-            {isAlive ? "Member" : "Ancestor"}
-          </span>
+        <div className="flex items-center gap-2">
+          <div className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+            <span className="text-[9px] text-amber-200/50 font-black uppercase tracking-[0.2em] leading-none">
+              {isAlive ? "Member" : "Ancestor"}
+            </span>
+          </div>
+          {member.father_id === null && (
+            <span className="text-[10px] animate-pulse">👑</span>
+          )}
         </div>
       </div>
     </div>
@@ -73,30 +78,25 @@ function ProfileBlock({ member }: { member: any }) {
 }
 
 function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
-  const { member, spouses, isHighlighted } = data;
+  const { member, spouses, isHighlighted, isActiveRoot } = data as any;
   const isAlive = (member.metadata as MemberMetadata)?.is_alive !== false;
 
   // Tạo danh sách kết hợp 1 người chồng + N người vợ
   const familyMembers = [member, ...(spouses || [])];
 
-  // Root Node condition: No father_id
-  const isRoot = !member.father_id;
-
   return (
     <div
       className={cn(
-        "rounded-xl border-[1.5px] transition-all duration-500 cursor-pointer group flex flex-col relative",
-        "bg-[#1B0506] shadow-[0_15px_60px_rgba(0,0,0,0.9)]",
-        isRoot
-          ? "border-amber-400 ring-1 ring-amber-500/50 shadow-[0_0_40px_rgba(251,191,36,0.2)]"
-          : "border-amber-600/30",
+        "rounded-2xl border-[2px] transition-all duration-700 cursor-pointer group flex flex-col relative",
+        "bg-[#1B0506] shadow-[0_20px_80px_rgba(0,0,0,1)]",
+        isActiveRoot
+          ? "border-amber-400 ring-[3px] ring-amber-500/30 shadow-[0_0_60px_rgba(251,191,36,0.4)] z-30 scale-110"
+          : "border-amber-600/20",
         selected
-          ? "border-amber-400 shadow-[0_0_50px_rgba(251,191,36,0.5)] z-20 scale-[1.05] bg-[#2A0809]"
+          ? "border-amber-300 shadow-[0_0_80px_rgba(251,191,36,0.6)] z-20 scale-[1.08] bg-[#2A0809]"
           : isHighlighted
-            ? "border-amber-500 shadow-[0_0_30px_rgba(251,191,36,0.4)] z-10 scale-[1.03]"
-            : isRoot
-              ? "hover:scale-[1.02]"
-              : "hover:border-amber-500/50 hover:shadow-[0_10px_40px_rgba(245,158,11,0.3)]",
+            ? "border-amber-500 shadow-[0_0_40px_rgba(251,191,36,0.5)] z-10 scale-[1.05]"
+            : "hover:border-amber-500/60 hover:shadow-[0_15px_50px_rgba(245,158,11,0.4)]",
         !isAlive && spouses?.length === 0 && "opacity-90",
       )}
     >

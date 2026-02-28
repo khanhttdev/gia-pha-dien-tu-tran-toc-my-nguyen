@@ -169,7 +169,18 @@ function TreeContent({
   const prevRootId = useRef<string | null>(null);
   useEffect(() => {
     const { nodes: n, edges: e } = buildTreeLayout(displayMembers, spouses);
-    setNodes(n);
+
+    // Inject isActiveRoot into node data
+    const nodesWithExtra = n.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        isActiveRoot: node.id === activeRootId,
+        isHighlighted: false // Will be updated by highlighted effect
+      }
+    }));
+
+    setNodes(nodesWithExtra);
     setEdges(e);
 
     if (prevRootId.current !== activeRootId) {
@@ -199,6 +210,7 @@ function TreeContent({
         },
       })),
     );
+
     if ((filtered.size === 1 || focusId) && (search.trim() || focusId)) {
       const idToFocus = focusId || Array.from(filtered)[0];
       const currentNodes = getNodes();
@@ -206,15 +218,15 @@ function TreeContent({
       if (node) {
         setTimeout(
           () =>
-            setCenter(node.position.x + 90, node.position.y + 40, {
-              zoom: 1.2,
+            setCenter(node.position.x + 150, node.position.y + 50, {
+              zoom: 1.0,
               duration: 600,
             }),
           100,
         );
       }
     }
-  }, [search, focusId, setNodes, setCenter, filtered, getNodes]);
+  }, [search, focusId, setCenter, filtered, getNodes, setNodes]);
 
   const onNodeClick: NodeMouseHandler<Node> = useCallback(
     (_evt, node) => {
@@ -319,13 +331,13 @@ function TreeContent({
             </span>
             {(urlRootId ||
               (defaultRootId && activeRootId !== defaultRootId)) && (
-              <button
-                onClick={() => (window.location.href = "/tree")}
-                className="text-[8px] text-amber-400 hover:text-amber-300 font-bold uppercase transition-colors"
-              >
-                Về Thủy Tổ
-              </button>
-            )}
+                <button
+                  onClick={() => (window.location.href = "/tree")}
+                  className="text-[8px] text-amber-400 hover:text-amber-300 font-bold uppercase transition-colors"
+                >
+                  Về Thủy Tổ
+                </button>
+              )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {ancestryTrail.length > 0 ? (
