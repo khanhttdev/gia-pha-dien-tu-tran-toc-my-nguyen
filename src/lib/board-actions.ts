@@ -165,3 +165,36 @@ export async function addComment(contributionId: string, content: string) {
   revalidatePath("/board");
   return { error: null };
 }
+
+/**
+ * Xóa một bài đăng (chỉ dành cho Admin).
+ */
+export async function deleteContribution(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Vui lòng đăng nhập" };
+
+  // Kiểm tra quyền admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Bạn không có quyền thực hiện hành động này" };
+  }
+
+  const { error } = await supabase.from("contributions").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting contribution:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/board");
+  return { error: null };
+}

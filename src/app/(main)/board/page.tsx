@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getBoardFeed, submitContribution } from "@/lib/board-actions";
+import { getBoardFeed, submitContribution, deleteContribution } from "@/lib/board-actions";
 import { createClient } from "@/lib/supabase-client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import {
   UserCircle2,
   MessageCircle,
   ChevronDown,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommentSection } from "@/components/board/comment-section";
@@ -56,6 +57,7 @@ export default function BoardPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [expandedComments, setExpandedComments] = useState<
     Record<string, boolean>
   >({});
@@ -97,11 +99,30 @@ export default function BoardPage() {
       const {
         data: { user },
       } = await sb.auth.getUser();
-      if (user) setCurrentUserId(user.id);
+      if (user) {
+        setCurrentUserId(user.id);
+        const { data: profile } = await sb
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        setIsAdmin(profile?.role === "admin");
+      }
     };
     fetchUser();
     loadFeed(true);
   }, []);
+
+  const handleDeletePost = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) return;
+    const res = await deleteContribution(id);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Đã xóa bài đăng");
+      await loadFeed(true);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,6 +362,16 @@ export default function BoardPage() {
                           >
                             Từ chối
                           </Badge>
+                        )}
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeletePost(item.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         )}
                       </div>
                     </div>
