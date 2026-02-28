@@ -62,18 +62,22 @@ export async function submitContribution(formData: FormData) {
     return { error: "Vui lòng đăng nhập để gửi đóng góp" };
   }
 
-  const content = formData.get("content") as string;
+  const content = (formData.get("content") as string) || "";
   const type = formData.get("type") as string;
+  const imageUrl = formData.get("imageUrl") as string;
 
-  if (!content || !type) {
-    return { error: "Vui lòng nhập đầy đủ nội dung và loại đóng góp" };
+  if (!type || (!content.trim() && !imageUrl)) {
+    return { error: "Vui lòng nhập nội dung hoặc đính kèm ảnh" };
   }
+
+  const proposed_data = imageUrl ? { image_url: imageUrl } : null;
 
   const { error } = await supabase.from("contributions").insert({
     author_id: user.id,
-    content: content,
+    content: content.trim() || "Có đính kèm hình ảnh.",
     type: type,
     status: "pending",
+    proposed_data: proposed_data,
   });
 
   if (error) {
@@ -81,7 +85,24 @@ export async function submitContribution(formData: FormData) {
     return { error: error.message };
   }
 
+  // Nếu có tải ảnh lên, tự động cập nhật vào thư viện (media)
+  if (imageUrl) {
+    const { error: mediaError } = await supabase.from("media").insert({
+      title: "Ảnh từ Bản tin: " + (content.substring(0, 30) || "Tải lên mới"),
+      description: content.substring(0, 150),
+      url: imageUrl,
+      type: "image",
+      uploaded_by: user.id,
+      year: new Date().getFullYear(),
+    });
+
+    if (mediaError) {
+      console.error("Error adding to gallery from contribution:", mediaError);
+    }
+  }
+
   revalidatePath("/board");
+  revalidatePath("/media");
   return { error: null };
 }
 

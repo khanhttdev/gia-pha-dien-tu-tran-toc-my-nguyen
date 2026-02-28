@@ -20,6 +20,22 @@ import {
 import { cn } from "@/lib/utils";
 import { CommentSection } from "@/components/board/comment-section";
 import type { BoardFeedItem } from "@/lib/types";
+import { ImageUpload } from "@/components/ui/image-upload";
+import Image from "next/image";
+
+// Helper to safely extract image URL
+const getFeedImageUrl = (proposed_data: any) => {
+  if (!proposed_data) return null;
+  if (typeof proposed_data === "string") {
+    try {
+      const parsed = JSON.parse(proposed_data);
+      return parsed.image_url || null;
+    } catch {
+      return null;
+    }
+  }
+  return proposed_data.image_url || null;
+};
 
 export default function BoardPage() {
   const [feed, setFeed] = useState<BoardFeedItem[]>([]);
@@ -30,6 +46,7 @@ export default function BoardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [content, setContent] = useState("");
   const [type, setType] = useState("news");
+  const [imageUrl, setImageUrl] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [expandedComments, setExpandedComments] = useState<
     Record<string, boolean>
@@ -80,12 +97,13 @@ export default function BoardPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return toast.error("Vui lòng nhập nội dung");
+    if (!content.trim() && !imageUrl) return toast.error("Vui lòng nhập nội dung hoặc đính kèm ảnh");
 
     setSubmitting(true);
     const formData = new FormData();
     formData.append("content", content);
     formData.append("type", type);
+    if (imageUrl) formData.append("imageUrl", imageUrl);
 
     const res = await submitContribution(formData);
     if (res.error) {
@@ -93,6 +111,7 @@ export default function BoardPage() {
     } else {
       toast.success("Gửi đóng góp thành công! Đang chờ BQT duyệt.");
       setContent("");
+      setImageUrl("");
       await loadFeed(true); // Reset về trang 1
     }
     setSubmitting(false);
@@ -147,6 +166,16 @@ export default function BoardPage() {
                 placeholder="Nhập nội dung bạn muốn chia sẻ..."
                 className="flex min-h-[100px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
               />
+              <div className="pt-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground block mb-2">
+                  Đính kèm hình ảnh
+                </label>
+                <ImageUpload
+                  bucket="media"
+                  value={imageUrl}
+                  onChange={(url) => setImageUrl(url)}
+                />
+              </div>
             </div>
           </div>
           <div className="flex justify-end">
@@ -303,6 +332,18 @@ export default function BoardPage() {
                     <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
                       {item.content}
                     </p>
+
+                    {getFeedImageUrl(item.proposed_data) && (
+                      <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
+                        <Image
+                          src={getFeedImageUrl(item.proposed_data)}
+                          alt="Ảnh đính kèm từ người dùng"
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 768px) 100vw, 400px"
+                        />
+                      </div>
+                    )}
 
                     {/* Action: Toggle Comments */}
                     {item.status === "approved" && (

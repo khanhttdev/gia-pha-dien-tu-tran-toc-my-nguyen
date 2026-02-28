@@ -2,7 +2,9 @@
   "ci": {
     "collect": {
       "startServerCommand": "npm start",
-      "url": ["http://localhost:3000/home"],
+      "url": [
+        "http://localhost:3000/board"
+      ],
       "numberOfRuns": 1
     },
     "upload": {
