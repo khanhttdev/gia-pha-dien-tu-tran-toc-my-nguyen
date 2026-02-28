@@ -34,7 +34,7 @@ import { Input } from '@/components/ui/input'
 const nodeTypes = { person: PersonNode }
 
 function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; spouses: Spouse[], defaultRootId?: string | null }) {
-    const { fitView, setCenter } = useReactFlow()
+    const { fitView, setCenter, getNodes } = useReactFlow()
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
     const [selected, setSelected] = useState<Member | null>(null)
@@ -158,12 +158,13 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         })))
         if ((filtered.size === 1 || focusId) && (search.trim() || focusId)) {
             const idToFocus = focusId || Array.from(filtered)[0]
-            const node = nodes.find((n: Node) => n.id === idToFocus)
+            const currentNodes = getNodes()
+            const node = currentNodes.find((n: Node) => n.id === idToFocus)
             if (node) {
                 setTimeout(() => setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1.2, duration: 600 }), 100)
             }
         }
-    }, [search, focusId, setNodes, setCenter, filtered, nodes])
+    }, [search, focusId, setNodes, setCenter, filtered, getNodes])
 
     const onNodeClick: NodeMouseHandler<Node> = useCallback((_evt, node) => {
         const m = displayMembers.find(x => x.id === node.id)
