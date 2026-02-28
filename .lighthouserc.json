@@ -3,7 +3,8 @@
     "collect": {
       "startServerCommand": "npm start",
       "url": [
-        "http://localhost:3000/board"
+        "http://localhost:3000/login",
+        "http://localhost:3000/register"
       ],
       "numberOfRuns": 1
     },
