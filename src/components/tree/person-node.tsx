@@ -19,28 +19,28 @@ function ProfileBlock({
 
     return (
         <div className={cn(
-            "flex flex-row items-center gap-3 px-3 py-2 w-[180px] group/profile transition-all duration-300",
+            "flex flex-col items-center justify-center gap-2 px-3 py-4 w-[140px] group/profile transition-all duration-300",
             !isAlive && 'opacity-70'
         )}>
             {/* Avatar Circle with Gold Ring */}
             <div className={cn(
-                'w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 transition-all duration-500 ring-1 ring-offset-2 ring-offset-[#1B0506]',
+                'w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0 transition-all duration-500 ring-2 ring-offset-2 ring-offset-[#1B0506]',
                 'bg-[#0D0202] overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)]',
                 isMale ? 'ring-blue-400/40' : isFemale ? 'ring-pink-400/40' : 'ring-amber-500/30'
             )}>
                 {meta.avatar_url
-                    ? <img src={meta.avatar_url} alt={member.full_name} width={48} height={48} className="w-full h-full object-cover grayscale-[20%] group-hover/profile:grayscale-0 transition-all" />
+                    ? <img src={meta.avatar_url} alt={member.full_name} width={56} height={56} className="w-full h-full object-cover grayscale-[20%] group-hover/profile:grayscale-0 transition-all" />
                     : isMale ? '👨' : isFemale ? '👩' : '👤'
                 }
             </div>
 
-            <div className="flex flex-col items-start min-w-0">
-                <h3 className="text-[11px] font-bold text-amber-200/90 leading-tight tracking-wide line-clamp-1 drop-shadow-sm uppercase font-serif">
+            <div className="flex flex-col items-center text-center mt-1">
+                <h3 className="text-[12px] font-bold text-amber-200/90 leading-tight tracking-wide drop-shadow-sm uppercase font-serif line-clamp-2">
                     {member.full_name}
                 </h3>
 
                 {yearRange && (
-                    <p className="text-[9px] text-amber-500/60 mt-0.5 font-medium tracking-tighter">
+                    <p className="text-[10px] text-amber-500/60 mt-1 font-medium tracking-widest">
                         {yearRange}
                     </p>
                 )}
@@ -95,7 +95,7 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
 
                         {/* Ring separator between primary member and spouses */}
                         {index === 0 && familyMembers.length > 1 && (
-                            <div className="w-1 h-8 bg-gradient-to-b from-transparent via-amber-500/20 to-transparent mx-1" />
+                            <div className="w-1 h-12 bg-gradient-to-b from-transparent via-amber-500/20 to-transparent mx-1" />
                         )}
                     </div>
                 ))}
