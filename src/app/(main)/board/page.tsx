@@ -54,6 +54,7 @@ export default function BoardPage() {
   const [content, setContent] = useState("");
   const [type, setType] = useState("news");
   const [imageUrl, setImageUrl] = useState("");
+  const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [expandedComments, setExpandedComments] = useState<
     Record<string, boolean>
@@ -110,7 +111,10 @@ export default function BoardPage() {
     const formData = new FormData();
     formData.append("content", content);
     formData.append("type", type);
-    if (imageUrl) formData.append("imageUrl", imageUrl);
+    if (imageUrl) {
+      formData.append("imageUrl", imageUrl);
+      formData.append("mediaType", mediaType);
+    }
 
     const res = await submitContribution(formData);
     if (res.error) {
@@ -180,8 +184,11 @@ export default function BoardPage() {
                 <ImageUpload
                   bucket="media"
                   value={imageUrl}
-                  onChange={(url) => setImageUrl(url)}
-                  accept="image/*"
+                  onChange={(url, mType) => {
+                    setImageUrl(url);
+                    setMediaType(mType);
+                  }}
+                  accept="image/*,video/*"
                 />
               </div>
             </div>

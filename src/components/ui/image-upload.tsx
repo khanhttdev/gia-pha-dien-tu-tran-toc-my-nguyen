@@ -8,7 +8,7 @@ import Image from "next/image";
 
 interface ImageUploadProps {
   value?: string | null;
-  onChange: (url: string) => void;
+  onChange: (url: string, fileType: "image" | "video") => void;
   bucket?: "media" | "avatars";
   className?: string;
   accept?: string;
@@ -42,7 +42,9 @@ export function ImageUpload({
       const {
         data: { publicUrl },
       } = sb.storage.from(bucket).getPublicUrl(filePath);
-      onChange(publicUrl);
+
+      const detectedType = file.type.startsWith("video") ? "video" : "image";
+      onChange(publicUrl, detectedType);
       toast.success("Đã tải file lên thành công!");
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -57,7 +59,7 @@ export function ImageUpload({
     <div className={`flex items-center gap-4 ${className}`}>
       {value ? (
         <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border/50 group bg-muted flex items-center justify-center">
-          {value.match(/\.(mp4|webm|mov)$/i) ? (
+          {value.match(/\.(mp4|webm|mov)$/i) || value.includes('/video/') ? (
             <span className="text-3xl">🎬</span>
           ) : (
             <Image
@@ -70,7 +72,7 @@ export function ImageUpload({
           )}
           <button
             type="button"
-            onClick={() => onChange("")}
+            onClick={() => onChange("", "image")}
             className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="w-6 h-6 text-white" />

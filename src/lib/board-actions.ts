@@ -65,6 +65,7 @@ export async function submitContribution(formData: FormData) {
   const content = (formData.get("content") as string) || "";
   const type = formData.get("type") as string;
   const imageUrl = formData.get("imageUrl") as string;
+  const mediaType = formData.get("mediaType") as string; // "image" | "video"
 
   if (!type || (!content.trim() && !imageUrl)) {
     return { error: "Vui lòng nhập nội dung hoặc đính kèm ảnh" };
@@ -74,7 +75,7 @@ export async function submitContribution(formData: FormData) {
 
   const { error } = await supabase.from("contributions").insert({
     author_id: user.id,
-    content: content.trim() || "Có đính kèm hình ảnh.",
+    content: content.trim() || "Có đính kèm " + (mediaType === "video" ? "video." : "hình ảnh."),
     type: type,
     status: "approved",
     proposed_data: proposed_data,
@@ -87,7 +88,7 @@ export async function submitContribution(formData: FormData) {
 
   // Nếu có tải ảnh lên, tự động cập nhật vào thư viện (media)
   if (imageUrl) {
-    const isVideo = imageUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) || imageUrl.includes('/video/');
+    const isVideo = mediaType === "video";
 
     const { error: mediaError } = await supabase.from("media").insert({
       title: (isVideo ? "Video" : "Ảnh") + " từ Bản tin: " + (content.substring(0, 30) || "Tải lên mới"),

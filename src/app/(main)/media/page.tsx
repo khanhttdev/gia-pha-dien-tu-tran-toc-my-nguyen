@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 import {
   Dialog,
@@ -13,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ImageIcon, Plus, Loader2, Trash2, Search, X, Play, Clock } from "lucide-react";
 
@@ -151,130 +154,51 @@ export default function MediaPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : media.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <div className="text-5xl mb-4">📷</div>
-            <p className="text-sm">Chưa có ảnh hoặc video nào</p>
-            {isAdmin && (
-              <p className="text-xs mt-2">
-                Nhấn <span className="text-amber-500">+ Thêm media</span> để bắt
-                đầu
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {images.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                  Hình ảnh ({images.length})
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {images.map((m) => (
-                    <div
-                      key={m.id}
-                      className="relative group aspect-square rounded-xl overflow-hidden border border-border/60 cursor-pointer bg-black/5"
-                      onClick={() => setSelected(m)}
-                    >
-                      <Image
-                        src={m.url}
-                        alt={m.title}
-                        fill
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
+        <Tabs defaultValue="all" className="w-full h-full flex flex-col">
+          <TabsList className="w-full sm:w-auto mb-4 bg-muted/50 p-1">
+            <TabsTrigger value="all" className="flex-1 sm:flex-initial gap-2">
+              Tất cả <Badge variant="secondary" className="h-5 px-1.5 min-w-[20px] justify-center text-[10px]">{media.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="image" className="flex-1 sm:flex-initial gap-2">
+              Hình ảnh <Badge variant="secondary" className="h-5 px-1.5 min-w-[20px] justify-center text-[10px]">{images.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="video" className="flex-1 sm:flex-initial gap-2">
+              Video <Badge variant="secondary" className="h-5 px-1.5 min-w-[20px] justify-center text-[10px]">{videos.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
 
-                      {/* Overlay for Info */}
-                      <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                        <p className="text-white text-[11px] font-medium truncate">{m.title}</p>
-                        <div className="flex items-center gap-1 text-[9px] text-white/70 mt-0.5">
-                          <Clock className="w-2.5 h-2.5" />
-                          {m.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : "Không rõ ngày"}
-                        </div>
-                      </div>
-
-                      {isAdmin && (
-                        <button
-                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600 z-10"
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            handleDelete(m);
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <TabsContent value="all" className="mt-0">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
+            ) : media.length === 0 ? (
+              <EmptyState isAdmin={isAdmin} />
+            ) : (
+              <MediaGrid items={filtered} isAdmin={isAdmin} handleDelete={handleDelete} setSelected={setSelected} />
             )}
-            {videos.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                  Video ({videos.length})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {videos.map((m) => (
-                    <div
-                      key={m.id}
-                      className="relative group aspect-video rounded-xl overflow-hidden border border-border/60 cursor-pointer bg-black/5"
-                      onClick={() => setSelected(m)}
-                    >
-                      {/* Video Preview */}
-                      <video
-                        src={m.url}
-                        className="w-full h-full object-cover"
-                        preload="metadata"
-                        muted
-                      />
+          </TabsContent>
 
-                      {/* Play Icon Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                        <div className="w-12 h-12 rounded-full gold-gradient flex items-center justify-center text-amber-950 shadow-lg scale-90 group-hover:scale-100 transition-transform">
-                          <Play className="w-6 h-6 fill-current" />
-                        </div>
-                      </div>
-
-                      {/* Info Overlay */}
-                      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                        <p className="text-white text-xs font-bold truncate">{m.title}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-white/80 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            Đăng lúc: {m.created_at ? new Date(m.created_at).toLocaleString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            }) : "Không rõ ngày"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {isAdmin && (
-                        <button
-                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600 z-10"
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            handleDelete(m);
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <TabsContent value="image" className="mt-0">
+            {images.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <p className="text-sm">Chưa có hình ảnh nào</p>
               </div>
+            ) : (
+              <MediaGrid items={images} isAdmin={isAdmin} handleDelete={handleDelete} setSelected={setSelected} />
             )}
-          </div>
-        )}
+          </TabsContent>
+
+          <TabsContent value="video" className="mt-0">
+            {videos.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <p className="text-sm">Chưa có video nào</p>
+              </div>
+            ) : (
+              <MediaGrid items={videos} isAdmin={isAdmin} handleDelete={handleDelete} setSelected={setSelected} />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Image lightbox */}
@@ -374,7 +298,9 @@ export default function MediaPage() {
               <ImageUpload
                 bucket="media"
                 value={form.url}
-                onChange={(url) => setForm((f) => ({ ...f, url }))}
+                onChange={(url, mType) =>
+                  setForm((f) => ({ ...f, url, type: mType }))
+                }
               />
             </div>
             <div className="space-y-1">
@@ -402,6 +328,158 @@ export default function MediaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function EmptyState({ isAdmin }: { isAdmin: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 bg-muted/20 rounded-3xl border border-dashed border-border animate-in fade-in zoom-in duration-500">
+      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+        <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
+      </div>
+      <h3 className="text-lg font-bold text-foreground mb-1">Chưa có nội dung</h3>
+      <p className="text-sm text-muted-foreground text-center max-w-[250px]">
+        Thư viện hiện đang trống. Hãy bắt đầu chia sẻ những khoảnh khắc của gia đình.
+      </p>
+      {isAdmin && (
+        <Button variant="outline" className="mt-6 border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
+          <Plus className="w-4 h-4 mr-2" /> Thêm ngay
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MediaGrid({
+  items,
+  isAdmin,
+  handleDelete,
+  setSelected,
+}: {
+  items: Media[];
+  isAdmin: boolean;
+  handleDelete: (m: Media) => void;
+  setSelected: (m: Media) => void;
+}) {
+  const images = items.filter((m) => m.type === "image");
+  const videos = items.filter((m) => m.type === "video");
+
+  return (
+    <div className="space-y-10 pb-10">
+      {images.length > 0 && (
+        <div className="animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-6 w-1.5 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+            <h2 className="text-base font-bold text-foreground/90 flex items-center gap-2">
+              Hình ảnh
+              <Badge variant="secondary" className="font-medium bg-muted text-[10px] px-2">{images.length}</Badge>
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {images.map((m, idx) => (
+              <div
+                key={m.id}
+                style={{ animationDelay: `${idx * 50}ms` }}
+                className="relative group aspect-square rounded-2xl overflow-hidden border border-border/40 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer bg-muted/20 animate-in fade-in slide-in-from-bottom-2"
+                onClick={() => setSelected(m)}
+              >
+                <Image
+                  src={m.url}
+                  alt={m.title}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-white text-[11px] font-bold truncate">
+                    {m.title}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-[9px] text-white/80 mt-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    {m.created_at
+                      ? new Date(m.created_at).toLocaleDateString("vi-VN")
+                      : "N/A"}
+                  </div>
+                </div>
+                {isAdmin && (
+                  <button
+                    className="absolute top-2 right-2 w-8 h-8 rounded-xl bg-red-500/90 text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-red-600 z-10 shadow-lg scale-90 group-hover:scale-100"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      handleDelete(m);
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {videos.length > 0 && (
+        <div className="animate-in slide-in-from-bottom-4 delay-150 duration-500">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-6 w-1.5 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+            <h2 className="text-base font-bold text-foreground/90 flex items-center gap-2">
+              Video bài giảng & lưu niệm
+              <Badge variant="secondary" className="font-medium bg-muted text-[10px] px-2">{videos.length}</Badge>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {videos.map((m, idx) => (
+              <div
+                key={m.id}
+                style={{ animationDelay: `${200 + idx * 100}ms` }}
+                className="relative group aspect-video rounded-3xl overflow-hidden border border-border/40 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer bg-black/5 animate-in fade-in slide-in-from-bottom-2"
+                onClick={() => setSelected(m)}
+              >
+                <video
+                  src={m.url}
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                  preload="metadata"
+                  muted
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+                  <div className="w-14 h-14 rounded-full gold-gradient flex items-center justify-center text-amber-950 shadow-2xl scale-90 group-hover:scale-110 transition-transform ring-4 ring-white/10">
+                    <Play className="w-7 h-7 fill-current ml-1" />
+                  </div>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+                  <p className="text-white text-sm font-bold truncate">
+                    {m.title}
+                  </p>
+                  <div className="flex items-center gap-2.5 text-[11px] text-white/90 mt-2">
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md">
+                      <Clock className="w-3.5 h-3.5" />
+                      {m.created_at
+                        ? new Date(m.created_at).toLocaleString("vi-VN", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                        : "N/A"}
+                    </div>
+                  </div>
+                </div>
+                {isAdmin && (
+                  <button
+                    className="absolute top-4 right-4 w-9 h-9 rounded-2xl bg-red-500/90 text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-red-600 z-10 shadow-lg scale-90 group-hover:scale-100"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      handleDelete(m);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
