@@ -11,9 +11,9 @@ export type PersonNode = Node<
   "person"
 >;
 
-const NODE_HEIGHT = 120;
-const H_GAP = 100;
-const V_GAP = 140;
+const NODE_HEIGHT = 80;
+const H_GAP = 40;
+const V_GAP = 80;
 
 interface LayoutNode {
   member: Member;
@@ -26,9 +26,9 @@ interface LayoutNode {
 }
 
 export function getNodeWidth(spousesCount: number) {
-  // Every ProfileBlock is 300px wide for the new VIP design
+  // Every ProfileBlock is 220px wide for the compact maroon design
   const totalPeople = 1 + spousesCount;
-  return totalPeople * 300 + Math.max(0, totalPeople - 1) * 8 + 32; // More padding
+  return totalPeople * 220 + Math.max(0, totalPeople - 1) * 8 + 8;
 }
 
 /**
@@ -139,8 +139,8 @@ export function buildTreeLayout(
         id: `${m.father_id}->${m.id}`,
         source: m.father_id,
         target: m.id,
-        type: "smoothstep", // Dùng smoothstep cho mượt mà, không bị gắt
-        style: { stroke: "#F59E0B", strokeWidth: 2.5, opacity: 0.85 }, // Vàng Amber rực rỡ Heritage
+        type: "step", // Dốc vuông góc chuẩn phả hệ hoàng gia
+        style: { stroke: "#D4AF37", strokeWidth: 1.5, opacity: 0.9, filter: "drop-shadow(0 0 3px rgba(212,175,55,0.6))" },
         animated: false,
       });
     }

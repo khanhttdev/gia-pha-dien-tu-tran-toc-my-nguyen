@@ -18,29 +18,29 @@ function ProfileBlock({ member }: { member: any }) {
   return (
     <div
       className={cn(
-        "flex flex-row items-center gap-6 px-6 py-5 w-[300px] group/profile transition-all duration-500",
+        "flex flex-row items-center gap-3 px-3 py-2 w-[220px] group/profile transition-all duration-300",
         !isAlive && "opacity-70",
       )}
     >
-      {/* Avatar Circle with Premium Gold Ring - 80x80 Retina Size */}
+      {/* Avatar Circle with Premium Gold Ring - Compact Size */}
       <div
         className={cn(
-          "w-20 h-20 rounded-full flex items-center justify-center text-4xl shrink-0 transition-all duration-700 ring-[2px] ring-offset-4 ring-offset-[#1B0506]",
-          "bg-[#0D0202] overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)]",
+          "w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0 transition-all duration-500 ring-[1.5px] ring-offset-[2px] ring-offset-[#0B0E14]",
+          "bg-[#0D0202] overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)]",
           isMale
-            ? "ring-blue-400/50"
+            ? "ring-[#4B6B99]"
             : isFemale
-              ? "ring-pink-400/50"
-              : "ring-amber-500/40",
+              ? "ring-[#C5A365]"
+              : "ring-amber-500/50",
         )}
       >
         {meta.avatar_url ? (
           <img
             src={meta.avatar_url}
             alt={member.full_name}
-            width={80}
-            height={80}
-            className="w-full h-full object-cover grayscale-[10%] group-hover/profile:grayscale-0 transition-all duration-700 scale-105 group-hover/profile:scale-110"
+            width={44}
+            height={44}
+            className="w-full h-full object-cover grayscale-[20%] group-hover/profile:grayscale-0 transition-all duration-500"
           />
         ) : isMale ? (
           "👨"
@@ -52,24 +52,24 @@ function ProfileBlock({ member }: { member: any }) {
       </div>
 
       <div className="flex flex-col items-start min-w-0 justify-center">
-        <h3 className="text-[15px] md:text-base font-black text-amber-50 leading-tight tracking-wide drop-shadow-md uppercase font-serif line-clamp-2 mb-1">
+        <h3 className="text-[11px] font-black text-[#E8D9A8] leading-tight tracking-[0.05em] uppercase font-serif line-clamp-2 mb-0.5">
           {member.full_name}
         </h3>
 
         {yearRange && (
-          <p className="text-[12px] text-amber-500/80 font-bold tracking-[0.1em] font-mono mb-2">
+          <p className="text-[9px] text-[#A68F55] font-semibold tracking-widest font-mono mb-1">
             {yearRange}
           </p>
         )}
 
-        <div className="flex items-center gap-2">
-          <div className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-            <span className="text-[9px] text-amber-200/50 font-black uppercase tracking-[0.2em] leading-none">
+        <div className="flex items-center gap-1.5">
+          <div className="px-1.5 py-px rounded bg-white/5 border border-white/5">
+            <span className="text-[8px] text-[#A68F55]/60 font-bold uppercase tracking-widest leading-none">
               {isAlive ? "Member" : "Ancestor"}
             </span>
           </div>
           {member.father_id === null && (
-            <span className="text-[10px] animate-pulse">👑</span>
+            <span className="text-[9px] drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]">👑</span>
           )}
         </div>
       </div>
@@ -87,49 +87,42 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
   return (
     <div
       className={cn(
-        "rounded-2xl border-[2px] transition-all duration-700 cursor-pointer group flex flex-col relative",
-        "bg-[#1B0506] shadow-[0_20px_80px_rgba(0,0,0,1)]",
+        "rounded-xl border-[1px] transition-all duration-300 cursor-pointer group flex flex-col relative",
+        "bg-[#0B0E14] shadow-[0_5px_15px_rgba(0,0,0,0.8)] outline outline-1 outline-offset-[-2px] outline-[#1A233A]",
         isActiveRoot
-          ? "border-amber-400 ring-[3px] ring-amber-500/30 shadow-[0_0_60px_rgba(251,191,36,0.4)] z-30 scale-110"
-          : "border-amber-600/20",
+          ? "border-[#D4AF37] ring-[1px] ring-[#D4AF37]/50 shadow-[0_0_20px_rgba(212,175,55,0.4)] z-30"
+          : "border-[#D4AF37]/40",
         selected
-          ? "border-amber-300 shadow-[0_0_80px_rgba(251,191,36,0.6)] z-20 scale-[1.08] bg-[#2A0809]"
+          ? "border-[#F5D061] shadow-[0_0_25px_rgba(245,208,97,0.5)] z-20 bg-[#121824]"
           : isHighlighted
-            ? "border-amber-500 shadow-[0_0_40px_rgba(251,191,36,0.5)] z-10 scale-[1.05]"
-            : "hover:border-amber-500/60 hover:shadow-[0_15px_50px_rgba(245,158,11,0.4)]",
+            ? "border-[#F5D061] z-10"
+            : "hover:border-[#D4AF37]/80 hover:shadow-[0_8px_20px_rgba(212,175,55,0.2)]",
         !isAlive && spouses?.length === 0 && "opacity-90",
       )}
     >
-      {/* Ornamental Corners - Giống ảnh mẫu */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-amber-500/40 rounded-tl-[2px]" />
-      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-amber-500/40 rounded-tr-[2px]" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-amber-500/40 rounded-bl-[2px]" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-amber-500/40 rounded-br-[2px]" />
+      {/* Decorative inner corners like the House Deveraux image */}
+      <div className="absolute top-[2px] left-[2px] w-[6px] h-[6px] border-t border-l border-[#D4AF37]/30 rounded-tl-sm pointer-events-none" />
+      <div className="absolute top-[2px] right-[2px] w-[6px] h-[6px] border-t border-r border-[#D4AF37]/30 rounded-tr-sm pointer-events-none" />
+      <div className="absolute bottom-[2px] left-[2px] w-[6px] h-[6px] border-b border-l border-[#D4AF37]/30 rounded-bl-sm pointer-events-none" />
+      <div className="absolute bottom-[2px] right-[2px] w-[6px] h-[6px] border-b border-r border-[#D4AF37]/30 rounded-br-sm pointer-events-none" />
 
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2 !h-2 !bg-amber-500 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-1.5 !h-1.5 !bg-[#D4AF37] !border-none !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
       />
 
-      {/* Generation badge - Bo góc vuông chuẩn Chronicle */}
-      <div className="absolute -top-3 left-3 z-10">
-        <div className="text-[8px] font-black tracking-[0.2em] px-2 py-0.5 bg-[#F59E0B] text-[#1B0506] shadow-lg uppercase">
-          GEN {member.generation_level}
-        </div>
-      </div>
-
-      <div className="flex flex-row items-center justify-start p-1.5 min-h-[64px]">
+      <div className="flex flex-row items-center justify-start p-1 min-h-[50px]">
         {familyMembers.map((person, index) => (
           <div
             key={person.id}
-            className="flex flex-row items-center border-r border-amber-500/10 last:border-r-0"
+            className="flex flex-row items-center border-r border-[#D4AF37]/10 last:border-r-0 relative"
           >
             <ProfileBlock member={person} />
 
-            {/* Ring separator between primary member and spouses */}
+            {/* Horizontal connector line for spouses */}
             {index === 0 && familyMembers.length > 1 && (
-              <div className="w-1 h-12 bg-gradient-to-b from-transparent via-amber-500/20 to-transparent mx-1" />
+              <div className="absolute -right-[1px] top-1/2 -translate-y-1/2 w-2 h-0.5 bg-[#D4AF37]/50" />
             )}
           </div>
         ))}
@@ -138,7 +131,7 @@ function PersonNodeComponent({ data, selected }: NodeProps<PersonNodeType>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-2 !h-2 !bg-amber-500 !border-transparent !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-1.5 !h-1.5 !bg-[#D4AF37] !border-none !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
       />
     </div>
   );

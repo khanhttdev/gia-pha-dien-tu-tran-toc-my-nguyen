@@ -59,13 +59,14 @@ function TreeContent({
   spouses: Spouse[];
   defaultRootId?: string | null;
 }) {
+
   const { fitView, setCenter, getNodes } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selected, setSelected] = useState<Member | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [nodeLimit, setNodeLimit] = useState(15);
+  const [nodeLimit, setNodeLimit] = useState(200); // Massive view right from the start
 
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
@@ -152,9 +153,12 @@ function TreeContent({
     }
 
     const resultIds = new Set(orderedNodes.slice(0, effectiveLimit));
+    const resultMembers = members.filter((m) => resultIds.has(m.id));
+
+    console.log(`[VIP Debug] limit=${nodeLimit}, effective=${effectiveLimit}, displayed=${resultMembers.length}`);
 
     return {
-      displayMembers: members.filter((m) => resultIds.has(m.id)),
+      displayMembers: resultMembers,
       hasMore: effectiveLimit < orderedNodes.length,
       totalInTree: orderedNodes.length,
     };
@@ -240,8 +244,9 @@ function TreeContent({
   );
 
   // Infinite Scroll handler - Tự động tải thêm khi cuộn chuột
-  const handleMoveEnd = useCallback(() => {
-    if (hasMore) {
+  const handleMoveEnd = useCallback((event: any) => {
+    // Only load more if it was a user interaction (event is not null/undefined)
+    if (event && hasMore) {
       setNodeLimit((prev) => Math.min(prev + 15, totalInTree));
     }
   }, [hasMore, totalInTree]);
@@ -258,75 +263,68 @@ function TreeContent({
   );
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#1B0506] overflow-hidden relative font-serif">
-      {/* Chronicles Central Header */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] w-full max-w-2xl px-4 pointer-events-none">
-        <header className="pointer-events-auto bg-[#1B0506]/90 backdrop-blur-md border-[1.5px] border-amber-600/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] p-4 flex flex-col items-center relative overflow-hidden group">
-          {/* Decorative Header Border */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+    <div className="flex flex-col w-full h-full bg-[#180308] overflow-hidden relative font-serif">
+      {/* Dark Maroon Mandala Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#4A0A12] via-[#21050A] to-[#120205] pointer-events-none" />
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='1'%3E%3Cpath d='M60 0L48 12l12 12 12-12L60 0zm0 120l-12-12 12-12 12 12-12 12zm-60-60l12-12 12 12-12 12L0 60zm120 0l-12-12-12 12 12 12 12-12zM60 40l-20 20 20 20 20-20-20-20zm0 10l10 10-10 10-10-10 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '200px 200px', backgroundPosition: 'center' }}
+      />
 
-          <div className="flex items-center gap-6">
-            {/* Golden Tree Logo - Heritage Icon */}
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-200 via-amber-500 to-amber-700 p-0.5 shadow-[0_0_25px_rgba(251,191,36,0.3)] group-hover:shadow-[0_0_40px_rgba(251,191,36,0.5)] transition-all duration-700">
-              <div className="w-full h-full rounded-full bg-[#1B0506] flex items-center justify-center">
-                <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
-                  🌳
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-bold tracking-[0.4em] text-amber-500/60 uppercase leading-none mb-1">
-                THE CHRONICLES OF
-              </span>
-              <h1 className="text-2xl font-black tracking-tight text-amber-50 uppercase leading-none drop-shadow-md">
-                GIA PHẢ{" "}
-                <span className="text-amber-500 font-serif lowercase italic font-normal">
-                  họ
-                </span>{" "}
-                TRẦN
-              </h1>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="w-12 h-px bg-gradient-to-r from-transparent to-amber-500/40" />
-                <span className="text-[10px] font-medium text-amber-500/40 italic tracking-widest">
-                  Legacy & Lineage
-                </span>
-                <div className="w-12 h-px bg-gradient-to-l from-transparent to-amber-500/40" />
-              </div>
-            </div>
+      {/* House Deveraux Style Header */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] pointer-events-none">
+        <header className="pointer-events-auto bg-[#131720]/95 backdrop-blur-xl border border-[#D4AF37]/40 rounded-[20px] shadow-[0_30px_60px_rgba(0,0,0,0.8)] px-8 py-5 flex items-center gap-6 min-w-[500px]">
+          {/* Glowing Tree Icon */}
+          <div className="w-16 h-16 shrink-0 flex items-center justify-center filter drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#D4AF37]">
+              <path d="M12 22C12 22 17 18 17 12V6L12 2L7 6V12C7 18 12 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M12 22V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15C12 15 15 13 15 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 18C12 18 14 16.5 14 14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15C12 15 9 13 9 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
-          {/* Stats & Search Floating Bar */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/5 w-full justify-center">
-            <div className="flex items-center gap-2 group/search shadow-sm rounded-lg shrink-0">
-              <Search className="w-3.5 h-3.5 text-amber-500/40 group-focus-within/search:text-amber-500 transition-colors" />
-              <Input
-                placeholder="Truy tìm tiên tổ..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-7 w-40 bg-white/5 border-white/10 focus-visible:ring-amber-500/20 rounded-lg font-medium text-[10px] text-amber-50 placeholder:text-white/20 border-none outline-none"
-              />
-            </div>
-            <div className="px-3 py-1 bg-amber-500/5 rounded-lg border border-amber-500/20">
-              <span className="text-[9px] font-black text-amber-500/70 uppercase tracking-tighter">
-                {displayMembers.length} / {stats.total} THÀNH VIÊN
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-[11px] font-black tracking-[0.2em] text-[#E8D9A8]/70 uppercase leading-none mb-2 font-sans">
+              THE CHRONICLES OF
+            </span>
+            <h1 className="text-3xl font-black tracking-widest text-[#F5D061] uppercase leading-none drop-shadow-lg font-serif">
+              HOUSE TRAN
+            </h1>
+            <div className="flex items-center gap-4 mt-3">
+              <div className="w-16 h-[1.5px] bg-gradient-to-r from-transparent to-[#D4AF37]/60" />
+              <span className="text-[12px] font-bold text-[#E8D9A8]/50 italic tracking-[0.3em] uppercase font-serif">
+                Legacy & Lineage
               </span>
+              <div className="w-16 h-[1.5px] bg-gradient-to-l from-transparent to-[#D4AF37]/60" />
             </div>
-            {hasMore && (
-              <div className="text-[9px] text-amber-500/50 animate-pulse uppercase tracking-wider font-bold">
-                Cuộn để tải thêm...
-              </div>
-            )}
           </div>
         </header>
       </div>
 
+      {/* Controls Platform overlay (Right side) */}
+      <div className="absolute top-6 right-6 z-[500] flex flex-col gap-3">
+        <div className="bg-[#131720]/90 backdrop-blur-md border border-[#D4AF37]/30 rounded-lg p-2 flex items-center gap-2 shadow-xl">
+          <Search className="w-4 h-4 text-[#D4AF37]/60" />
+          <Input
+            placeholder="Search lineage..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-48 bg-transparent border-none text-[12px] text-[#E8D9A8] placeholder:text-[#E8D9A8]/40 outline-none focus-visible:ring-0 font-sans"
+          />
+        </div>
+        <div className="self-end px-3 py-1.5 bg-[#131720]/80 rounded border border-[#D4AF37]/20">
+          <span className="text-[10px] font-bold text-[#D4AF37]/80 tracking-widest uppercase font-sans">
+            Members: {displayMembers.length} / {stats.total}
+          </span>
+        </div>
+      </div >
+
       {/* Ancestry Breadcrumbs - Floating Bottom Left */}
       <div className="absolute bottom-6 left-6 z-[400] max-w-[320px]">
-        <div className="bg-[#1B0506]/90 backdrop-blur-md border border-amber-600/30 rounded-xl p-3 shadow-2xl flex flex-col gap-2">
+        <div className="bg-[#131720]/90 backdrop-blur-md border border-[#D4AF37]/30 rounded-xl p-3 shadow-2xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[8px] font-black uppercase text-amber-500/60 tracking-widest flex items-center gap-2">
+            <span className="text-[8px] font-black uppercase text-[#D4AF37]/60 tracking-widest flex items-center gap-2 font-sans">
               <Waypoints size={10} /> Phả Hệ Đang Xem
             </span>
             {(urlRootId ||
@@ -348,21 +346,21 @@ function TreeContent({
                       (window.location.href = `/tree?root=${m.id}`)
                     }
                     className={cn(
-                      "text-[9px] px-2 py-0.5 rounded transition-all border font-bold uppercase tracking-tighter whitespace-nowrap",
+                      "text-[9px] px-2 py-0.5 rounded transition-all border font-bold uppercase tracking-tighter whitespace-nowrap font-sans",
                       m.id === (selected?.id || activeRootId)
-                        ? "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
-                        : "bg-white/5 border-white/5 text-amber-50/40 hover:border-amber-500/40 hover:text-amber-400",
+                        ? "bg-[#D4AF37]/20 border-[#D4AF37]/40 text-[#F5D061] shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+                        : "bg-white/5 border-white/5 text-[#E8D9A8]/40 hover:border-[#D4AF37]/40 hover:text-[#D4AF37]",
                     )}
                   >
                     {m.full_name.split(" ").pop()}
                   </button>
                   {idx < ancestryTrail.length - 1 && (
-                    <ChevronRight size={10} className="text-amber-500/20" />
+                    <ChevronRight size={10} className="text-[#D4AF37]/20" />
                   )}
                 </React.Fragment>
               ))
             ) : (
-              <div className="text-[9px] text-white/20 italic">
+              <div className="text-[9px] text-[#E8D9A8]/20 italic font-sans">
                 Chọn một nút để xem dòng tộc...
               </div>
             )}
@@ -371,17 +369,13 @@ function TreeContent({
       </div>
 
       <main className="flex-1 relative overflow-hidden z-0">
-        {/* Subtle Background Ornament Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/black-paper.png')] mix-blend-overlay" />
-
-        {/* Vertical Timeline - Left Side Indicator */}
-        <div className="absolute top-0 left-4 bottom-0 w-12 z-20 flex flex-col items-center py-60 gap-40 pointer-events-none select-none">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((g) => (
-            <div key={g} className="flex flex-col items-center gap-3 group">
-              <div className="text-[10px] font-black text-amber-600/30 rotate-180 [writing-mode:vertical-lr] tracking-[0.5em] transition-all duration-700">
-                GEN 0{g}
+        {/* Timeline - House Deveraux Style (1820, 1835...) */}
+        <div className="absolute top-0 left-6 bottom-0 w-16 z-20 flex flex-col items-center py-40 gap-[6.5rem] pointer-events-none select-none">
+          {[1820, 1835, 1850, 1865, 1880, 1895, 1910, 1925, 1940, 1955].map((year) => (
+            <div key={year} className="flex flex-col items-center gap-1.5 group">
+              <div className="text-[12px] font-black text-[#D4AF37]/40 rotate-180 [writing-mode:vertical-lr] tracking-[0.2em] font-serif">
+                {year}
               </div>
-              <div className="w-[1px] h-32 bg-gradient-to-b from-transparent via-amber-600/20 to-transparent" />
             </div>
           ))}
         </div>
@@ -440,7 +434,7 @@ function TreeContent({
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
       />
-    </div>
+    </div >
   );
 }
 
