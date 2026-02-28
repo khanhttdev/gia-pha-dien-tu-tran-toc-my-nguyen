@@ -78,6 +78,11 @@
 }
 
 @theme inline {
+  --color-heritage-crimson: #4a141b;
+  --color-heritage-maroon: #2a0a0f;
+  --color-heritage-gold: #e6c875;
+  --color-heritage-gold-dim: #997835;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -127,21 +132,15 @@
 body {
   background-color: hsl(var(--background));
   background-image:
-    radial-gradient(
-      ellipse at 20% 50%,
+    radial-gradient(ellipse at 20% 50%,
       hsl(351 69% 15% / 0.4) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 80% 20%,
+      transparent 50%),
+    radial-gradient(ellipse at 80% 20%,
       hsl(40 100% 66% / 0.03) 0%,
-      transparent 40%
-    ),
-    radial-gradient(
-      ellipse at 50% 100%,
+      transparent 40%),
+    radial-gradient(ellipse at 50% 100%,
       hsl(351 69% 8% / 0.6) 0%,
-      transparent 50%
-    ),
+      transparent 50%),
     url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   background-attachment: fixed;
   color: hsl(var(--foreground));
@@ -170,6 +169,38 @@ h5,
 h6,
 .font-serif {
   font-family: var(--font-serif);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom scrollbar for Heritage Theme Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-heritage-gold-dim);
+  border-radius: 4px;
+  opacity: 0.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-heritage-gold);
 }
 
 /* Scrollbar styling */
@@ -273,11 +304,13 @@ h6,
 
 /* Scroll indicator dot */
 @keyframes scroll-dot {
+
   0%,
   100% {
     transform: translateY(0);
     opacity: 1;
   }
+
   50% {
     transform: translateY(8px);
     opacity: 0.3;
@@ -294,10 +327,12 @@ h6,
 }
 
 @keyframes logo-float {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }

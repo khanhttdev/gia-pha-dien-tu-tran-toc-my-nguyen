@@ -1,166 +1,140 @@
-import { Member, Spouse } from "./types";
-import { Node, Edge } from "@xyflow/react";
+import { Edge } from "@xyflow/react";
+import { Member, Spouse, MemberMetadata } from "@/lib/types";
+import { PersonNodeType } from "@/components/tree/person-node";
+import dagre from "dagre";
 
-export type PersonNode = Node<
-  {
-    member: Member;
-    spouses: Spouse[]; // Update to support multiple spouses
-    hasChildren: boolean;
-    isHighlighted: boolean;
-  },
-  "person"
->;
+const nodeWidth = 280;
+const nodeHeight = 120;
 
-const NODE_HEIGHT = 80;
-const H_GAP = 40;
-const V_GAP = 80;
-
-interface LayoutNode {
-  member: Member;
-  spouses: Spouse[];
-  x: number;
-  y: number;
-  width: number;
-  subtreeWidth: number;
-  children: string[];
-}
-
-export function getNodeWidth(spousesCount: number) {
-  // Every ProfileBlock is 220px wide for the compact maroon design
-  const totalPeople = 1 + spousesCount;
-  return totalPeople * 220 + Math.max(0, totalPeople - 1) * 8 + 8;
-}
-
-/**
- * Build a tree layout using a simple top-down algorithm.
- * Positions nodes by generation row, distributing horizontally per family.
- */
 export function buildTreeLayout(
   members: Member[],
   spouses: Spouse[] = [],
-): { nodes: PersonNode[]; edges: Edge[] } {
-  if (!members.length) return { nodes: [], edges: [] };
+): { nodes: PersonNodeType[]; edges: Edge[] } {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const map = new Map<string, Member>(members.map((m) => [m.id, m]));
-  const spouseByMember = new Map<string, Spouse[]>();
-  spouses.forEach((s) => {
-    if (!spouseByMember.has(s.member_id)) spouseByMember.set(s.member_id, []);
-    spouseByMember.get(s.member_id)!.push(s);
-  });
+  // Ranksep increased to give more space for marriage lines
+  dagreGraph.setGraph({ rankdir: "TB", ranksep: 100, nodesep: 100 });
 
-  const childrenMap = new Map<string, string[]>();
+  const nodes: PersonNodeType[] = [];
   const edges: Edge[] = [];
 
-  // Build children map using father_id as backbone
+  // 1. Tạo Node cho Member (Huyết thống)
   members.forEach((m) => {
-    if (m.father_id && map.has(m.father_id)) {
-      if (!childrenMap.has(m.father_id)) childrenMap.set(m.father_id, []);
-      childrenMap.get(m.father_id)!.push(m.id);
-    }
-  });
+    const hasChildren = members.some((child) => child.father_id === m.id || child.mother_id === m.id);
+    const meta = (m.metadata as MemberMetadata) || {};
 
-  const layoutMap = new Map<string, LayoutNode>();
-
-  // Determine min generation for Y offset
-  const minGen = Math.min(...members.map((m) => m.generation_level ?? 1));
-
-  // Initialize layout nodes
-  members.forEach((m) => {
-    const spCount = spouseByMember.get(m.id)?.length || 0;
-    layoutMap.set(m.id, {
-      member: m,
-      spouses: spouseByMember.get(m.id) || [],
-      x: 0,
-      y: ((m.generation_level ?? 1) - minGen) * (NODE_HEIGHT + V_GAP),
-      width: getNodeWidth(spCount),
-      subtreeWidth: 0,
-      children: childrenMap.get(m.id) ?? [],
-    });
-  });
-
-  // Calculate subtree widths (bottom-up)
-  // Sort by generation descending to ensure children are processed before parents
-  const sortedDesc = [...members].sort(
-    (a, b) => (b.generation_level ?? 0) - (a.generation_level ?? 0),
-  );
-
-  sortedDesc.forEach((m) => {
-    const node = layoutMap.get(m.id)!;
-    if (node.children.length === 0) {
-      node.subtreeWidth = node.width;
-    } else {
-      const childrenNodes = node.children
-        .map((cid) => layoutMap.get(cid))
-        .filter(Boolean) as LayoutNode[];
-      const totalChildrenWidth =
-        childrenNodes.reduce((sum, n) => sum + n.subtreeWidth, 0) +
-        Math.max(0, childrenNodes.length - 1) * H_GAP;
-      // Subtree is at least as wide as the node itself
-      node.subtreeWidth = Math.max(node.width, totalChildrenWidth);
-    }
-  });
-
-  // Calculate X positions (top-down)
-  const roots = members.filter((m) => !m.father_id || !map.has(m.father_id));
-
-  let currentRootX = 0;
-
-  function calculatePositions(node: LayoutNode, centerX: number) {
-    node.x = centerX;
-
-    if (node.children.length > 0) {
-      const childrenNodes = node.children
-        .map((cid) => layoutMap.get(cid))
-        .filter(Boolean) as LayoutNode[];
-      const totalChildrenWidth =
-        childrenNodes.reduce((sum, n) => sum + n.subtreeWidth, 0) +
-        Math.max(0, childrenNodes.length - 1) * H_GAP;
-
-      let currentChildX = centerX - totalChildrenWidth / 2;
-
-      childrenNodes.forEach((child) => {
-        const childCenterX = currentChildX + child.subtreeWidth / 2;
-        calculatePositions(child, childCenterX);
-        currentChildX += child.subtreeWidth + H_GAP;
-      });
-    }
-  }
-
-  roots.forEach((r) => {
-    const rootNode = layoutMap.get(r.id)!;
-    calculatePositions(rootNode, currentRootX + rootNode.subtreeWidth / 2);
-    currentRootX += rootNode.subtreeWidth + H_GAP * 2; // Add extra gap between different root families
-  });
-
-  // Build edges from father_id
-  members.forEach((m) => {
-    if (m.father_id && layoutMap.has(m.father_id)) {
-      edges.push({
-        id: `${m.father_id}->${m.id}`,
-        source: m.father_id,
-        target: m.id,
-        type: "step", // Dốc vuông góc chuẩn phả hệ hoàng gia
-        style: { stroke: "#D4AF37", strokeWidth: 1.5, opacity: 0.9, filter: "drop-shadow(0 0 3px rgba(212,175,55,0.6))" },
-        animated: false,
-      });
-    }
-  });
-
-  // Prepare Node configurations
-  const nodes: PersonNode[] = Array.from(layoutMap.values()).map((ln) => {
-    return {
-      id: ln.member.id,
+    nodes.push({
+      id: m.id,
       type: "person",
-      // ReactFlow anchor is top-left by default, but we calculated center X. We shift it by half width.
-      position: { x: ln.x - ln.width / 2, y: ln.y },
+      position: { x: 0, y: 0 },
       data: {
-        member: ln.member,
-        spouses: ln.spouses,
-        hasChildren: ln.children.length > 0,
-        isHighlighted: false,
+        id: m.id,
+        name: m.full_name,
+        avatarUrl: meta.avatar_url,
+        birthYear: meta.birth_year,
+        deathYear: meta.death_year,
+        hasChildren,
+        role: m.generation_level ? `Đời thứ ${m.generation_level}` : "Thành viên",
+        isSpouse: false,
       },
+    });
+
+    dagreGraph.setNode(m.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  // 2. Tạo Node cho Spouse (Phu/Thê) và Edge Hôn nhân
+  spouses.forEach((s) => {
+    // Chỉ render spouse nếu Member tương ứng có trong danh sách
+    const partner = members.find(m => m.id === s.member_id);
+    if (!partner) return;
+
+    const spouseId = `spouse-${s.id}`;
+    const sMeta = (s.metadata as any) || {};
+
+    nodes.push({
+      id: spouseId,
+      type: "person",
+      position: { x: 0, y: 0 },
+      data: {
+        id: s.id,
+        name: s.full_name,
+        avatarUrl: sMeta.avatar_url,
+        birthYear: sMeta.birth_year,
+        deathYear: sMeta.death_year,
+        isSpouse: true,
+      },
+    });
+
+    // Trong Dagre, ta đặt Spouse nằm cạnh Member bằng cách tạo edge giả với trọng số cao
+    dagreGraph.setNode(spouseId, { width: nodeWidth, height: nodeHeight });
+
+    // Edge hôn nhân hiển thị
+    edges.push({
+      id: `marriage-${partner.id}-${spouseId}`,
+      source: partner.id,
+      target: spouseId,
+      sourceHandle: "marriage-right",
+      targetHandle: "marriage-left",
+      type: "marriage", // Custom edge type
+    });
+
+    // Quan hệ trong Dagre để chúng cùng rank (cùng tầng)
+    // Lưu ý: Dagre graphlib không hỗ trợ cùng rank dễ dàng, nhưng ta có thể ép nó bằng rankdir và nodesep
+    // Một mẹo nhỏ là coi Spouse như con của Member nhưng với rank 'same' (nếu dùng D3) 
+    // Ở đây ta cứ để Dagre tự tính, sau đó sẽ fix tọa độ Y
+  });
+
+  // 3. Xây dựng Edge huyết mạch (Parent -> Child)
+  members.forEach((m) => {
+    const parentId = m.father_id || m.mother_id;
+    if (parentId) {
+      edges.push({
+        id: `e-${parentId}-${m.id}`,
+        source: parentId,
+        target: m.id,
+        type: "smoothstep",
+        animated: true,
+        style: {
+          stroke: "var(--color-heritage-gold)",
+          strokeWidth: 2,
+          filter: "drop-shadow(0 0 3px rgba(230,200,117,0.4))"
+        },
+      });
+      dagreGraph.setEdge(parentId, m.id);
+    }
+  });
+
+  // Chạy thuật toán Dagre
+  dagre.layout(dagreGraph);
+
+  // 4. Map lại tọa độ và Fix Spouse Position
+  const mappedNodes = nodes.map((node) => {
+    const dagreNode = dagreGraph.node(node.id);
+    if (!dagreNode) return node;
+
+    let x = dagreNode.x - nodeWidth / 2;
+    let y = dagreNode.y - nodeHeight / 2;
+
+    // Nếu là Spouse, ta cố gắng đẩy nó sang phải Member
+    if (node.data.isSpouse) {
+      // Tìm partner của spouse này
+      const spouseObj = spouses.find(s => `spouse-${s.id}` === node.id);
+      if (spouseObj) {
+        const partnerDagre = dagreGraph.node(spouseObj.member_id);
+        if (partnerDagre) {
+          // Ép Y bằng nhau và X cách nhau một khoảng nodeWidth + gap
+          y = partnerDagre.y - nodeHeight / 2;
+          x = partnerDagre.x + nodeWidth / 2 + 40;
+        }
+      }
+    }
+
+    return {
+      ...node,
+      position: { x, y },
     };
   });
 
-  return { nodes, edges };
+  return { nodes: mappedNodes, edges };
 }
