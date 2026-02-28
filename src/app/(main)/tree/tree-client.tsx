@@ -77,7 +77,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
 
     const { displayMembers, hasMore, totalInTree } = useMemo(() => {
         if (!activeRootId) return { displayMembers: members, hasMore: false, totalInTree: members.length }
-        
+
         const childrenMap = new Map<string, string[]>()
         members.forEach(m => {
             if (m.father_id) {
@@ -85,11 +85,11 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                 childrenMap.get(m.father_id)!.push(m.id)
             }
         })
-        
+
         const orderedNodes: string[] = []
         const visited = new Set<string>()
         const queue = [activeRootId]
-        
+
         while (queue.length > 0) {
             const curr = queue.shift()!
             if (visited.has(curr)) continue
@@ -98,14 +98,14 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
             const children = childrenMap.get(curr) || []
             queue.push(...children)
         }
-        
+
         let effectiveLimit = nodeLimit
-        
+
         if (focusId && visited.has(focusId)) {
             const idx = orderedNodes.indexOf(focusId)
             if (idx >= effectiveLimit) effectiveLimit = idx + 1
         }
-        
+
         if (search.trim()) {
             const q = search.toLowerCase()
             const matches = members.filter(m => visited.has(m.id) && m.full_name.toLowerCase().includes(q))
@@ -116,7 +116,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         }
 
         const resultIds = new Set(orderedNodes.slice(0, effectiveLimit))
-        
+
         return {
             displayMembers: members.filter(m => resultIds.has(m.id)),
             hasMore: effectiveLimit < orderedNodes.length,
@@ -135,7 +135,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         const { nodes: n, edges: e } = buildTreeLayout(displayMembers, spouses)
         setNodes(n)
         setEdges(e)
-        
+
         if (prevRootId.current !== activeRootId) {
             prevRootId.current = activeRootId
             setTimeout(() => fitView({ padding: 0.2 }), 300)
@@ -158,7 +158,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
         })))
         if ((filtered.size === 1 || focusId) && (search.trim() || focusId)) {
             const idToFocus = focusId || Array.from(filtered)[0]
-            const node = rawNodes.current?.find(n => n.id === idToFocus) || nodes.find(n => n.id === idToFocus)
+            const node = nodes.find((n: Node) => n.id === idToFocus)
             if (node) {
                 setTimeout(() => setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1.2, duration: 600 }), 100)
             }
@@ -225,7 +225,7 @@ function TreeContent({ members, spouses, defaultRootId }: { members: Member[]; s
                             </span>
                         </div>
                         {hasMore && (
-                            <Button 
+                            <Button
                                 onClick={() => setNodeLimit(l => l + 50)}
                                 className="h-7 px-3 text-[9px] font-black tracking-widest uppercase bg-amber-500 text-[#1B0506] hover:bg-amber-400 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all"
                             >
