@@ -24,12 +24,21 @@ import Image from "next/image";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { deleteMedia } from "@/lib/admin-actions";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useAuth } from "@/hooks/use-auth";
+import { useConfirmModal } from "@/hooks/use-confirm-modal";
+import { MEDIA_TYPES } from "@/lib/constants";
 
-const EMPTY_FORM = {
+const EMPTY_FORM: {
+  title: string;
+  description: string;
+  url: string;
+  type: typeof MEDIA_TYPES[keyof typeof MEDIA_TYPES];
+  year: string;
+} = {
   title: "",
   description: "",
   url: "",
-  type: "image",
+  type: MEDIA_TYPES.IMAGE,
   year: "",
 };
 
@@ -38,14 +47,12 @@ export default function MediaPage() {
   const [filtered, setFiltered] = useState<Media[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<Media | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [mediaToDelete, setMediaToDelete] = useState<Media | null>(null);
-  const [deleting, setDeleting] = useState(false);
+
+  const { isAdmin } = useAuth();
   const sb = createClient();
 
   const load = async () => {
@@ -61,16 +68,6 @@ export default function MediaPage() {
 
   useEffect(() => {
     load();
-  }, []);
-  useEffect(() => {
-    sb.auth.getUser().then(({ data }: any) => {
-      if (!data.user) return;
-      sb.from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single()
-        .then(({ data: p }: any) => setIsAdmin(p?.role === "admin"));
-    });
   }, []);
 
   useEffect(() => {
@@ -112,28 +109,25 @@ export default function MediaPage() {
     setSaving(false);
   };
 
-  const handleDelete = (m: Media) => {
-    setMediaToDelete(m);
-    setDeleteConfirmOpen(true);
-  };
+  const {
+    open: deleteConfirmOpen,
+    setOpen: setDeleteConfirmOpen,
+    data: mediaToDelete,
+    loading: deleting,
+    showConfirm: handleDelete,
+    handleConfirm: confirmDelete,
+  } = useConfirmModal<Media>({
+    onConfirm: async (m) => {
+      // Optimistic UI
+      setMedia((prev) => prev.filter((item) => item.id !== m.id));
+      return deleteMedia(m.id);
+    },
+    onSuccess: () => load(),
+    successMessage: "Đã xoá thành công",
+  });
 
-  const confirmDelete = async () => {
-    if (!mediaToDelete) return;
-    setDeleting(true);
-    const res = await deleteMedia(mediaToDelete.id);
-    if (res.error) {
-      toast.error("Lỗi khi xoá: " + res.error);
-    } else {
-      toast.success("Đã xoá thành công");
-      await load();
-      setDeleteConfirmOpen(false);
-      setMediaToDelete(null);
-    }
-    setDeleting(false);
-  };
-
-  const images = filtered.filter((m) => m.type === "image");
-  const videos = filtered.filter((m) => m.type === "video");
+  const images = filtered.filter((m) => m.type === MEDIA_TYPES.IMAGE);
+  const videos = filtered.filter((m) => m.type === MEDIA_TYPES.VIDEO);
 
   return (
     <div className="h-full flex flex-col">

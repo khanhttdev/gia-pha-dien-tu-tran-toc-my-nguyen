@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Menu } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useAuth } from "@/hooks/use-auth";
+import { useConfirmModal } from "@/hooks/use-confirm-modal";
+import { APP_ROLES, APP_STATUS, APP_PATHS } from "@/lib/constants";
 
 // Import New Subcomponents
 import { AnalyticsTab } from "@/components/admin/analytics-tab";
@@ -50,89 +53,91 @@ export default function AdminPage() {
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const { isAdmin, currentUserId } = useAuth();
 
   const [showAddUser, setShowAddUser] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<"admin" | "member" | "accountant">(
-    "member",
+  const [newRole, setNewRole] = useState<typeof APP_ROLES[keyof typeof APP_ROLES]>(
+    APP_ROLES.MEMBER,
   );
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
-  // Delete modal state
-  const [deleteModal, setDeleteModal] = useState<{
-    open: boolean;
-    userId: string;
-    userName: string;
-  }>({ open: false, userId: "", userName: "" });
-  const [isDeleting, setIsDeleting] = useState(false);
+  const sb = createClient();
 
-  // Status modal state
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [{ data: users }, { data: contribs }, { data: history }] =
+        await Promise.all([
+          sb
+            .from("profiles")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          sb
+            .from("contributions")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(20),
+          sb
+            .from("activity_logs")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(50),
+        ]);
+      setProfiles(users ?? []);
+      setContributions(contribs ?? []);
+      setLogs(history ?? []);
+    } catch (e: any) {
+      toast.error("Lỗi khi tải dữ liệu: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [sb]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadData();
+    }
+  }, [isAdmin, loadData]);
+
+  // Delete modal hook
+  const {
+    open: deleteConfirmOpen,
+    setOpen: setDeleteConfirmOpen,
+    data: deleteModalData,
+    loading: isDeleting,
+    showConfirm: showDeleteConfirm,
+    handleConfirm: confirmDeleteUser,
+  } = useConfirmModal<{ id: string; name: string }>({
+    onConfirm: async (data) => {
+      // Optimistic UI
+      setProfiles((prev) => prev.filter((p) => p.id !== data.id));
+      return deleteUser(data.id);
+    },
+    onSuccess: () => loadData(),
+    successMessage: "Đã xóa người dùng thành công",
+  });
+
+  // Status modal state handled manually for custom logic
   const [statusModal, setStatusModal] = useState<{
     open: boolean;
     userId: string;
     userName: string;
-    action: "approved" | "rejected";
-  }>({ open: false, userId: "", userName: "", action: "approved" });
+    action: typeof APP_STATUS.APPROVED | typeof APP_STATUS.REJECTED;
+  }>({ open: false, userId: "", userName: "", action: APP_STATUS.APPROVED });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const sb = createClient();
-
-  useEffect(() => {
-    sb.auth.getUser().then(({ data }: any) => {
-      if (!data.user) return;
-      setCurrentUserId(data.user.id);
-      sb.from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single()
-        .then(({ data: p }: any) => {
-          if (p?.role === "admin") {
-            setIsAdmin(true);
-            loadData();
-          } else {
-            setLoading(false);
-          }
-        });
-    });
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    const [{ data: users }, { data: contribs }, { data: history }] =
-      await Promise.all([
-        sb
-          .from("profiles")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        sb
-          .from("contributions")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(20),
-        sb
-          .from("activity_logs")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(50),
-      ]);
-    setProfiles(users ?? []);
-    setContributions(contribs ?? []);
-    setLogs(history ?? []);
-    setLoading(false);
-  };
 
   const updateRole = async (
     userId: string,
-    role: "admin" | "member" | "accountant",
+    role: typeof APP_ROLES[keyof typeof APP_ROLES],
   ) => {
     try {
       const res = await setUserRole(userId, role);
       if (res.error) throw new Error(res.error);
       toast.success(
-        `Đã đổi vai trò thành ${role === "admin" ? "Admin" : role === "accountant" ? "Thủ quỹ" : "Thành viên"}`,
+        `Đã đổi vai trò thành ${role === APP_ROLES.ADMIN ? "Admin" : role === APP_ROLES.ACCOUNTANT ? "Thủ quỹ" : "Thành viên"}`,
       );
       await loadData();
     } catch (e: any) {
@@ -158,23 +163,10 @@ export default function AdminPage() {
       setShowAddUser(false);
       setNewEmail("");
       setNewPassword("");
-      setNewRole("member");
+      setNewRole(APP_ROLES.MEMBER);
       await loadData();
     }
     setIsCreatingUser(false);
-  };
-
-  const confirmDeleteUser = async () => {
-    setIsDeleting(true);
-    const res = await deleteUser(deleteModal.userId);
-    if (res.error) {
-      toast.error(res.error);
-    } else {
-      toast.success("Đã xóa người dùng thành công");
-      await loadData();
-    }
-    setIsDeleting(false);
-    setDeleteModal({ open: false, userId: "", userName: "" });
   };
 
   const confirmStatusChange = async () => {
@@ -184,28 +176,23 @@ export default function AdminPage() {
       toast.error(res.error);
     } else {
       toast.success(
-        statusModal.action === "approved"
+        statusModal.action === APP_STATUS.APPROVED
           ? "Đã duyệt thành viên"
           : "Đã từ chối thành viên",
       );
       await loadData();
     }
     setIsUpdatingStatus(false);
-    setStatusModal({
-      open: false,
-      userId: "",
-      userName: "",
-      action: "approved",
-    });
+    setStatusModal((prev) => ({ ...prev, open: false }));
   };
 
-  const updateContrib = async (id: string, status: "approved" | "rejected") => {
+  const updateContrib = async (id: string, status: typeof APP_STATUS.APPROVED | typeof APP_STATUS.REJECTED) => {
     try {
       await sb
         .from("contributions")
         .update({ status, reviewed_at: new Date().toISOString() })
         .eq("id", id);
-      toast.success(status === "approved" ? "Đã duyệt" : "Đã từ chối");
+      toast.success(status === APP_STATUS.APPROVED ? "Đã duyệt" : "Đã từ chối");
       await loadData();
     } catch (e: any) {
       toast.error(e.message);
@@ -213,13 +200,13 @@ export default function AdminPage() {
   };
 
   const getRoleBadge = (role: string | null) => {
-    if (role === "admin")
+    if (role === APP_ROLES.ADMIN)
       return (
         <Badge className="text-[10px] bg-amber-500/20 text-amber-600 border-amber-500/30">
           👑 Admin
         </Badge>
       );
-    if (role === "accountant")
+    if (role === APP_ROLES.ACCOUNTANT)
       return (
         <Badge className="text-[10px] bg-emerald-500/20 text-emerald-600 border-emerald-500/30">
           💰 Thủ quỹ
@@ -233,13 +220,13 @@ export default function AdminPage() {
   };
 
   const getStatusBadge = (status: string | null) => {
-    if (status === "approved")
+    if (status === APP_STATUS.APPROVED)
       return (
         <Badge className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
           ✅ Đã duyệt
         </Badge>
       );
-    if (status === "rejected")
+    if (status === APP_STATUS.REJECTED)
       return (
         <Badge className="text-[10px] bg-red-500/10 text-red-500 border-red-500/20">
           ❌ Từ chối
@@ -252,7 +239,7 @@ export default function AdminPage() {
     );
   };
 
-  const pendingCount = profiles.filter((p) => p.status === "pending").length;
+  const pendingCount = profiles.filter((p) => p.status === APP_STATUS.PENDING).length;
 
   if (!isAdmin && !loading) {
     return (
@@ -317,7 +304,6 @@ export default function AdminPage() {
             className="w-full max-w-5xl mx-auto"
           >
             <div className="mb-6 border-b border-border/40 pb-2">
-              {/* MOBILE TABS (DROPDOWN) */}
               <div className="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -328,32 +314,27 @@ export default function AdminPage() {
                       <span className="flex items-center gap-2">
                         {activeTab === "analytics" && (
                           <>
-                            <BarChart3 className="w-4 h-4 text-amber-500" />{" "}
-                            Thống Kê
+                            <BarChart3 className="w-4 h-4 text-amber-500" /> Thống Kê
                           </>
                         )}
                         {activeTab === "users" && (
                           <>
-                            <Users className="w-4 h-4 text-amber-500" /> Người
-                            Dùng
+                            <Users className="w-4 h-4 text-amber-500" /> Người Dùng
                           </>
                         )}
                         {activeTab === "funds" && (
                           <>
-                            <Wallet className="w-4 h-4 text-emerald-500" /> Quỹ
-                            Họ
+                            <Wallet className="w-4 h-4 text-emerald-500" /> Quỹ Họ
                           </>
                         )}
                         {activeTab === "contributions" && (
                           <>
-                            <MessageSquare className="w-4 h-4 text-amber-500" />{" "}
-                            Đề Xuất
+                            <MessageSquare className="w-4 h-4 text-amber-500" /> Đề Xuất
                           </>
                         )}
                         {activeTab === "logs" && (
                           <>
-                            <ClipboardList className="w-4 h-4 text-amber-500" />{" "}
-                            Nhật Ký
+                            <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật Ký
                           </>
                         )}
                       </span>
@@ -369,7 +350,7 @@ export default function AdminPage() {
                       className={cn(
                         "gap-2 py-3",
                         activeTab === "analytics" &&
-                          "bg-amber-500/10 text-amber-500",
+                        "bg-amber-500/10 text-amber-500",
                       )}
                     >
                       <BarChart3
@@ -387,7 +368,7 @@ export default function AdminPage() {
                       className={cn(
                         "gap-2 py-3 justify-between",
                         activeTab === "users" &&
-                          "bg-amber-500/10 text-amber-500",
+                        "bg-amber-500/10 text-amber-500",
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -415,7 +396,7 @@ export default function AdminPage() {
                       className={cn(
                         "gap-2 py-3",
                         activeTab === "funds" &&
-                          "bg-emerald-500/10 text-emerald-500",
+                        "bg-emerald-500/10 text-emerald-500",
                       )}
                     >
                       <Wallet
@@ -433,7 +414,7 @@ export default function AdminPage() {
                       className={cn(
                         "gap-2 py-3 justify-between",
                         activeTab === "contributions" &&
-                          "bg-amber-500/10 text-amber-500",
+                        "bg-amber-500/10 text-amber-500",
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -447,25 +428,25 @@ export default function AdminPage() {
                         />{" "}
                         Đề Xuất
                       </div>
-                      {contributions.filter((c) => c.status === "pending")
+                      {contributions.filter((c) => c.status === APP_STATUS.PENDING)
                         .length > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="h-5 text-[10px] px-1.5 animate-pulse"
-                        >
-                          {
-                            contributions.filter((c) => c.status === "pending")
-                              .length
-                          }
-                        </Badge>
-                      )}
+                          <Badge
+                            variant="destructive"
+                            className="h-5 text-[10px] px-1.5 animate-pulse"
+                          >
+                            {
+                              contributions.filter((c) => c.status === APP_STATUS.PENDING)
+                                .length
+                            }
+                          </Badge>
+                        )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => setActiveTab("logs")}
                       className={cn(
                         "gap-2 py-3",
                         activeTab === "logs" &&
-                          "bg-amber-500/10 text-amber-500",
+                        "bg-amber-500/10 text-amber-500",
                       )}
                     >
                       <ClipboardList
@@ -482,7 +463,6 @@ export default function AdminPage() {
                 </DropdownMenu>
               </div>
 
-              {/* DESKTOP TABS LIST */}
               <TabsList className="hidden md:flex w-full h-auto gap-0 bg-transparent p-0 justify-start">
                 <TabsTrigger
                   value="analytics"
@@ -516,10 +496,10 @@ export default function AdminPage() {
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Đề Xuất</span>
-                  {contributions.filter((c) => c.status === "pending").length >
+                  {contributions.filter((c) => c.status === APP_STATUS.PENDING).length >
                     0 && (
-                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  )}
+                      <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="logs"
@@ -531,7 +511,6 @@ export default function AdminPage() {
               </TabsList>
             </div>
 
-            {/* TAB: THỐNG KÊ */}
             <TabsContent
               value="analytics"
               className="animate-in fade-in-50 duration-500 outline-none"
@@ -539,7 +518,6 @@ export default function AdminPage() {
               <AnalyticsTab />
             </TabsContent>
 
-            {/* TAB: QUỸ HỌ */}
             <TabsContent
               value="funds"
               className="animate-in fade-in-50 duration-500 outline-none"
@@ -547,12 +525,10 @@ export default function AdminPage() {
               <FundManagerTab />
             </TabsContent>
 
-            {/* TAB: NGƯỜI DÙNG */}
             <TabsContent
               value="users"
               className="animate-in fade-in-50 duration-500 outline-none space-y-4"
             >
-              {/* Pending users section */}
               {pendingCount > 0 && (
                 <div className="glass rounded-xl p-4 border border-yellow-500/30 space-y-3">
                   <h3 className="text-sm font-bold flex items-center gap-2 text-yellow-500">
@@ -561,7 +537,7 @@ export default function AdminPage() {
                   </h3>
                   <div className="space-y-2">
                     {profiles
-                      .filter((p) => p.status === "pending")
+                      .filter((p) => p.status === APP_STATUS.PENDING)
                       .map((p) => (
                         <div
                           key={p.id}
@@ -589,7 +565,7 @@ export default function AdminPage() {
                                   open: true,
                                   userId: p.id,
                                   userName: p.full_name ?? p.email ?? "",
-                                  action: "approved",
+                                  action: APP_STATUS.APPROVED,
                                 })
                               }
                             >
@@ -604,7 +580,7 @@ export default function AdminPage() {
                                   open: true,
                                   userId: p.id,
                                   userName: p.full_name ?? p.email ?? "",
-                                  action: "rejected",
+                                  action: APP_STATUS.REJECTED,
                                 })
                               }
                             >
@@ -672,9 +648,9 @@ export default function AdminPage() {
                       onChange={(e) => setNewRole(e.target.value as any)}
                       className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50"
                     >
-                      <option value="member">Thành viên</option>
-                      <option value="accountant">Thủ quỹ</option>
-                      <option value="admin">Admin</option>
+                      <option value={APP_ROLES.MEMBER}>Thành viên</option>
+                      <option value={APP_ROLES.ACCOUNTANT}>Thủ quỹ</option>
+                      <option value={APP_ROLES.ADMIN}>Admin</option>
                     </select>
                   </div>
                   <Button
@@ -693,7 +669,7 @@ export default function AdminPage() {
 
               <div className="space-y-2">
                 {profiles
-                  .filter((p) => p.status !== "pending")
+                  .filter((p) => p.status !== APP_STATUS.PENDING)
                   .map((p) => (
                     <div
                       key={p.id}
@@ -726,8 +702,8 @@ export default function AdminPage() {
                           <p className="text-[10px] text-muted-foreground">
                             {p.created_at
                               ? new Date(p.created_at).toLocaleDateString(
-                                  "vi-VN",
-                                )
+                                "vi-VN",
+                              )
                               : ""}
                           </p>
                         </div>
@@ -752,30 +728,30 @@ export default function AdminPage() {
                                 className="glass-toast border-amber-500/20"
                               >
                                 <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, "member")}
+                                  onClick={() => updateRole(p.id, APP_ROLES.MEMBER)}
                                   className={cn(
                                     "gap-2",
-                                    p.role === "member" && "bg-amber-500/10",
+                                    p.role === APP_ROLES.MEMBER && "bg-amber-500/10",
                                   )}
                                 >
                                   <UserCheck className="w-3.5 h-3.5" /> Thành
                                   viên
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, "accountant")}
+                                  onClick={() => updateRole(p.id, APP_ROLES.ACCOUNTANT)}
                                   className={cn(
                                     "gap-2",
-                                    p.role === "accountant" &&
-                                      "bg-emerald-500/10",
+                                    p.role === APP_ROLES.ACCOUNTANT &&
+                                    "bg-emerald-500/10",
                                   )}
                                 >
                                   <Wallet className="w-3.5 h-3.5" /> Thủ quỹ
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, "admin")}
+                                  onClick={() => updateRole(p.id, APP_ROLES.ADMIN)}
                                   className={cn(
                                     "gap-2",
-                                    p.role === "admin" && "bg-amber-500/10",
+                                    p.role === APP_ROLES.ADMIN && "bg-amber-500/10",
                                   )}
                                 >
                                   <Shield className="w-3.5 h-3.5" /> Admin
@@ -788,13 +764,7 @@ export default function AdminPage() {
                               size="icon"
                               className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                               title="Xóa người dùng"
-                              onClick={() =>
-                                setDeleteModal({
-                                  open: true,
-                                  userId: p.id,
-                                  userName: p.full_name ?? p.email ?? "",
-                                })
-                              }
+                              onClick={() => showDeleteConfirm({ id: p.id, name: p.full_name ?? p.email ?? "" })}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -806,281 +776,136 @@ export default function AdminPage() {
               </div>
             </TabsContent>
 
-            {/* TAB: CONTRIBUTIONS */}
-            <TabsContent
-              value="contributions"
-              className="animate-in fade-in-50 duration-500 outline-none"
-            >
-              <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-amber-500" /> Đóng Góp /
-                Đề Xuất (
-                {contributions.filter((c) => c.status === "pending").length} chờ
-                duyệt)
-              </h2>
-              {contributions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Không có đóng góp nào.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {contributions.map((c) => (
-                    <div
-                      key={c.id}
-                      className="glass rounded-xl p-4 border border-border/60"
-                    >
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] uppercase"
-                            >
-                              {c.type}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground">
-                              {c.created_at
-                                ? new Date(c.created_at).toLocaleString("vi-VN")
-                                : ""}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground mb-2 font-medium">
-                            {c.content}
-                          </p>
-                          {(() => {
-                            const author = profiles.find(
-                              (p) => p.id === c.author_id,
-                            );
-                            return author ? (
-                              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-white/5 py-1 px-2 rounded-lg w-fit">
-                                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center text-[8px] font-bold text-amber-600">
-                                  {author.full_name?.[0]?.toUpperCase() ?? "?"}
-                                </span>
-                                <span>
-                                  Gửi bởi:{" "}
-                                  <strong className="text-foreground/80">
-                                    {author.full_name}
-                                  </strong>
-                                </span>
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-2 sm:shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
-                          <Badge
-                            variant={
-                              c.status === "pending"
-                                ? "outline"
-                                : c.status === "approved"
-                                  ? "default"
-                                  : "secondary"
-                            }
-                            className={cn(
-                              "text-[10px]",
-                              c.status === "approved" &&
-                                "bg-emerald-500/20 text-emerald-500 border-emerald-500/30",
-                              c.status === "rejected" &&
-                                "bg-red-500/10 text-red-500 border-red-500/20",
-                            )}
-                          >
-                            {c.status === "pending"
-                              ? "⏳ Chờ duyệt"
-                              : c.status === "approved"
-                                ? "✅ Đã duyệt"
-                                : "❌ Đã từ chối"}
-                          </Badge>
-                          {c.status === "pending" && (
-                            <div className="flex gap-1 ml-auto sm:ml-2">
-                              <Button
-                                aria-label="Duyệt"
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 hover:text-emerald-500 hover:bg-emerald-500/10 border-emerald-500/20"
-                                onClick={() => updateContrib(c.id, "approved")}
-                              >
-                                <Check className="w-3.5 h-3.5" />{" "}
-                                <span className="hidden sm:inline">Duyệt</span>
-                              </Button>
-                              <Button
-                                aria-label="Từ chối"
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
-                                onClick={() => updateContrib(c.id, "rejected")}
-                              >
-                                <X className="w-3.5 h-3.5" />{" "}
-                                <span className="hidden sm:inline">
-                                  Từ chối
-                                </span>
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* TAB: ACTIVITY LOGS */}
             <TabsContent
               value="logs"
-              className="animate-in fade-in-50 duration-500 outline-none"
+              className="animate-in fade-in-50 duration-500 outline-none space-y-4"
             >
-              <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật Ký
-                Hoạt Động (Gần nhất)
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật ký hoạt động
               </h2>
-              {logs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Chưa có hoạt động nào được ghi lại.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {logs.map((log) => {
-                    const user = profiles.find((p) => p.id === log.user_id);
-                    return (
-                      <div
-                        key={log.id}
-                        className="glass rounded-xl p-3 border border-border/60 hover:bg-white/5 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] px-1.5 py-0 border",
-                              log.action === "INSERT"
-                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                : log.action === "UPDATE"
-                                  ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                                  : "bg-red-500/10 text-red-500 border-red-500/20",
-                            )}
-                          >
-                            {log.action}
+              <div className="space-y-2">
+                {logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="glass rounded-xl p-3 border border-border/40 flex items-start gap-3"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
+                      <ClipboardList className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">
+                        <span className="font-bold text-amber-600 uppercase">
+                          {log.action === "INSERT"
+                            ? "Thêm mới"
+                            : log.action === "UPDATE"
+                              ? "Cập nhật"
+                              : log.action === "DELETE"
+                                ? "Xóa"
+                                : log.action}
+                        </span>{" "}
+                        trên bảng{" "}
+                        <span className="italic font-medium">
+                          {log.table_name === "profiles"
+                            ? "Người dùng"
+                            : log.table_name === "contributions"
+                              ? "Bài viết"
+                              : log.table_name === "media"
+                                ? "Thư viện"
+                                : log.table_name === "members"
+                                  ? "Gia phả"
+                                  : log.table_name}
+                        </span>{" "}
+                        <span className="text-xs text-muted-foreground">
+                          (ID record: {log.record_id.slice(0, 8)}...)
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {log.created_at
+                          ? new Date(log.created_at).toLocaleString("vi-VN")
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent
+              value="contributions"
+              className="animate-in fade-in-50 duration-500 outline-none space-y-4"
+            >
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-amber-500" /> Phê duyệt đóng góp
+              </h2>
+              <div className="space-y-4">
+                {contributions.length === 0 ? (
+                  <p className="text-center py-12 text-muted-foreground text-sm">
+                    Chưa có đóng góp nào
+                  </p>
+                ) : (
+                  contributions.map((c) => (
+                    <div
+                      key={c.id}
+                      className="glass rounded-xl p-4 border border-border/60 space-y-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            {c.type}
                           </Badge>
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                            {log.table_name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground ml-auto">
-                            {new Date(log.created_at).toLocaleString("vi-VN")}
+                          <span className="text-[10px] text-muted-foreground">
+                            {c.created_at ? new Date(c.created_at).toLocaleString("vi-VN") : ""}
                           </span>
                         </div>
-                        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-2">
-                          <span className="font-bold text-foreground bg-background/50 px-1.5 py-0.5 rounded shrink-0">
-                            {user?.full_name || "System"}
-                          </span>
-                          <div className="text-muted-foreground break-words">
-                            {(() => {
-                              const {
-                                action,
-                                table_name,
-                                old_data,
-                                new_data,
-                                record_id,
-                              } = log as any;
-                              const data = new_data || old_data || {};
-
-                              if (table_name === "funds") {
-                                const amount =
-                                  data.amount?.toLocaleString("vi-VN");
-                                const type =
-                                  data.transaction_type === "income"
-                                    ? "Thu"
-                                    : "Chi";
-                                if (action === "INSERT")
-                                  return `đã thêm giao dịch ${type}: ${amount}đ - "${data.description}"`;
-                                if (action === "DELETE")
-                                  return `đã xóa giao dịch ${type}: ${amount}đ - "${data.description}"`;
-                                if (action === "UPDATE") {
-                                  const oldAmt =
-                                    old_data?.amount?.toLocaleString("vi-VN");
-                                  if (old_data?.amount !== new_data?.amount) {
-                                    return `đã sửa số tiền giao dịch: ${oldAmt}đ → ${amount}đ ("${data.description}")`;
-                                  }
-                                  return `đã cập nhật thông tin giao dịch: "${data.description}"`;
-                                }
-                              }
-
-                              if (table_name === "profiles") {
-                                const target =
-                                  data.full_name || data.email || record_id;
-                                if (action === "UPDATE") {
-                                  if (old_data?.role !== new_data?.role)
-                                    return `đã đổi quyền của ${target}: ${old_data?.role} → ${new_data?.role}`;
-                                  if (old_data?.status !== new_data?.status)
-                                    return `đã đổi trạng thái ${target}: ${old_data?.status} → ${new_data?.status}`;
-                                }
-                                return `đã ${action === "INSERT" ? "tạo" : action === "DELETE" ? "xóa" : "cập nhật"} tài khoản: ${target}`;
-                              }
-
-                              if (table_name === "members") {
-                                const name = data.full_name || record_id;
-                                return `đã ${action === "INSERT" ? "thêm" : action === "DELETE" ? "xóa" : "sửa"} thành viên gia phả: ${name}`;
-                              }
-
-                              if (
-                                table_name === "events" ||
-                                table_name === "contributions"
-                              ) {
-                                const title =
-                                  data.title || data.full_name || record_id;
-                                const label =
-                                  table_name === "events"
-                                    ? "bài viết"
-                                    : "đóng góp";
-                                if (action === "INSERT")
-                                  return `đã gửi/tạo ${label} mới: "${title}"`;
-                                if (action === "UPDATE")
-                                  return `đã duyệt/cập nhật ${label}: "${title}"`;
-                                return `đã xóa ${label}: "${title}"`;
-                              }
-
-                              return `đã ${action === "INSERT" ? "thêm mới" : action === "UPDATE" ? "cập nhật" : "xoá"} bản ghi ID: ${record_id}`;
-                            })()}
-                          </div>
-                        </div>
+                        {getStatusBadge(c.status)}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      <p className="text-sm">{c.content}</p>
+                      {c.status === APP_STATUS.PENDING && (
+                        <div className="flex gap-2 pt-2 border-t border-border/40">
+                          <Button
+                            size="sm"
+                            className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => updateContrib(c.id, APP_STATUS.APPROVED)}
+                          >
+                            <Check className="w-3.5 h-3.5" /> Duyệt
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1.5 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
+                            onClick={() => updateContrib(c.id, APP_STATUS.REJECTED)}
+                          >
+                            <X className="w-3.5 h-3.5" /> Từ chối
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         )}
       </div>
 
-      {/* DELETE USER MODAL */}
       <ConfirmModal
-        open={deleteModal.open}
-        onOpenChange={(open) => setDeleteModal((prev) => ({ ...prev, open }))}
-        variant="destructive"
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
         title="Xóa người dùng"
-        description={`Bạn có chắc chắn muốn xóa "${deleteModal.userName}" khỏi hệ thống? Toàn bộ dữ liệu liên quan sẽ bị xóa vĩnh viễn.`}
-        confirmText="Xóa"
-        cancelText="Hủy"
+        description={`Bạn có chắc chắn muốn xóa người dùng ${deleteModalData?.name}? Hành động này không thể hoàn tác.`}
         onConfirm={confirmDeleteUser}
         loading={isDeleting}
+        variant="destructive"
       />
 
-      {/* APPROVE/REJECT MODAL */}
       <ConfirmModal
         open={statusModal.open}
         onOpenChange={(open) => setStatusModal((prev) => ({ ...prev, open }))}
-        variant={statusModal.action === "approved" ? "success" : "warning"}
-        title={
-          statusModal.action === "approved"
-            ? "Duyệt thành viên"
-            : "Từ chối thành viên"
-        }
-        description={
-          statusModal.action === "approved"
-            ? `Bạn có muốn duyệt "${statusModal.userName}" trở thành thành viên chính thức?`
-            : `Bạn có muốn từ chối "${statusModal.userName}"? Họ sẽ không thể truy cập ứng dụng.`
-        }
-        confirmText={statusModal.action === "approved" ? "Duyệt" : "Từ chối"}
-        cancelText="Hủy"
+        title={statusModal.action === APP_STATUS.APPROVED ? "Phê duyệt thành viên" : "Từ chối thành viên"}
+        description={`Bạn có chắc chắn muốn ${statusModal.action === APP_STATUS.APPROVED ? "phê duyệt" : "từ chối"} thành viên ${statusModal.userName}?`}
         onConfirm={confirmStatusChange}
         loading={isUpdatingStatus}
+        variant={statusModal.action === APP_STATUS.APPROVED ? "success" : "destructive"}
       />
     </div>
   );

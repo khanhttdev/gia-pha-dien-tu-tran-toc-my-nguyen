@@ -2,141 +2,121 @@
 
 import { createClient } from "./supabase-server";
 import { revalidatePath } from "next/cache";
+import { APP_ROLES, APP_STATUS, APP_PATHS } from "./constants";
+import { verifyAdmin, actionHandler } from "./server-utils";
 
 export interface AdminUserData {
   id: string;
   email: string;
-  role: "admin" | "member" | "accountant";
+  role: typeof APP_ROLES[keyof typeof APP_ROLES];
   created_at: string;
-  status: "pending" | "approved" | "rejected";
+  status: typeof APP_STATUS[keyof typeof APP_STATUS];
 }
 
 export async function getAdminUsers() {
-  const supabase = await createClient();
+  return actionHandler(async () => {
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  const { data, error } = await supabase.rpc("get_admin_users");
-
-  if (error) {
-    console.error("Error fetching admin users:", error);
-    return { error: error.message, data: null };
-  }
-
-  return { error: null, data: data as AdminUserData[] };
+    const { data, error } = await adminCheck.supabase!.rpc("get_admin_users");
+    if (error) throw error;
+    return data as AdminUserData[];
+  });
 }
 
 export async function setUserRole(
   userId: string,
-  newRole: "admin" | "member" | "accountant",
+  newRole: typeof APP_ROLES[keyof typeof APP_ROLES],
 ) {
-  const supabase = await createClient();
+  return actionHandler(async () => {
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  const { error } = await supabase.rpc("set_user_role", {
-    target_user_id: userId,
-    new_role: newRole,
+    const { error } = await adminCheck.supabase!.rpc("set_user_role", {
+      target_user_id: userId,
+      new_role: newRole,
+    });
+
+    if (error) throw error;
+    revalidatePath(APP_PATHS.ADMIN);
+    return true;
   });
-
-  if (error) {
-    console.error("Error setting user role:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin");
-  return { error: null };
 }
 
 export async function setUserStatus(
   userId: string,
-  newStatus: "approved" | "rejected",
+  newStatus: typeof APP_STATUS.APPROVED | typeof APP_STATUS.REJECTED,
 ) {
-  const supabase = await createClient();
+  return actionHandler(async () => {
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  const { error } = await supabase.rpc("set_user_status", {
-    target_user_id: userId,
-    new_status: newStatus,
+    const { error } = await adminCheck.supabase!.rpc("set_user_status", {
+      target_user_id: userId,
+      new_status: newStatus,
+    });
+
+    if (error) throw error;
+    revalidatePath(APP_PATHS.ADMIN);
+    return true;
   });
-
-  if (error) {
-    console.error("Error setting user status:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin");
-  return { error: null };
 }
 
 export async function deleteUser(userId: string) {
-  const supabase = await createClient();
+  return actionHandler(async () => {
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  const { error } = await supabase.rpc("delete_user", {
-    target_user_id: userId,
+    const { error } = await adminCheck.supabase!.rpc("delete_user", {
+      target_user_id: userId,
+    });
+
+    if (error) throw error;
+    revalidatePath(APP_PATHS.ADMIN);
+    return true;
   });
-
-  if (error) {
-    console.error("Error deleting user:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin");
-  return { error: null };
 }
 
 export async function adminCreateUser(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const role = (formData.get("role") as string) || "member";
+  return actionHandler(async () => {
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const role = (formData.get("role") as string) || APP_ROLES.MEMBER;
 
-  if (!email || !password) {
-    return { error: "Email and password are required" };
-  }
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
 
-  const supabase = await createClient();
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  const { data, error } = await supabase.rpc("admin_create_user", {
-    new_email: email,
-    new_password: password,
-    new_role: role,
-    new_active: true,
+    const { data, error } = await adminCheck.supabase!.rpc("admin_create_user", {
+      new_email: email,
+      new_password: password,
+      new_role: role,
+      new_active: true,
+    });
+
+    if (error) throw error;
+    revalidatePath(APP_PATHS.ADMIN);
+    return data;
   });
-
-  if (error) {
-    console.error("Error creating user:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin");
-  return { error: null, data };
 }
 
 /**
  * Xóa media khỏi thư viện (Admin only)
  */
 export async function deleteMedia(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return actionHandler(async () => {
+    const adminCheck = await verifyAdmin();
+    if (adminCheck.error) throw new Error(adminCheck.error);
 
-  if (!user) return { error: "Vui lòng đăng nhập" };
+    const { error } = await adminCheck.supabase!.from("media").delete().eq("id", id);
+    if (error) throw error;
 
-  // Kiểm tra quyền admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return { error: "Bạn không có quyền thực hiện hành động này" };
-  }
-
-  const { error } = await supabase.from("media").delete().eq("id", id);
-  if (error) {
-    console.error("Error deleting media:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/media");
-  return { error: null };
+    revalidatePath(APP_PATHS.MEDIA);
+    return true;
+  });
 }
 
 export async function getDemographicStats() {

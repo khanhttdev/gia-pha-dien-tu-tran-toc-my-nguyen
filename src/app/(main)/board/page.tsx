@@ -20,10 +20,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommentSection } from "@/components/board/comment-section";
-import type { BoardFeedItem } from "@/lib/types";
 import { ImageUpload } from "@/components/ui/image-upload";
 import Image from "next/image";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useAuth } from "@/hooks/use-auth";
+import { useConfirmModal } from "@/hooks/use-confirm-modal";
+import { BOARD_TYPES, APP_STATUS } from "@/lib/constants";
+import { BoardFeedItem } from "@/lib/types";
 
 // Helper to safely extract media URL
 const getFeedMediaUrl = (proposed_data: any) => {
@@ -52,20 +55,16 @@ export default function BoardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const [content, setContent] = useState("");
-  const [type, setType] = useState("news");
+  const [type, setType] = useState<string>(BOARD_TYPES.NEWS);
+  const [submitting, setSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+
+  const { currentUserId, isAdmin } = useAuth();
   const [expandedComments, setExpandedComments] = useState<
     Record<string, boolean>
   >({});
-
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [postIdToDelete, setPostIdToDelete] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const toggleComments = (id: string) => {
     setExpandedComments((prev) => ({
@@ -87,8 +86,9 @@ export default function BoardPage() {
       const res = await getBoardFeed(currentPage, 20);
 
       if (res.data) {
-        setFeed((prev) => (reset ? res.data! : [...prev, ...res.data!]));
-        setHasMore(res.hasMore);
+        const { items, hasMore } = res.data;
+        setFeed((prev) => (reset ? items : [...prev, ...items]));
+        setHasMore(hasMore);
         if (!reset) setPage(currentPage);
       }
 
@@ -99,44 +99,25 @@ export default function BoardPage() {
   );
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const sb = createClient();
-      const {
-        data: { user },
-      } = await sb.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        const { data: profile } = await sb
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        setIsAdmin(profile?.role === "admin");
-      }
-    };
-    fetchUser();
     loadFeed(true);
   }, []);
 
-  const handleDeletePost = (id: string) => {
-    setPostIdToDelete(id);
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDeletePost = async () => {
-    if (!postIdToDelete) return;
-    setDeleting(true);
-    const res = await deleteContribution(postIdToDelete);
-    if (res.error) {
-      toast.error(res.error);
-    } else {
-      toast.success("Đã xóa bài đăng thành công");
-      await loadFeed(true);
-      setDeleteConfirmOpen(false);
-      setPostIdToDelete(null);
-    }
-    setDeleting(false);
-  };
+  const {
+    open: deleteConfirmOpen,
+    setOpen: setDeleteConfirmOpen,
+    data: postIdToDelete,
+    loading: deleting,
+    showConfirm: handleDeletePost,
+    handleConfirm: confirmDeletePost,
+  } = useConfirmModal<string>({
+    onConfirm: async (id) => {
+      // Optimistic UI: Ẩn ngay lập tức
+      setFeed((prev) => prev.filter((item) => item.id !== id));
+      return deleteContribution(id);
+    },
+    onSuccess: () => loadFeed(true),
+    successMessage: "Đã xóa bài đăng thành công",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,15 +326,15 @@ export default function BoardPage() {
                           variant="secondary"
                           className="text-[10px] uppercase font-medium bg-background/50"
                         >
-                          {item.type === "news"
+                          {item.type === BOARD_TYPES.NEWS
                             ? "Tin tức"
-                            : item.type === "event"
+                            : item.type === BOARD_TYPES.EVENT
                               ? "Sự kiện"
-                              : item.type === "correction"
+                              : item.type === BOARD_TYPES.CORRECTION
                                 ? "Báo lỗi"
                                 : "Tư vấn"}
                         </Badge>
-                        {item.status === "pending" && (
+                        {item.status === APP_STATUS.PENDING && (
                           <Badge
                             variant="outline"
                             className="text-[10px] border-amber-500/50 text-amber-500 gap-1"
@@ -361,7 +342,7 @@ export default function BoardPage() {
                             <Clock className="w-3 h-3" /> Chờ duyệt
                           </Badge>
                         )}
-                        {item.status === "approved" && (
+                        {item.status === APP_STATUS.APPROVED && (
                           <Badge
                             variant="outline"
                             className="text-[10px] border-emerald-500/50 text-emerald-500 gap-1"
@@ -369,7 +350,7 @@ export default function BoardPage() {
                             <CheckCircle2 className="w-3 h-3" /> Đã công khai
                           </Badge>
                         )}
-                        {item.status === "rejected" && (
+                        {item.status === APP_STATUS.REJECTED && (
                           <Badge
                             variant="destructive"
                             className="text-[10px] gap-1"
@@ -427,7 +408,7 @@ export default function BoardPage() {
                     })()}
 
                     {/* Action: Toggle Comments */}
-                    {item.status === "approved" && (
+                    {item.status === APP_STATUS.APPROVED && (
                       <div className="mt-3 pt-3 border-t border-border/20">
                         <Button
                           variant="ghost"
