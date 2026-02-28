@@ -23,8 +23,8 @@ import type { BoardFeedItem } from "@/lib/types";
 import { ImageUpload } from "@/components/ui/image-upload";
 import Image from "next/image";
 
-// Helper to safely extract image URL
-const getFeedImageUrl = (proposed_data: any) => {
+// Helper to safely extract media URL
+const getFeedMediaUrl = (proposed_data: any) => {
   if (!proposed_data) return null;
   if (typeof proposed_data === "string") {
     try {
@@ -35,6 +35,13 @@ const getFeedImageUrl = (proposed_data: any) => {
     }
   }
   return proposed_data.image_url || null;
+};
+
+// Helper to check if URL is a video
+const isVideoUrl = (url: string | null) => {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  return videoExtensions.some(ext => url.toLowerCase().endsWith(ext)) || url.includes('/video/');
 };
 
 export default function BoardPage() {
@@ -174,6 +181,7 @@ export default function BoardPage() {
                   bucket="media"
                   value={imageUrl}
                   onChange={(url) => setImageUrl(url)}
+                  accept="image/*"
                 />
               </div>
             </div>
@@ -333,17 +341,35 @@ export default function BoardPage() {
                       {item.content}
                     </p>
 
-                    {getFeedImageUrl(item.proposed_data) && (
-                      <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
-                        <Image
-                          src={getFeedImageUrl(item.proposed_data)}
-                          alt="Ảnh đính kèm từ người dùng"
-                          fill
-                          className="object-contain"
-                          sizes="(max-width: 768px) 100vw, 400px"
-                        />
-                      </div>
-                    )}
+                    {(() => {
+                      const mediaUrl = getFeedMediaUrl(item.proposed_data);
+                      if (!mediaUrl) return null;
+
+                      if (isVideoUrl(mediaUrl)) {
+                        return (
+                          <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
+                            <video
+                              src={mediaUrl}
+                              controls
+                              className="w-full h-full object-contain"
+                              preload="metadata"
+                            />
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
+                          <Image
+                            src={mediaUrl}
+                            alt="Ảnh đính kèm từ người dùng"
+                            fill
+                            className="object-contain"
+                            sizes="(max-width: 768px) 100vw, 400px"
+                          />
+                        </div>
+                      );
+                    })()}
 
                     {/* Action: Toggle Comments */}
                     {item.status === "approved" && (

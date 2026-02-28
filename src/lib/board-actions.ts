@@ -87,11 +87,13 @@ export async function submitContribution(formData: FormData) {
 
   // Nếu có tải ảnh lên, tự động cập nhật vào thư viện (media)
   if (imageUrl) {
+    const isVideo = imageUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) || imageUrl.includes('/video/');
+
     const { error: mediaError } = await supabase.from("media").insert({
-      title: "Ảnh từ Bản tin: " + (content.substring(0, 30) || "Tải lên mới"),
+      title: (isVideo ? "Video" : "Ảnh") + " từ Bản tin: " + (content.substring(0, 30) || "Tải lên mới"),
       description: content.substring(0, 150),
       url: imageUrl,
-      type: "image",
+      type: isVideo ? "video" : "image",
       uploaded_by: user.id,
       year: new Date().getFullYear(),
     });
