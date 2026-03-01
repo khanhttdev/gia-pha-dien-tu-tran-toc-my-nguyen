@@ -109,6 +109,7 @@ export function MeiChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                aria-label="Hỏi Mei về gia phả"
                 placeholder="Hỏi Mei về gia phả..."
                 disabled={isLoading}
                 className={cn(

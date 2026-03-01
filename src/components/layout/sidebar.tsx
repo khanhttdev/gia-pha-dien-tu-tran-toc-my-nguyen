@@ -45,13 +45,15 @@ const HeritageOverlay = () => (
 const navItems = [
   { href: "/home", label: "Trang Chủ", icon: Home },
   { href: "/tree", label: "Cây Gia Phả", icon: GitFork },
-  { href: "/people", label: "Thành Viên", icon: Users },
-  { href: "/directory", label: "Danh Bạ", icon: Phone },
+  { href: "/people", label: "Hội Viên", icon: Users },
+  { href: "/board", label: "Bảng Tin", icon: MessageSquare },
   { href: "/book", label: "Sách Gia Phả", icon: BookOpen },
+];
+
+const secondaryNavItems = [
+  { href: "/directory", label: "Danh Bạ", icon: Phone },
   { href: "/events", label: "Sự Kiện", icon: CalendarDays },
   { href: "/media", label: "Thư Viện", icon: ImageIcon },
-  { href: "/board", label: "Bảng Tin", icon: MessageSquare },
-  { href: "/settings", label: "Hồ Sơ", icon: UserCog },
 ];
 
 interface SidebarProps {
@@ -125,6 +127,50 @@ export function Sidebar({ profile }: SidebarProps) {
             </Link>
           );
         })}
+
+        <div className="pt-4 pb-1 px-3 mt-4 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-wider text-amber-200/50 font-bold">
+            Tiện ích
+          </p>
+        </div>
+        {secondaryNavItems.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-primary/20 text-white border border-primary/30 shadow-sm"
+                  : "text-amber-100/70 hover:bg-white/10 hover:text-white",
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </Link>
+          );
+        })}
+
+        <div className="pt-4 pb-1 px-3 mt-4 border-t border-white/10">
+          <p className="text-[10px] uppercase tracking-wider text-amber-200/50 font-bold">
+            Cá nhân
+          </p>
+        </div>
+        <Link
+          href="/settings"
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            pathname.startsWith("/settings")
+              ? "bg-primary/20 text-white border border-primary/30 shadow-sm"
+              : "text-amber-100/70 hover:bg-white/10 hover:text-white",
+          )}
+        >
+          <UserCog className="w-4 h-4 shrink-0" />
+          Hồ Sơ
+        </Link>
 
         {(profile?.role === "admin" || profile?.role === "accountant") && (
           <>
@@ -227,7 +273,7 @@ export function Sidebar({ profile }: SidebarProps) {
         <div className="flex items-center gap-1">
           <NotificationMenu />
           <Button
-            aria-label="Action Button"
+            aria-label={open ? "Đóng menu" : "Mở menu"}
             variant="ghost"
             size="icon"
             className="h-8 w-8 hover:bg-foreground/5"

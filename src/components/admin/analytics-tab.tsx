@@ -5,8 +5,17 @@ import { getDemographicStats } from "@/lib/admin-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, HeartPulse, Workflow, Activity } from "lucide-react";
 
+interface DemographicStats {
+  total: number;
+  male: number;
+  female: number;
+  alive: number;
+  deceased: number;
+  generations: Record<string, number>;
+}
+
 export function AnalyticsTab() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DemographicStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -62,6 +62,7 @@ export function TreeHeader({
                                 ? "bg-[var(--color-heritage-gold)] text-black shadow-[0_0_15px_rgba(230,200,117,0.4)]"
                                 : "text-[var(--color-heritage-gold)] bg-black/40 hover:bg-white/10"
                                 }`}
+                            aria-label="Xem Sơ Đồ Cây"
                             title="Xem Sơ Đồ Cây"
                         >
                             <NetworkIcon className="w-4 h-4 md:w-5 md:h-5" />
@@ -72,6 +73,7 @@ export function TreeHeader({
                                 ? "bg-[var(--color-heritage-gold)] text-black shadow-[0_0_15px_rgba(230,200,117,0.4)]"
                                 : "text-[var(--color-heritage-gold)] bg-black/40 hover:bg-white/10"
                                 }`}
+                            aria-label="Xem Danh Sách"
                             title="Xem Danh Sách"
                         >
                             <ListIcon className="w-4 h-4 md:w-5 md:h-5" />

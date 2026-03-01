@@ -128,7 +128,7 @@ export function MemberProfileModal({
                                 </div>
 
                                 {memberSpouses.map((spouse, idx) => {
-                                    const sMeta = (spouse.metadata as any) || {};
+                                    const sMeta = (spouse.metadata as MemberMetadata) || {};
                                     return (
                                         <div key={spouse.id} className="flex items-center gap-3 md:gap-6 z-10 relative">
                                             {/* Marriage Ring SVG Connector */}

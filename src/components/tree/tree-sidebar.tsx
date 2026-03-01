@@ -39,6 +39,7 @@ export function TreeSidebar({
                         placeholder="Tìm kiếm thành viên..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        aria-label="Tìm kiếm thành viên dòng họ"
                         className="w-full bg-black/30 border-[var(--color-heritage-gold-dim)]/50 text-[var(--color-heritage-gold)] placeholder:text-[var(--color-heritage-gold-dim)]/50 pl-10 h-10 rounded-full"
                     />
                     <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-heritage-gold-dim)]" />
@@ -122,6 +123,7 @@ function RecursiveSidebarItem({ member, allMembers, level, onSelect }: { member:
                     <button
                         onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
                         className="w-6 h-6 flex items-center justify-center shrink-0 mr-1 text-[var(--color-heritage-gold-dim)] hover:text-[var(--color-heritage-gold)] hover:bg-white/5 rounded"
+                        aria-label={expanded ? "Thu gọn" : "Mở rộng"}
                     >
                         {expanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
                     </button>

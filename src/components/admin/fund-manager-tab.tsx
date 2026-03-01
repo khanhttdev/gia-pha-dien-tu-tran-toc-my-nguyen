@@ -39,8 +39,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface FundTransaction {
+  id: string;
+  transaction_type: "income" | "expense" | string;
+  amount: number;
+  description: string;
+  transaction_date: string;
+  member?: { id: string; full_name: string } | null;
+}
+
 export function FundManagerTab() {
-  const [funds, setFunds] = useState<any[]>([]);
+  const [funds, setFunds] = useState<FundTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -82,7 +91,9 @@ export function FundManagerTab() {
 
     if (resFunds.data) {
       setFunds((prev) =>
-        append ? [...prev, ...resFunds.data!] : resFunds.data!,
+        append
+          ? [...prev, ...(resFunds.data as FundTransaction[])]
+          : (resFunds.data as FundTransaction[]),
       );
       setHasMore(resFunds.hasMore);
       setNextCursor(resFunds.nextCursor);
@@ -302,12 +313,12 @@ export function FundManagerTab() {
                           "vi-VN",
                         )}
                       </p>
-                      {f.person && (
+                      {f.member && (
                         <Badge
                           variant="outline"
                           className="text-[10px] py-0 px-1.5"
                         >
-                          {f.person.full_name}
+                          {f.member.full_name}
                         </Badge>
                       )}
                     </div>

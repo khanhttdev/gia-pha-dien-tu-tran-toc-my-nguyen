@@ -50,7 +50,7 @@ export function buildTreeLayout(
     if (!partner) return;
 
     const spouseId = `spouse-${s.id}`;
-    const sMeta = (s.metadata as any) || {};
+    const sMeta = (s.metadata as MemberMetadata) || {};
 
     nodes.push({
       id: spouseId,
