@@ -26,7 +26,7 @@ export function MemberProfileModal({
         We use a highly stylized royal layout based on the provided Heritage Image 1 & 2.
       */}
             <DialogContent
-                className="max-w-[95vw] sm:max-w-[550px] md:max-w-[700px] border-2 border-[var(--color-heritage-gold)] bg-gradient-to-b from-[#2a0a0f] to-[#1a0505] p-0 overflow-hidden shadow-[0_0_50px_rgba(230,200,117,0.2)] rounded-2xl"
+                className="max-w-[calc(100vw-32px)] sm:max-w-[550px] md:max-w-[700px] max-h-[90vh] overflow-y-auto border-2 border-[var(--color-heritage-gold)] bg-gradient-to-b from-[#2a0a0f] to-[#1a0505] p-0 shadow-[0_0_50px_rgba(230,200,117,0.2)] rounded-2xl custom-scrollbar"
                 aria-describedby="member-profile-description"
             >
                 <DialogTitle className="sr-only">Hồ sơ thành viên {member.full_name}</DialogTitle>

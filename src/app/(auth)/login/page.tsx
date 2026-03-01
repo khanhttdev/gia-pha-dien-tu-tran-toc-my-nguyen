@@ -54,7 +54,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background overflow-hidden relative">
       {/* Left panel — decorative heritage */}
       <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-background border-r border-border/50">
         {/* Traditional Asian-inspired SVG Pattern */}

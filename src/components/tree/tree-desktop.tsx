@@ -36,6 +36,7 @@ function FlowCanvas({
     edges,
     onNodesChange,
     onEdgesChange,
+    isMobile,
 }: {
     members: Member[];
     spouses: Spouse[];
@@ -45,6 +46,7 @@ function FlowCanvas({
     edges: any[];
     onNodesChange: any;
     onEdgesChange: any;
+    isMobile?: boolean;
 }) {
     const { setCenter } = useReactFlow();
 
@@ -54,7 +56,6 @@ function FlowCanvas({
                 const sId = node.id.replace("spouse-", "");
                 const spouse = spouses.find((s) => s.id === sId);
                 if (spouse) {
-                    // Chuyển đổi Spouse thành Member-like để ProfileModal hiển thị
                     const virtualMember = {
                         ...spouse,
                         father_id: null,
@@ -73,20 +74,21 @@ function FlowCanvas({
 
     return (
         <div className="w-full h-full relative">
-            <TreeSidebar
-                members={members}
-                onSelectMember={(m) => {
-                    setSelectedMember(m);
-                    // Focus to node
-                    const node = nodes.find(n => n.id === m.id);
-                    if (node) {
-                        setCenter(node.position.x + 120, node.position.y + 70, { zoom: 1, duration: 800 });
-                    }
-                }}
-            />
+            {!isMobile && (
+                <TreeSidebar
+                    members={members}
+                    onSelectMember={(m) => {
+                        setSelectedMember(m);
+                        const node = nodes.find(n => n.id === m.id);
+                        if (node) {
+                            setCenter(node.position.x + 120, node.position.y + 70, { zoom: 1, duration: 800 });
+                        }
+                    }}
+                />
+            )}
 
             {/* Main Canvas Area */}
-            <div className="absolute inset-0 left-80 text-[var(--color-heritage-gold)]">
+            <div className={`absolute inset-0 text-[var(--color-heritage-gold)] ${!isMobile ? 'left-80' : 'left-0'}`}>
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -101,6 +103,7 @@ function FlowCanvas({
                     onlyRenderVisibleElements={true}
                 >
                     <Background gap={16} size={1} color="var(--color-heritage-gold-dim)" />
+                    <Controls showInteractive={false} className="bg-black/40 border-[var(--color-heritage-gold-dim)]/30" />
                 </ReactFlow>
             </div>
         </div>
@@ -110,11 +113,13 @@ function FlowCanvas({
 export function TreeDesktop({
     members,
     spouses,
-    defaultRootId
+    defaultRootId,
+    isMobile,
 }: {
     members: Member[],
     spouses: Spouse[],
-    defaultRootId?: string | null
+    defaultRootId?: string | null,
+    isMobile?: boolean,
 }) {
     const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
         return buildTreeLayout(members, spouses);
@@ -136,6 +141,7 @@ export function TreeDesktop({
                     edges={edges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
+                    isMobile={isMobile}
                 />
             </ReactFlowProvider>
 

@@ -61,6 +61,7 @@ export default function TreeClient({
             members={initialMembers}
             spouses={initialSpouses}
             defaultRootId={urlRootId || defaultRootId}
+            isMobile={!isDesktop}
           />
         ) : (
           <TreeMobile

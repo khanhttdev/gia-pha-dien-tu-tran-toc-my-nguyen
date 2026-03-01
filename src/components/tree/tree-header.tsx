@@ -14,7 +14,7 @@ export function TreeHeader({
     isMobile: boolean;
 }) {
     return (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto w-[95%] md:w-auto">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto w-[calc(100vw-24px)] md:w-auto">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 px-4 md:px-10 py-3 md:py-4 rounded-xl bg-gradient-to-b from-[#1a0505]/95 to-[#2a0a0f]/95 border border-[var(--color-heritage-gold-dim)]/40 shadow-[0_15px_40px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(230,200,117,0.2)] backdrop-blur-md">
 
                 <div className="flex items-center gap-4 md:gap-8 w-full justify-between md:justify-center">

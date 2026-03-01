@@ -61,8 +61,8 @@ export function MeiChatWidget() {
       {/* Chat Panel */}
       <div
         className={cn(
-          "fixed bottom-6 right-6 z-50 transition-all duration-300 ease-out",
-          "w-[380px] h-[520px] max-h-[80vh]",
+          "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 transition-all duration-300 ease-out",
+          "w-[calc(100vw-32px)] sm:w-[380px] h-[520px] max-h-[calc(100vh-100px)] sm:max-h-[80vh]",
           "rounded-3xl overflow-hidden flex flex-col",
           "bg-[#1a0a0b]/95 backdrop-blur-xl",
           "border border-white/10 shadow-2xl shadow-black/50",
