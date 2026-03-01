@@ -73,6 +73,20 @@ export const toolDeclarations: FunctionDeclaration[] = [
       required: ["person_name_1", "person_name_2"],
     },
   },
+  {
+    name: "get_app_guide",
+    description: "Lấy hướng dẫn sử dụng các chức năng của ứng dụng (Cây gia phả, Quỹ tộc, Di sản, Bảo mật...).",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        feature: {
+          type: Type.STRING,
+          description: "Tên tính năng cần hướng dẫn (ví dụ: 'security', 'tree', 'fund', 'media')",
+        },
+      },
+      required: ["feature"],
+    },
+  },
 ];
 
 // ─── Metadata Helpers ──────────────────────────────────────────────────────
@@ -137,6 +151,17 @@ async function getFamilyStatistics() {
   };
 }
 
+async function getAppGuide(feature: string) {
+  const guides: Record<string, string> = {
+    tree: "Để xem cây gia phả, bạn vào mục 'Cây Gia Phả' trên menu. Bạn có thể phóng to/thu nhỏ, kéo thả để xem các chi nhánh. Nhấp vào tên một người để xem thông tin chi tiết.",
+    fund: "Mục 'Quỹ Tộc' hiển thị danh sách thu chi của dòng họ. Bạn có thể theo dõi sự đóng góp của các thành viên và các khoản chi tiêu chung.",
+    media: "Mục 'Di Sản' là nơi lưu giữ ảnh và video kỷ niệm. Bạn có thể xem theo từng năm hoặc loại nội dung (ảnh/video). Sắp tới sẽ có phần Sắc phong tư liệu cổ.",
+    security: "Để bảo mật tài khoản, bạn vào 'Cài đặt' -> 'Bảo mật tài khoản' để kích hoạt xác thực 2 lớp (2FA) bằng Google Authenticator.",
+    admin: "Khu vực Quản trị dành cho Ban Quản Trị để thêm/sửa thành viên, phê duyệt đóng góp và quản lý quỹ.",
+  };
+  return guides[feature] || "Hiện Mei chưa có hướng dẫn chi tiết cho tính năng này. Bạn có thể thử hỏi về 'tree', 'fund', 'media' hoặc 'security' nhé!";
+}
+
 // ─── BFS Relationship Finder ───────────────────────────────────────────────
 
 interface GraphNode {
@@ -144,6 +169,7 @@ interface GraphNode {
   name: string;
   generation: number | null;
   gender: string | null;
+  birth_order: number | null;
   type: "member" | "spouse";
   father_id?: string | null;
   spouse_of?: string | null;
@@ -158,49 +184,97 @@ interface RelationshipResult {
   description: string;
 }
 
-function describePath(path: GraphNode[]): string {
-  if (path.length < 2) return "Cùng một người";
+// Hàm trợ giúp xác định xưng hô theo đời (Cụ, Ông/Bà, Cha/Mẹ, Anh/Chị, Con, Cháu, Chắt...)
+function getKinshipTerm(d1: number, d2: number, elderGender: string | null, youngerGender: string | null, elderBirthOrder: number | null, youngerBirthOrder: number | null): string {
+  // d1: Khoảng cách từ người 1 đến Tổ tiên chung
+  // d2: Khoảng cách từ người 2 đến Tổ tiên chung
+  // Quy ước: Người 1 đang gọi Người 2. Vậy Person 2 là target (d2), Person 1 là source (d1).
+  // Ở đây ta dùng hàm mô tả mối quan hệ Person 1 so với Person 2.
+  // VD: Person 1 là "cháu", Person 2 là "ông".
+  return ""; // Sẽ cài đặt logic tổng quát riêng nếu cần, tạm thời dùng trực tiếp trong hàm.
+}
 
-  // If purely members and short enough, we can use old static logic, but unified step-by-step is better for complex
+function describePath(path: GraphNode[]): string {
+  if (path.length < 2) return "Đó là cùng một người.";
+
+  const p1 = path[0]; // Người bắt đầu (Source)
+  const p2 = path[path.length - 1]; // Người kết thúc (Target)
+
   const isPureMembers = path.every((n) => n.type === "member");
 
   if (isPureMembers) {
-    const p1 = path[0];
-    const p2 = path[path.length - 1];
+    // 1. Tìm Tổ Tiên Chung (LCA - Lowest Common Ancestor) trong đường đi
+    let lca = path[0];
+    for (const node of path) {
+      if (node.generation !== null && (lca.generation === null || node.generation < lca.generation)) {
+        lca = node;
+      }
+    }
 
-    // Direct parent-child
-    if (p1.father_id === p2.id)
-      return p2.gender === "male"
-        ? `${p2.name} là **cha** của ${p1.name}`
-        : `${p2.name} là **mẹ** của ${p1.name}`;
-    if (p2.father_id === p1.id)
-      return p1.gender === "male"
-        ? `${p1.name} là **cha** của ${p2.name}`
-        : `${p1.name} là **mẹ** của ${p2.name}`;
+    const gen1 = p1.generation ?? 1;
+    const gen2 = p2.generation ?? 1;
+    const lcaGen = lca.generation ?? 1;
 
-    // Siblings
-    if (p1.father_id && p1.father_id === p2.father_id)
-      return `${p1.name} và ${p2.name} là **anh/chị em** ruột`;
+    const d1 = gen1 - lcaGen; // Khoảng cách đời của P1 tới LCA
+    const d2 = gen2 - lcaGen; // Khoảng cách đời của P2 tới LCA
 
-    // generation gap
-    const genGap = Math.abs((p1.generation ?? 1) - (p2.generation ?? 1));
-    const elder = (p1.generation ?? 1) < (p2.generation ?? 1) ? p1 : p2;
-    const younger = (p1.generation ?? 1) < (p2.generation ?? 1) ? p2 : p1;
+    // Quan hệ Cùng thế hệ (Anh, Chị, Em rột hoặc họ)
+    if (d1 === d2) {
+      if (d1 === 1) {
+        // Anh chị em ruột (Cùng cha)
+        const isElder = (p1.birth_order ?? 99) < (p2.birth_order ?? 99);
+        return isElder
+          ? `${p1.name} là **anh/chị** ruột của ${p2.name}.`
+          : `${p1.name} là **em** ruột của ${p2.name}.`;
+      } else {
+        // Anh chị em họ
+        return `${p1.name} và ${p2.name} là **anh/chị em họ** (cùng thế hệ đời thứ ${gen1}). (Theo phong tục, người thuộc nhánh của anh/chị ruột của LCA sẽ có vai lớn hơn).`;
+      }
+    }
 
-    if (genGap === 2)
-      return elder.gender === "male"
-        ? `${elder.name} là **ông** của ${younger.name}`
-        : `${elder.name} là **bà** của ${younger.name}`;
-    if (genGap === 3)
-      return elder.gender === "male"
-        ? `${elder.name} là **cụ ông** của ${younger.name}`
-        : `${elder.name} là **cụ bà** của ${younger.name}`;
-    if (genGap === 0)
-      return `${p1.name} và ${p2.name} là **anh/chị em họ** (cùng thế hệ F${p1.generation})`;
-    if (genGap === 1)
-      return elder.gender === "male"
-        ? `${elder.name} là **chú/bác** của ${younger.name}`
-        : `${elder.name} là **cô/dì** của ${younger.name}`;
+    // Quan hệ Trực hệ (Cha-con, Ông-cháu)
+    if (d1 === 0 || d2 === 0) {
+      const gap = Math.abs(d1 - d2);
+      const elder = d1 === 0 ? p1 : p2;
+      const younger = d1 === 0 ? p2 : p1;
+
+      let termElder = "Tổ tiên";
+      if (gap === 1) termElder = elder.gender === "male" ? "Cha" : "Mẹ";
+      if (gap === 2) termElder = elder.gender === "male" ? "Ông" : "Bà";
+      if (gap === 3) termElder = elder.gender === "male" ? "Cụ ông" : "Cụ bà";
+      if (gap === 4) termElder = elder.gender === "male" ? "Kỵ ông" : "Kỵ bà";
+
+      let termYounger = "Hậu duệ";
+      if (gap === 1) termYounger = "Con"
+      if (gap === 2) termYounger = "Cháu"
+      if (gap === 3) termYounger = "Chắt"
+      if (gap === 4) termYounger = "Chút"
+
+      if (d1 === 0) {
+        return `${p1.name} là **${termElder}** của ${p2.name} (cách nhau ${gap} đời).`;
+      } else {
+        return `${p1.name} là **${termYounger}** của ${p2.name} (cách nhau ${gap} đời). ${p2.name} là **${termElder}**.`;
+      }
+    }
+
+    // Quan hệ Bàng hệ (Chú bác - Cháu họ)
+    if (d1 > 0 && d2 > 0 && d1 !== d2) {
+      const elderGen = Math.min(gen1, gen2);
+      const youngerGen = Math.max(gen1, gen2);
+      const elderNode = gen1 < gen2 ? p1 : p2;
+      const youngerNode = gen1 < gen2 ? p2 : p1;
+      const gap = youngerGen - elderGen;
+
+      if (gap === 1) {
+        const role = elderNode.gender === "male" ? "Chú/Bác/Cậu" : "Cô/Dì/Thím";
+        return `${elderNode.name} có vai vế là **${role}** của ${youngerNode.name} (hơn 1 thế hệ).`;
+      } else if (gap === 2) {
+        const role = elderNode.gender === "male" ? "Ông chú/Ông bác" : "Bà cô";
+        return `${elderNode.name} có vai vế là **${role}** họ của ${youngerNode.name} (hơn 2 thế hệ).`;
+      } else {
+        return `${elderNode.name} thuộc thế hệ đời thứ ${elderGen}, lớn hơn ${youngerNode.name} (đời thứ ${youngerGen}) **${gap} thế hệ**. Tức là bậc tổ tiên bàng hệ.`;
+      }
+    }
   }
 
   // Direct spouse
@@ -233,13 +307,13 @@ function describePath(path: GraphNode[]): string {
       stepDesc = `${a.name} là ${a.role_type === "chong" ? "chồng" : "vợ"} của ${b.name}`;
     else if (b.spouse_of === a.id)
       stepDesc = `${b.name} là ${b.role_type === "chong" ? "chồng" : "vợ"} của ${a.name}`;
-    else stepDesc = `${a.name} nối với ${b.name}`;
+    else stepDesc = `${a.name} nối quan hệ họ hàng với ${b.name}`;
 
     steps.push(stepDesc);
   }
 
   return (
-    `Quan hệ gián tiếp thông qua ${path.length - 2} người nối trung gian. Các bước:\n` +
+    `Quan hệ gián tiếp thông qua ${path.length - 2} người nối trung gian. Các bước lần lượt:\n` +
     steps.map((s, idx) => `  ${idx + 1}. ${s}`).join("\n")
   );
 }
@@ -250,7 +324,7 @@ async function findRelationship(
 ): Promise<RelationshipResult> {
   const supabase = await createClient();
   const [membersRes, spousesRes] = await Promise.all([
-    supabase.from("members").select("id, full_name, gender, generation_level, father_id"),
+    supabase.from("members").select("id, full_name, gender, generation_level, father_id, birth_order"),
     supabase.from("spouses").select("id, full_name, member_id, role_type"),
   ]);
 
@@ -263,6 +337,7 @@ async function findRelationship(
       name: m.full_name,
       generation: m.generation_level,
       gender: m.gender,
+      birth_order: m.birth_order,
       type: "member" as const,
       father_id: m.father_id,
     })),
@@ -271,6 +346,7 @@ async function findRelationship(
       name: s.full_name,
       generation: null,
       gender: s.role_type === "chong" ? "male" : "female",
+      birth_order: null,
       type: "spouse" as const,
       spouse_of: s.member_id,
       role_type: s.role_type,
@@ -398,6 +474,8 @@ export async function executeTool(
       return await getFamilyStatistics();
     case "find_relationship":
       return await findRelationship(args.person_name_1, args.person_name_2);
+    case "get_app_guide":
+      return await getAppGuide(args.feature);
     default:
       return { error: `Unknown tool: ${name}` };
   }

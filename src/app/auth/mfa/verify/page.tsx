@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, ShieldCheck, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-export default function MFAVerifyPage() {
+function MFAVerifyContent() {
     const [authCode, setAuthCode] = useState("");
     const [verifying, setVerifying] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -142,5 +142,17 @@ export default function MFAVerifyPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function MFAVerifyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[var(--color-heritage-maroon)]">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-heritage-gold)]" />
+            </div>
+        }>
+            <MFAVerifyContent />
+        </Suspense>
     );
 }
