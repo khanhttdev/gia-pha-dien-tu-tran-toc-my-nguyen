@@ -69,7 +69,7 @@ export function HeritageGallery({ items, isAdmin, onDelete, onSelect }: Heritage
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-6 z-20">
                                             <div className="text-center">
                                                 <p className="text-amber-100 text-xs font-serif leading-relaxed line-clamp-6">
-                                                    "{m.transcription}"
+                                                    &quot;{m.transcription}&quot;
                                                 </p>
                                                 <div className="mt-4 h-px w-12 bg-amber-500/50 mx-auto" />
                                                 <span className="text-[10px] text-amber-400/80 mt-2 block uppercase tracking-tighter">Bản dịch thư tịch</span>

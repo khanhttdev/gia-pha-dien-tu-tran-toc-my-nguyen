@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { getAllMembers, getAllSpouses } from "@/lib/supabase-data";
 import { Member, Spouse, MemberMetadata } from "@/lib/types";
-import { BookOpen, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Loader2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type FamilyBranch = {
   member: Member;
@@ -162,6 +164,7 @@ export default function BookPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [spouses, setSpouses] = useState<Spouse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     Promise.all([getAllMembers(), getAllSpouses()]).then(([m, s]) => {
@@ -187,22 +190,58 @@ export default function BookPage() {
     [members],
   );
 
+  const handleExportPDF = useCallback(async () => {
+    setExporting(true);
+    try {
+      const { generateGiaPhaPDF } = await import("@/lib/pdf-generator");
+      const blob = await generateGiaPhaPDF(members, spouses);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Gia_Pha_Tran_Toc_My_Nguyen_${new Date().getFullYear()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Đã tải xuống file PDF gia phả!");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Có lỗi khi xuất PDF. Vui lòng thử lại.");
+    }
+    setExporting(false);
+  }, [members, spouses]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="shrink-0 px-6 py-4 border-b border-border glass">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-amber-900" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-amber-900" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold leading-none">
+                S&aacute;ch Gia Ph&#7843;
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tr&#7847;n T&#7897;c M&#7929; Nguy&ecirc;n &mdash; t&#7921;
+                &#273;&#7897;ng t&#7841;o t&#7915; d&#7919; li&#7879;u
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-bold leading-none">
-              S&aacute;ch Gia Ph&#7843;
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Tr&#7847;n T&#7897;c M&#7929; Nguy&ecirc;n &mdash; t&#7921;
-              &#273;&#7897;ng t&#7841;o t&#7915; d&#7919; li&#7879;u
-            </p>
-          </div>
+          {!loading && members.length > 0 && (
+            <Button
+              size="sm"
+              className="gold-gradient border-0 text-amber-950 font-semibold hover:opacity-90 gap-1.5 shadow-md"
+              onClick={handleExportPDF}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              Xuất PDF
+            </Button>
+          )}
         </div>
       </div>
 

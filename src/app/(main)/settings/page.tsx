@@ -11,6 +11,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
 import { Loader2, UserCog } from "lucide-react";
 import { MFAEnroll } from "@/components/auth/mfa-enroll";
+import { NotificationSettings } from "@/components/settings/notification-settings";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -161,6 +162,13 @@ export default function SettingsPage() {
         <h2 className="text-xl font-bold font-serif text-[var(--color-heritage-gold)]">Bảo mật tài khoản</h2>
         <div className="glass p-6 md:p-8 rounded-2xl border border-white/10">
           <MFAEnroll />
+        </div>
+      </div>
+      {/* Section Notification Settings */}
+      <div className="mt-12 space-y-4">
+        <h2 className="text-xl font-bold font-serif text-[var(--color-heritage-gold)]">Thông báo nhắc nhở</h2>
+        <div className="glass p-6 md:p-8 rounded-2xl border border-white/10">
+          <NotificationSettings />
         </div>
       </div>
     </div>
