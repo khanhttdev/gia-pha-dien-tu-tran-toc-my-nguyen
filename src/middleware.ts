@@ -78,6 +78,40 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/admin") && role !== "admin") {
       return NextResponse.redirect(new URL("/home", request.url));
     }
+
+    // ── MFA Verification Check ───────────────────────────────────────
+    // If accessing admin and user has MFA enrolled but not verified (aal1),
+    // redirect to verify page.
+    const aal = user.app_metadata?.aal;
+    if (
+      pathname.startsWith("/admin") &&
+      aal === "aal1" &&
+      user.identities?.some((id) => id.provider === "email") // Basic check
+    ) {
+      // NOTE: Better to check listFactors, but that requires async DB call.
+      // Supabase sets 'aal1' by default. If we see 'aal1', we should check 
+      // if they have factors. Supabase provides 'amr' claim.
+      const amr = user.app_metadata?.amr;
+      // If amr doesn't contain 'mfa', they might need to verify.
+      // But we only want to force if they actually HAVE established MFA.
+
+      // We'll use a safer approach: check if 'mfa' is in the session claims
+      // via a client-side check in the Admin layout or here if we have info.
+    }
+  }
+
+  // A simplified rule for MFA in Middleware:
+  // If user is logged in, and has MFA enabled, and is AAL1, and is trying to hit sensitive routes.
+  if (user && pathname.startsWith("/admin")) {
+    const { data: mfaData } = await supabase.auth.mfa.listFactors();
+    const isMFAEnabled = mfaData && mfaData.all.some((f: any) => f.status === 'verified');
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (isMFAEnabled && aalData?.currentLevel === 'aal1') {
+      const verifyUrl = new URL("/auth/mfa/verify", request.url);
+      verifyUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(verifyUrl);
+    }
   }
 
   // Redirect logged-in users away from auth pages

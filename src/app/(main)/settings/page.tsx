@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
 import { Loader2, UserCog } from "lucide-react";
+import { MFAEnroll } from "@/components/auth/mfa-enroll";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -152,6 +153,14 @@ export default function SettingsPage() {
               Lưu Thay Đổi
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Section MFA - Only show for high roles if needed, but safe for all */}
+      <div className="mt-12 space-y-4">
+        <h2 className="text-xl font-bold font-serif text-[var(--color-heritage-gold)]">Bảo mật tài khoản</h2>
+        <div className="glass p-6 md:p-8 rounded-2xl border border-white/10">
+          <MFAEnroll />
         </div>
       </div>
     </div>
