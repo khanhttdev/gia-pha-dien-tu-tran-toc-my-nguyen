@@ -8,34 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, Phone, Mail, ShieldCheck } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OtpVerificationModal } from "@/components/auth/otp-verification-modal";
-import { getVietnameseAuthError } from "@/lib/auth-errors";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // OTP State
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpType, setOtpType] = useState<"email" | "phone">("phone");
-  const [loginMethod, setLoginMethod] = useState<"password" | "otp">("password");
-
-  const formatPhone = (p: string) => {
-    let cleaned = p.replace(/\D/g, "");
-    if (cleaned.startsWith("0")) {
-      cleaned = "+84" + cleaned.substring(1);
-    } else if (!cleaned.startsWith("+")) {
-      cleaned = "+" + cleaned;
-    }
-    return cleaned;
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,54 +31,14 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error(getVietnameseAuthError(error.message));
+      toast.error(
+        error.message === "Invalid login credentials"
+          ? "Email hoặc mật khẩu không đúng"
+          : error.message,
+      );
       return;
     }
     toast.success("Đăng nhập thành công!");
-    router.push("/home");
-    router.refresh();
-  };
-
-  const handleSendOtp = async (type: "email" | "phone") => {
-    const target = type === "email" ? email : formatPhone(phone);
-    if (!target) {
-      toast.error(`Vui lòng nhập ${type === "email" ? "email" : "số điện thoại"}`);
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp(
-      type === "email"
-        ? { email: target }
-        : { phone: target }
-    );
-    setLoading(false);
-
-    if (error) {
-      toast.error(getVietnameseAuthError(error.message));
-      return;
-    }
-
-    setOtpType(type);
-    setShowOtpModal(true);
-    toast.success("Mã xác thực đã được gửi!");
-  };
-
-  const handleVerifyOtp = async (token: string) => {
-    const target = otpType === "email" ? email : formatPhone(phone);
-    const verifyParams: any = {
-      [otpType]: target,
-      token,
-      type: otpType === "email" ? "email" : "sms",
-    };
-    const { error } = await supabase.auth.verifyOtp(verifyParams);
-
-    if (error) {
-      throw error; // Let the modal handle and display the error
-    }
-
-    toast.success("Xác thực thành công!");
-    setShowOtpModal(false);
     router.push("/home");
     router.refresh();
   };
@@ -109,7 +50,7 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/auth/callback?next=/home`,
       },
     });
-    if (error) toast.error(getVietnameseAuthError(error.message));
+    if (error) toast.error(error.message);
   };
 
   return (
@@ -201,166 +142,77 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 h-12 p-1 bg-muted/50 rounded-xl">
-              <TabsTrigger value="password" onClick={() => setLoginMethod("password")} className="rounded-lg gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Mật khẩu
-              </TabsTrigger>
-              <TabsTrigger value="otp" onClick={() => setLoginMethod("otp")} className="rounded-lg gap-2">
-                <Phone className="w-4 h-4" />
-                Mã OTP
-              </TabsTrigger>
-            </TabsList>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-foreground/80 font-semibold"
+              >
+                Địa chỉ Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="ten@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                autoComplete="email"
+                className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
+              />
+            </div>
 
-            <TabsContent value="password">
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-foreground/80 font-semibold"
-                  >
-                    Địa chỉ Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="ten@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    autoComplete="email"
-                    className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between pb-2">
-                    <Label
-                      htmlFor="password"
-                      className="text-foreground/80 font-semibold"
-                    >
-                      Mật khẩu
-                    </Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm font-semibold text-amber-600 hover:text-amber-700 hover:underline transition-colors"
-                    >
-                      Quên mật khẩu?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPass ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading}
-                      autoComplete="current-password"
-                      className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium pr-10"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                      onClick={() => setShowPass(!showPass)}
-                    >
-                      {showPass ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-11 rounded-xl gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all"
-                  disabled={loading}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between pb-2">
+                <Label
+                  htmlFor="password"
+                  className="text-foreground/80 font-semibold"
                 >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  ) : null}
-                  Đăng nhập
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="otp">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="phone-otp" className="text-foreground/80 font-semibold">
-                    Số điện thoại
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone-otp"
-                      type="tel"
-                      placeholder="0912 345 678"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      disabled={loading}
-                      className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 pl-10 transition-shadow text-amber-950 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => handleSendOtp("phone")}
-                  className="w-full h-11 rounded-xl gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all"
-                  disabled={loading || !phone}
+                  Mật khẩu
+                </Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-semibold text-amber-600 hover:text-amber-700 hover:underline transition-colors"
                 >
-                  {loading && otpType === "phone" ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  ) : null}
-                  Gửi mã xác thực SMS
-                </Button>
-
-                <div className="relative py-2">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/60" />
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-card px-4 text-muted-foreground font-medium rounded-full">
-                      Hoặc dùng Email
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email-otp" className="text-foreground/80 font-semibold">
-                    Địa chỉ Email
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email-otp"
-                      type="email"
-                      placeholder="ten@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={loading}
-                      className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 pl-10 transition-shadow text-amber-950 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => handleSendOtp("email")}
-                  variant="outline"
-                  className="w-full h-11 rounded-xl border-amber-200 text-amber-900 font-bold text-base hover:bg-amber-50 transition-all"
-                  disabled={loading || !email}
-                >
-                  {loading && otpType === "email" ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  ) : null}
-                  Gửi mã xác thực Email
-                </Button>
+                  Quên mật khẩu?
+                </Link>
               </div>
-            </TabsContent>
-          </Tabs>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPass ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  autoComplete="current-password"
+                  className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                  onClick={() => setShowPass(!showPass)}
+                >
+                  {showPass ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-xl gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              ) : null}
+              Đăng nhập
+            </Button>
+          </form>
 
           <div className="relative py-2">
             <div className="absolute inset-0 flex items-center">
@@ -412,15 +264,6 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-
-      <OtpVerificationModal
-        isOpen={showOtpModal}
-        onClose={() => setShowOtpModal(false)}
-        onVerify={handleVerifyOtp}
-        onResend={() => handleSendOtp(otpType)}
-        contactInfo={otpType === "email" ? email : phone}
-        type={otpType}
-      />
     </div>
   );
 }

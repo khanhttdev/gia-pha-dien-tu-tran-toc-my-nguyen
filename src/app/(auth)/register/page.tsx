@@ -8,99 +8,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Phone, Mail, User } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OtpVerificationModal } from "@/components/auth/otp-verification-modal";
-import { getVietnameseAuthError } from "@/lib/auth-errors";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
   const supabase = createClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [registerMethod, setRegisterMethod] = useState<"email" | "phone">("email");
 
-  // OTP State
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpType, setOtpType] = useState<"email" | "phone">("email");
-
-  const formatPhone = (p: string) => {
-    let cleaned = p.replace(/\D/g, "");
-    if (cleaned.startsWith("0")) {
-      cleaned = "+84" + cleaned.substring(1);
-    } else if (!cleaned.startsWith("+")) {
-      cleaned = "+" + cleaned;
-    }
-    return cleaned;
-  };
-
-  const handleRegister = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    if (!name || (registerMethod === "email" ? !email || !password : !phone)) {
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !password) {
       toast.error("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-
-    if (registerMethod === "email" && password.length < 6) {
+    if (password.length < 6) {
       toast.error("Mật khẩu phải có ít nhất 6 ký tự");
       return;
     }
-
     setLoading(true);
-
-    const signUpOptions = {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
       options: {
         data: { full_name: name },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/tree`,
       },
-    };
-
-    const { error } = await supabase.auth.signUp(
-      registerMethod === "email"
-        ? { email, password, ...signUpOptions }
-        : { phone: formatPhone(phone), password: Math.random().toString(36), ...signUpOptions } // Phone OTP needs a password in signUp but it's not used for login
-    );
-
+    });
     setLoading(false);
-
     if (error) {
-      toast.error(getVietnameseAuthError(error.message));
+      toast.error(error.message);
       return;
     }
-
-    if (registerMethod === "phone") {
-      setOtpType("phone");
-      setShowOtpModal(true);
-      toast.success("Mã xác thực đã được gửi đến số điện thoại của bạn!");
-    } else {
-      toast.success(
-        "Đăng ký thành công! Vui lòng kiểm tra và xác nhận email của bạn để có thể đăng nhập.",
-      );
-      router.push("/login");
-    }
-  };
-
-  const handleVerifyOtp = async (token: string) => {
-    const target = formatPhone(phone);
-    const verifyParams: any = {
-      phone: target,
-      token,
-      type: "sms", // Use 'sms' or 'signup' depending on Supabase version, 'any' bypassed the strict literal check
-    };
-    const { error } = await supabase.auth.verifyOtp(verifyParams);
-
-    if (error) {
-      throw error;
-    }
-
-    toast.success("Xác thực thành công!");
-    setShowOtpModal(false);
-    router.push("/home");
-    router.refresh();
+    toast.success(
+      "Đăng ký thành công! Vui lòng kiểm tra và xác nhận email của bạn để có thể đăng nhập.",
+    );
+    router.push("/login");
   };
 
   return (
@@ -181,109 +126,66 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 h-12 p-1 bg-muted/50 rounded-xl">
-              <TabsTrigger value="email" onClick={() => setRegisterMethod("email")} className="rounded-lg gap-2">
-                <Mail className="w-4 h-4" />
-                Email
-              </TabsTrigger>
-              <TabsTrigger value="phone" onClick={() => setRegisterMethod("phone")} className="rounded-lg gap-2">
-                <Phone className="w-4 h-4" />
-                Số điện thoại
-              </TabsTrigger>
-            </TabsList>
-
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="name"
-                  className="text-foreground/80 font-semibold"
-                >
-                  Họ và tên
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    placeholder="Trần Văn A"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
-                    className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 pl-10 transition-shadow text-amber-950 font-medium"
-                  />
-                </div>
-              </div>
-
-              <TabsContent value="email" className="space-y-4 m-0">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-foreground/80 font-semibold"
-                  >
-                    Địa chỉ Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="ten@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-foreground/80 font-semibold"
-                  >
-                    Mật khẩu
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="phone" className="space-y-4 m-0">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="phone"
-                    className="text-foreground/80 font-semibold"
-                  >
-                    Số điện thoại
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="0912 345 678"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      disabled={loading}
-                      className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 pl-10 transition-shadow text-amber-950 font-medium"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <Button
-                type="submit"
-                className="w-full h-11 rounded-xl mt-4 gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all"
-                disabled={loading}
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="text-foreground/80 font-semibold"
               >
-                {loading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
-                {registerMethod === "email" ? "Đăng ký bằng Email" : "Gửi mã xác thực SMS"}
-              </Button>
-            </form>
-          </Tabs>
+                Họ và tên
+              </Label>
+              <Input
+                id="name"
+                placeholder="Trần Văn A"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+                className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-foreground/80 font-semibold"
+              >
+                Địa chỉ Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="ten@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="password"
+                className="text-foreground/80 font-semibold"
+              >
+                Mật khẩu
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="h-11 rounded-xl bg-white border-border/80 focus:ring-amber-500/30 transition-shadow text-amber-950 font-medium"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-xl mt-4 gold-gradient border-0 text-amber-950 font-bold text-base shadow-md hover:shadow-lg hover:opacity-95 transition-all"
+              disabled={loading}
+            >
+              {loading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
+              Đăng ký
+            </Button>
+          </form>
 
           <p className="text-center text-sm text-muted-foreground font-medium pt-2">
             Đã có tài khoản?{" "}
@@ -296,15 +198,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
-
-      <OtpVerificationModal
-        isOpen={showOtpModal}
-        onClose={() => setShowOtpModal(false)}
-        onVerify={handleVerifyOtp}
-        onResend={handleRegister}
-        contactInfo={phone}
-        type="phone"
-      />
     </div>
   );
 }

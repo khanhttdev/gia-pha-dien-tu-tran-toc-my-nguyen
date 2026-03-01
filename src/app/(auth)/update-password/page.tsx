@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { getVietnameseAuthError } from "@/lib/auth-errors";
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -56,7 +55,7 @@ export default function UpdatePasswordPage() {
     setLoading(false);
 
     if (error) {
-      toast.error(getVietnameseAuthError(error.message));
+      toast.error(error.message);
       return;
     }
 
