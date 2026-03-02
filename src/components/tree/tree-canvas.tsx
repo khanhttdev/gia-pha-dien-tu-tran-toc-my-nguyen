@@ -151,7 +151,10 @@ export default function TreeCanvas({ members, spouses, onNodeClick }: TreeCanvas
     return (
         <div
             className="w-full h-full"
-            style={{ background: "linear-gradient(180deg, #0f0808 0%, #1a0a0f 50%, #0a0805 100%)" }}
+            style={{
+                // Atmospheric top-down lighting for organic tree concept
+                background: "radial-gradient(circle at top center, rgba(74, 28, 34, 0.4) 0%, rgba(26, 9, 13, 1) 70%, #050203 100%)",
+            }}
         >
             <ReactFlowProvider>
                 <TreeCanvasInner members={members} spouses={spouses} onNodeClick={onNodeClick} />

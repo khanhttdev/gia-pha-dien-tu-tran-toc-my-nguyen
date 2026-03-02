@@ -21,79 +21,88 @@ function FamilyNodeComponent({ data }: NodeProps) {
             <Handle type="target" position={Position.Top} className="!bg-transparent !border-0 !w-0 !h-0" />
             <Handle type="source" position={Position.Bottom} className="!bg-transparent !border-0 !w-0 !h-0" />
 
-            {/* Node Card */}
+            {/* Organic Gem/Leaf Card */}
             <div
-                className="rounded-xl px-4 py-3.5 border-2 transition-all duration-300 group-hover:scale-105"
+                className="group-hover:scale-105 transition-all duration-300 relative flex items-center pr-4 pl-2 py-2"
                 style={{
                     background: d.isSpouse
-                        ? "linear-gradient(145deg, #2a1520 0%, #1a0a15 100%)"
-                        : "linear-gradient(145deg, #1c1a0c 0%, #0d0b05 100%)",
-                    borderColor: d.isSpouse ? "rgba(200, 130, 160, 0.35)" : "rgba(230, 200, 117, 0.3)",
+                        ? "rgba(42, 21, 32, 0.65)"
+                        : "rgba(26, 9, 13, 0.65)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    // Organic leaf/drop shape: rounded top-left and bottom-right, slightly sharper others
+                    borderRadius: d.isSpouse ? "30px 12px 30px 30px" : "12px 30px 30px 30px",
+                    border: d.isSpouse
+                        ? "1px solid rgba(200, 130, 160, 0.4)"
+                        : "1px solid rgba(212, 175, 55, 0.5)",
                     boxShadow: d.isSpouse
-                        ? "0 4px 20px rgba(200,130,160,0.15), inset 0 1px 0 rgba(255,255,255,0.05)"
-                        : "0 4px 20px rgba(230,200,117,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
+                        ? "0 8px 32px rgba(200,130,160,0.15), inset 0 0 10px rgba(200,130,160,0.1)"
+                        : "0 8px 32px rgba(212,175,55,0.15), inset 0 0 10px rgba(212,175,55,0.1)",
                 }}
             >
-                {/* Avatar + Info row */}
-                <div className="flex items-center gap-3">
-                    {/* Avatar — larger */}
-                    <div
-                        className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold overflow-hidden"
-                        style={{
-                            background: d.avatarUrl
-                                ? "transparent"
-                                : d.isSpouse
-                                    ? "linear-gradient(135deg, #8b5a6b, #6b3a4b)"
-                                    : "linear-gradient(135deg, #b8903a, #7a5e22)",
-                            border: `2.5px solid ${d.isSpouse ? "rgba(200, 130, 160, 0.6)" : "rgba(230, 200, 117, 0.5)"}`,
-                            color: "#f0e6c0",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                        }}
-                    >
-                        {d.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={d.avatarUrl}
-                                alt={d.name}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                width={56}
-                                height={56}
-                            />
-                        ) : (
-                            d.name?.charAt(0)?.toUpperCase() || "?"
-                        )}
-                    </div>
-
-                    {/* Text info — larger fonts */}
-                    <div className="flex-1 min-w-0">
-                        <p
-                            className="text-sm font-bold truncate leading-snug"
-                            style={{ color: isDeceased ? "#b0a080" : "#f0e6c0" }}
-                        >
-                            {d.name}
-                        </p>
-                        {lifespan && (
-                            <p className="text-xs mt-1" style={{ color: "#c8a55a" }}>
-                                {lifespan}
-                            </p>
-                        )}
-                        {d.role && (
-                            <p
-                                className="text-[10px] mt-0.5 uppercase tracking-wider font-medium"
-                                style={{ color: d.isSpouse ? "#a0708a" : "#a08840" }}
-                            >
-                                {d.role}
-                            </p>
-                        )}
-                    </div>
+                {/* Glowing Avatar */}
+                <div
+                    className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center text-xl font-bold overflow-hidden relative z-10 mr-3"
+                    style={{
+                        background: d.avatarUrl
+                            ? "transparent"
+                            : d.isSpouse
+                                ? "linear-gradient(135deg, #8b5a6b, #4a1c22)"
+                                : "linear-gradient(135deg, #d4af37, #8a6a1c)",
+                        border: `2px solid ${d.isSpouse ? "rgba(200, 130, 160, 0.8)" : "rgba(212, 175, 55, 0.8)"}`,
+                        color: d.avatarUrl ? "transparent" : (d.isSpouse ? "#f0e6c0" : "#1a090d"),
+                        boxShadow: d.isSpouse
+                            ? "0 0 15px rgba(200, 130, 160, 0.4)"
+                            : "0 0 15px rgba(212, 175, 55, 0.5)",
+                    }}
+                >
+                    {d.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={d.avatarUrl}
+                            alt={d.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            width={64}
+                            height={64}
+                        />
+                    ) : (
+                        d.name?.charAt(0)?.toUpperCase() || "?"
+                    )}
                 </div>
 
-                {/* Deceased indicator */}
+                {/* Text info */}
+                <div className="flex-1 min-w-0 py-1">
+                    <p
+                        className="text-[15px] font-bold truncate leading-snug drop-shadow-md"
+                        style={{ color: isDeceased ? "#b0a080" : "#f0e6c0" }}
+                    >
+                        {d.name}
+                    </p>
+                    {lifespan && (
+                        <p className="text-[11px] mt-0.5 tracking-wide opacity-90" style={{ color: "#d4af37" }}>
+                            {lifespan}
+                        </p>
+                    )}
+                    {d.role && (
+                        <p
+                            className="text-[10px] mt-1 uppercase tracking-widest font-semibold opacity-80"
+                            style={{ color: d.isSpouse ? "#c882a0" : "#a08840" }}
+                        >
+                            {d.role}
+                        </p>
+                    )}
+                </div>
+
+                {/* Deceased indicator gem */}
                 {isDeceased && (
                     <div
-                        className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                        style={{ background: "rgba(180,160,120,0.6)" }}
+                        className="absolute top-0 right-0 w-3 h-3 rounded-full transform translate-x-1/3 -translate-y-1/3"
+                        style={{
+                            background: "radial-gradient(circle at 30% 30%, #e6d8b8, #b0a080)",
+                            boxShadow: "0 0 8px rgba(176,160,128,0.6)",
+                            border: "1px solid rgba(26,9,13,0.8)"
+                        }}
                         title="Đã mất"
                     />
                 )}

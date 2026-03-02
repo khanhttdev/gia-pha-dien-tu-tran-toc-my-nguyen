@@ -33,7 +33,7 @@ export function buildFamilyTree(
 
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: "BT", ranksep: 130, nodesep: 40 });
+    g.setGraph({ rankdir: "BT", ranksep: 180, nodesep: 80 });
 
     const sorted = [...members].sort((a, b) => {
         if (a.generation_level !== b.generation_level) {

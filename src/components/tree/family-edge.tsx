@@ -1,6 +1,6 @@
 "use client";
 
-import { BaseEdge, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
+import { BaseEdge, getBezierPath, type EdgeProps } from "@xyflow/react";
 
 export function FamilyEdge({
     id,
@@ -14,14 +14,13 @@ export function FamilyEdge({
 }: EdgeProps) {
     const isMarriage = data?.isMarriage === true;
 
-    const [edgePath] = getSmoothStepPath({
+    const [edgePath] = getBezierPath({
         sourceX,
         sourceY,
         targetX,
         targetY,
         sourcePosition,
         targetPosition,
-        borderRadius: isMarriage ? 0 : 12,
     });
 
     return (
@@ -29,9 +28,10 @@ export function FamilyEdge({
             id={id}
             path={edgePath}
             style={{
-                stroke: isMarriage ? "rgba(200, 130, 160, 0.4)" : "rgba(230, 200, 117, 0.25)",
-                strokeWidth: isMarriage ? 1.5 : 1.5,
+                stroke: isMarriage ? "rgba(200, 130, 160, 0.4)" : "rgba(212, 175, 55, 0.6)",
+                strokeWidth: isMarriage ? 1.5 : 2,
                 strokeDasharray: isMarriage ? "6 4" : undefined,
+                filter: isMarriage ? undefined : "drop-shadow(0px 0px 4px rgba(212, 175, 55, 0.5))",
             }}
         />
     );
