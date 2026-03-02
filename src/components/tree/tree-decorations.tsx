@@ -1,56 +1,40 @@
-"use client";
-
 import { motion } from "framer-motion";
 
 export function TreeDecorations() {
-    const tabs = [
-        { label: "BIỂU TƯỢNG GIA ĐÌNH", color: "#8b4513", top: "10%", left: "40px" },
-        { label: "NGUỒN CỘI", color: "#d2691e", top: "16%", left: "40px" },
-        { label: "KHỞI ĐẦU GIA TỘC", color: "#228b22", bottom: "10%", left: "10%" },
-        { label: "NGƯỜI SÁNG LẬP", color: "#cd853f", bottom: "10%", right: "10%" },
-    ];
-
     return (
-        <>
-            <div className="absolute inset-0 pointer-events-none">
-                {tabs.map((tab, idx) => (
-                    <motion.div
-                        key={idx}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 1.5 + idx * 0.2 }}
-                        className="absolute px-4 py-2 rounded-sm shadow-md border border-white/20 text-[10px] font-bold text-white flex items-center justify-center"
-                        style={{
-                            backgroundColor: tab.color,
-                            top: tab.top,
-                            bottom: tab.bottom,
-                            left: tab.left,
-                            right: tab.right,
-                            transform: 'rotate(-2deg)'
-                        }}
-                    >
-                        {tab.label}
-                    </motion.div>
-                ))}
-            </div>
+        <div className="fixed inset-0 z-40 pointer-events-none select-none">
+            {/* Ornate corners */}
+            <Corner decoration="top-left" />
+            <Corner decoration="top-right" />
+            <Corner decoration="bottom-left" />
+            <Corner decoration="bottom-right" />
 
-            {/* Ornate Vines or small birds could be added here */}
-        </>
+            {/* Frame border */}
+            <div className="absolute inset-4 md:inset-8 border-[1px] border-[var(--color-heritage-gold)]/20 rounded-[2rem] pointer-events-none" />
+            <div className="absolute inset-5 md:inset-10 border-[1px] border-[var(--color-heritage-gold)]/10 rounded-[1.8rem] pointer-events-none" />
+        </div>
     );
 }
 
-export function GenerationLabel({ text, y }: { text: string, y: number }) {
+function Corner({ decoration }: { decoration: "top-left" | "top-right" | "bottom-left" | "bottom-right" }) {
+    const positions = {
+        "top-left": "top-0 left-0",
+        "top-right": "top-0 right-0 rotate-90",
+        "bottom-left": "bottom-0 left-0 -rotate-90",
+        "bottom-right": "bottom-0 right-0 rotate-180"
+    };
+
     return (
         <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="absolute right-[50%] translate-x-[400px] z-10"
-            style={{ top: y }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            className={`absolute w-32 h-32 md:w-48 md:h-48 ${positions[decoration]} opacity-60 p-4 md:p-8`}
         >
-            <div className="relative px-6 py-1 bg-amber-100/90 border-y border-amber-900/30 text-[10px] font-bold text-amber-900 rounded-full shadow-sm">
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-900 animate-pulse" />
-                {text}
-            </div>
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[var(--color-heritage-gold)]">
+                <path d="M0 0H20C20 0 10 0 5 10C0 20 0 40 0 40V20V0Z" fill="currentColor" />
+                <path d="M10 10V25M25 10H10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="10" cy="10" r="2" fill="currentColor" />
+            </svg>
         </motion.div>
     );
 }

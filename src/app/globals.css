@@ -141,6 +141,13 @@
   --color-heritage-banner: #bc4749;
   --color-heritage-banner-text: #f2e8cf;
   --color-heritage-ba-trau: #4a141b;
+
+  /* Tree Page Custom Tokens */
+  --tree-bg: #1b0505;
+  --tree-border-gold: #e6c875;
+  --tree-node-bg: #2a0a0f;
+  --tree-node-border-green: #556b2f;
+  --tree-node-border-amber: #997835;
 }
 
 @utility bg-parchment {
@@ -175,6 +182,16 @@
     pointer-events: none;
     z-index: 40;
   }
+}
+
+@utility tree-page-bg {
+  background-color: var(--tree-bg);
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(27, 5, 5, 0.4) 0%, #000 100%),
+    url("/images/tree-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 /* ============================================================

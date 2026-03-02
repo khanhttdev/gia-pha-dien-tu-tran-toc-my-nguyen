@@ -8,7 +8,7 @@ export function TreeBanner() {
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1, delay: 0.5, type: "spring" }}
-            className="absolute top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
         >
             <div className="relative">
                 {/* Scroll Background */}

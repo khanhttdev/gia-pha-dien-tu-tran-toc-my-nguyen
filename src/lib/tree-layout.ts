@@ -7,11 +7,19 @@ const nodeWidth = 200; // Adjusted for circular fruit nodes
 const nodeHeight = 200;
 
 export function buildTreeLayout(
-  members: Member[],
+  members: Member[] = [],
   spouses: Spouse[] = [],
 ): { nodes: PersonNodeType[]; edges: Edge[] } {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  // Sort members by generation and birth order to help dagre layout
+  const sortedMembers = [...members].sort((a, b) => {
+    if (a.generation_level !== b.generation_level) {
+      return (a.generation_level || 0) - (b.generation_level || 0);
+    }
+    return (a.birth_order || 0) - (b.birth_order || 0);
+  });
 
   // Ranksep Bottom-to-Top (BT)
   dagreGraph.setGraph({ rankdir: "BT", ranksep: 120, nodesep: 80 });
@@ -20,8 +28,8 @@ export function buildTreeLayout(
   const edges: Edge[] = [];
 
   // 1. Create Member Nodes
-  members.forEach((m) => {
-    const hasChildren = members.some((child) => child.father_id === m.id || child.mother_id === m.id);
+  sortedMembers.forEach((m) => {
+    const hasChildren = sortedMembers.some((child) => child.father_id === m.id || child.mother_id === m.id);
     const meta = (m.metadata as MemberMetadata) || {};
 
     nodes.push({
@@ -43,10 +51,17 @@ export function buildTreeLayout(
     dagreGraph.setNode(m.id, { width: nodeWidth, height: nodeHeight });
   });
 
-  // 2. Create Spouse Nodes
+  // 2. Create Spouse Nodes and attach to members
   spouses.forEach((s) => {
-    const partner = members.find(m => m.id === s.member_id);
+    const partner = sortedMembers.find(m => m.id === s.member_id);
     if (!partner) return;
+
+    // Attach to member node data for easy access/testing
+    const partnerNode = nodes.find(n => n.id === partner.id);
+    if (partnerNode) {
+      if (!partnerNode.data.spouses) (partnerNode.data as any).spouses = [];
+      (partnerNode.data as any).spouses.push(s);
+    }
 
     const spouseId = `spouse-${s.id}`;
     const sMeta = (s.metadata as MemberMetadata) || {};
@@ -79,19 +94,21 @@ export function buildTreeLayout(
   });
 
   // 3. Bloodline Edges (Parent -> Child)
-  members.forEach((m) => {
+  sortedMembers.forEach((m) => {
     const parentId = m.father_id || m.mother_id;
-    if (parentId) {
+    const parentExists = sortedMembers.some(p => p.id === parentId);
+
+    if (parentId && parentExists) {
       edges.push({
         id: `e-${parentId}-${m.id}`,
         source: parentId,
         target: m.id,
-        type: "smoothstep",
-        animated: true,
+        type: "step",
+        animated: false,
         style: {
-          stroke: "var(--color-heritage-trunk)", // Woody color for branches
-          strokeWidth: 3,
-          filter: "drop-shadow(0 0 4px rgba(53, 26, 26, 0.3))"
+          stroke: "var(--color-heritage-gold-dim)",
+          strokeWidth: 2,
+          opacity: 0.4
         },
       });
       dagreGraph.setEdge(parentId, m.id);
