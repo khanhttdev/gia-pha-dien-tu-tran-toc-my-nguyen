@@ -19,7 +19,6 @@ import { MemberProfileModal } from "@/components/tree/member-profile-modal";
 import { TreeSidebar } from "@/components/tree/tree-sidebar";
 import { MarriageEdge } from "@/components/tree/marriage-edge";
 import { TreeBackground } from "@/components/tree/tree-background";
-import { TreeBanner } from "@/components/tree/tree-banner";
 import { TreeDecorations, GenerationLabel } from "@/components/tree/tree-decorations";
 
 const nodeTypes = {
@@ -107,9 +106,10 @@ function FlowCanvas({
 
             {/* Main Canvas Area */}
             <div className={`absolute inset-0 text-[var(--color-heritage-gold)] ${!isMobile ? 'left-80' : 'left-0'} bg-parchment ornate-frame overflow-hidden`}>
-                <TreeBanner />
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    <TreeBackground />
+                </div>
                 <TreeDecorations />
-                <TreeBackground />
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
