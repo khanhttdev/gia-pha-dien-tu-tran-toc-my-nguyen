@@ -3,92 +3,108 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 
-interface Branch {
-    id: string;
-    path: string;
-    delay: number;
-}
+// Static random data generated outside the component to ensure purity
+const FOLIAGE_DATA = [...Array(30)].map((_, i) => ({
+    cx: 150 + Math.random() * 700,
+    cy: 100 + Math.random() * 500,
+    r: 10 + Math.random() * 40,
+    delay: 2 + Math.random() * 3,
+}));
+
+const FLOWER_DATA = [...Array(15)].map((_, i) => ({
+    cx: 200 + Math.random() * 600,
+    cy: 150 + Math.random() * 450,
+    delay: 4 + Math.random() * 2,
+}));
 
 export function TreeBackground() {
-    // Static organic tree base (Trunk and main branches)
-    // In a real scenario, this could be more dynamic.
-    const mainBranches: Branch[] = useMemo(() => [
-        {
-            id: "trunk",
-            path: "M 500 1000 C 500 800 480 600 500 400", // Central Trunk
-            delay: 0,
-        },
-        {
-            id: "branch-L1",
-            path: "M 495 700 C 400 650 300 680 200 600",
-            delay: 0.5,
-        },
-        {
-            id: "branch-R1",
-            path: "M 505 750 C 600 700 750 720 850 650",
-            delay: 0.7,
-        },
-        {
-            id: "branch-L2",
-            path: "M 498 550 C 420 500 350 450 250 400",
-            delay: 1.2,
-        },
-        {
-            id: "branch-R2",
-            path: "M 502 500 C 580 450 650 400 750 350",
-            delay: 1.4,
-        },
-    ], []);
-
     return (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none opacity-30">
-            <svg
-                viewBox="0 0 1000 1000"
-                className="w-full h-full"
-                preserveAspectRatio="xMidYMax meet"
-            >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden flex justify-center">
+            <svg width="1000" height="1000" viewBox="0 0 1000 1000" className="opacity-40">
                 <defs>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
+                    <filter id="foliage-blur">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="15" />
                     </filter>
                 </defs>
 
-                {/* Tree Trunk & Main Branches */}
-                <g filter="url(#glow)">
-                    {mainBranches.map((branch) => (
-                        <motion.path
-                            key={branch.id}
-                            d={branch.path}
-                            fill="none"
-                            stroke="var(--color-heritage-trunk)"
-                            strokeWidth={branch.id === "trunk" ? 12 : 6}
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: 1 }}
-                            transition={{
-                                duration: 2.5,
-                                delay: branch.delay,
-                                ease: "easeInOut",
-                            }}
-                        />
-                    ))}
-                </g>
+                {/* Dense Canopy Base - Sage Green cloud shapes */}
+                <motion.path
+                    d="M100,400 Q200,100 500,150 T900,400 Q950,600 700,750 T300,750 Q50,600 100,400"
+                    fill="var(--color-heritage-leaf-sage)"
+                    fillOpacity="0.3"
+                    filter="url(#foliage-blur)"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 4 }}
+                />
 
-                {/* Decorative Leaves/Details (Abstract) */}
-                <motion.g
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.4 }}
-                    transition={{ delay: 2, duration: 2 }}
-                >
-                    <circle cx="200" cy="600" r="40" fill="var(--color-heritage-leaf)" opacity="0.2" />
-                    <circle cx="850" cy="650" r="50" fill="var(--color-heritage-leaf)" opacity="0.2" />
-                    <circle cx="250" cy="400" r="30" fill="var(--color-heritage-leaf)" opacity="0.2" />
-                    <circle cx="750" cy="350" r="45" fill="var(--color-heritage-leaf)" opacity="0.2" />
-                </motion.g>
+                {/* Artistic Trunk and main branches */}
+                <motion.path
+                    d="M500,1000 C500,850 450,700 350,600 C250,500 100,400 100,200"
+                    stroke="var(--color-heritage-trunk)"
+                    strokeWidth="35"
+                    strokeLinecap="round"
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 3, ease: "easeInOut" }}
+                />
+                <motion.path
+                    d="M500,850 C550,750 750,650 850,550 C950,450 900,300 800,150"
+                    stroke="var(--color-heritage-trunk)"
+                    strokeWidth="25"
+                    strokeLinecap="round"
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 3, delay: 0.5, ease: "easeInOut" }}
+                />
+
+                {/* Foliage details - scattered dots and smaller clouds */}
+                {FOLIAGE_DATA.map((item, i) => (
+                    <motion.circle
+                        key={i}
+                        cx={item.cx}
+                        cy={item.cy}
+                        r={item.r}
+                        fill="var(--color-heritage-leaf-sage)"
+                        fillOpacity="0.15"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.5 }}
+                        transition={{ delay: item.delay }}
+                    />
+                ))}
+
+                {/* Flowers - White petals */}
+                {FLOWER_DATA.map((item, i) => (
+                    <motion.g
+                        key={`flower-${i}`}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: item.delay }}
+                    >
+                        <circle cx={item.cx} cy={item.cy} r="6" fill="#fff" fillOpacity="0.7" />
+                        <circle cx={item.cx} cy={item.cy} r="3" fill="#ffcc00" />
+                    </motion.g>
+                ))}
+
+                {/* Decorative Birds (Simplified SVG Paths) */}
+                <motion.path
+                    d="M200,300 Q210,290 220,300 Q210,310 200,300"
+                    stroke="#4a90e2"
+                    fill="none"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 0.4, x: 0 }}
+                    transition={{ delay: 6, duration: 2 }}
+                />
+                <motion.path
+                    d="M800,250 Q810,240 820,250 Q810,260 800,250"
+                    stroke="#4a90e2"
+                    fill="none"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 0.4, x: 0 }}
+                    transition={{ delay: 6.5, duration: 2 }}
+                />
             </svg>
         </div>
     );

@@ -19,6 +19,8 @@ import { MemberProfileModal } from "@/components/tree/member-profile-modal";
 import { TreeSidebar } from "@/components/tree/tree-sidebar";
 import { MarriageEdge } from "@/components/tree/marriage-edge";
 import { TreeBackground } from "@/components/tree/tree-background";
+import { TreeBanner } from "@/components/tree/tree-banner";
+import { TreeDecorations, GenerationLabel } from "@/components/tree/tree-decorations";
 
 const nodeTypes = {
     person: PersonNode,
@@ -40,6 +42,7 @@ function FlowCanvas({
     isMobile,
     onLoadMore,
     canLoadMore,
+    visibleGenerations,
 }: {
     members: Member[];
     spouses: Spouse[];
@@ -52,6 +55,7 @@ function FlowCanvas({
     isMobile?: boolean;
     onLoadMore: () => void;
     canLoadMore: boolean;
+    visibleGenerations: number;
 }) {
     const { setCenter } = useReactFlow();
 
@@ -102,7 +106,9 @@ function FlowCanvas({
             )}
 
             {/* Main Canvas Area */}
-            <div className={`absolute inset-0 text-[var(--color-heritage-gold)] ${!isMobile ? 'left-80' : 'left-0'}`}>
+            <div className={`absolute inset-0 text-[var(--color-heritage-gold)] ${!isMobile ? 'left-80' : 'left-0'} bg-parchment ornate-frame overflow-hidden`}>
+                <TreeBanner />
+                <TreeDecorations />
                 <TreeBackground />
                 <ReactFlow
                     nodes={nodes}
@@ -118,6 +124,15 @@ function FlowCanvas({
                     maxZoom={1.5}
                     onlyRenderVisibleElements={true}
                 >
+                    {/* Generation Labels (Artistic) */}
+                    {[...Array(visibleGenerations)].map((_, i) => (
+                        <GenerationLabel
+                            key={`gen-label-${i + 1}`}
+                            text={`THẾ HỆ ${i + 1}`}
+                            y={1000 - ((i + 1) * 200) + 100} // Matches layout logic offsets roughly
+                        />
+                    ))}
+
                     <Background gap={16} size={1} color="var(--color-heritage-gold-dim)" />
                     <Controls showInteractive={false} className="bg-black/40 border-[var(--color-heritage-gold-dim)]/30" />
                 </ReactFlow>
@@ -184,6 +199,7 @@ export function TreeDesktop({
                     onEdgesChange={onEdgesChange}
                     onLoadMore={loadMore}
                     canLoadMore={visibleGenerations < 10} // Limit to 10 generations for now
+                    visibleGenerations={visibleGenerations}
                     isMobile={isMobile}
                 />
             </ReactFlowProvider>
