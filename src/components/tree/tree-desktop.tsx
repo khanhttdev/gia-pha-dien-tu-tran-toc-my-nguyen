@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import {
     ReactFlow,
     Controls,
@@ -18,6 +18,7 @@ import { buildTreeLayout } from "@/lib/tree-layout";
 import { MemberProfileModal } from "@/components/tree/member-profile-modal";
 import { TreeSidebar } from "@/components/tree/tree-sidebar";
 import { MarriageEdge } from "@/components/tree/marriage-edge";
+import { TreeBackground } from "@/components/tree/tree-background";
 
 const nodeTypes = {
     person: PersonNode,
@@ -37,6 +38,8 @@ function FlowCanvas({
     onNodesChange,
     onEdgesChange,
     isMobile,
+    onLoadMore,
+    canLoadMore,
 }: {
     members: Member[];
     spouses: Spouse[];
@@ -47,8 +50,19 @@ function FlowCanvas({
     onNodesChange: any;
     onEdgesChange: any;
     isMobile?: boolean;
+    onLoadMore: () => void;
+    canLoadMore: boolean;
 }) {
     const { setCenter } = useReactFlow();
+
+    // Scroll detection for lazy loading descendants
+    const onMove = useCallback((_: any, viewport: { x: number, y: number, zoom: number }) => {
+        // Trigger loadMore if user is looking at the top area (descendants)
+        // In BT mode, descendants are at small Y values.
+        if (canLoadMore && viewport.y > 100) { // arbitrary threshold for "scrolling up"
+            onLoadMore();
+        }
+    }, [onLoadMore, canLoadMore]);
 
     const onNodeClick = useCallback(
         (_: React.MouseEvent, node: any) => {
@@ -89,12 +103,14 @@ function FlowCanvas({
 
             {/* Main Canvas Area */}
             <div className={`absolute inset-0 text-[var(--color-heritage-gold)] ${!isMobile ? 'left-80' : 'left-0'}`}>
+                <TreeBackground />
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodeClick={onNodeClick}
+                    onMove={onMove}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
                     fitView
@@ -121,13 +137,38 @@ export function TreeDesktop({
     defaultRootId?: string | null,
     isMobile?: boolean,
 }) {
+    const [visibleGenerations, setVisibleGenerations] = useState(2); // Start with 2 generations
+
+    const filteredMembers = useMemo(() => {
+        return members.filter(m => (m.generation_level || 1) <= visibleGenerations);
+    }, [members, visibleGenerations]);
+
+    const filteredSpouses = useMemo(() => {
+        return spouses.filter(s => {
+            const partner = members.find(m => m.id === s.member_id);
+            return partner && (partner.generation_level || 1) <= visibleGenerations;
+        });
+    }, [spouses, members, visibleGenerations]);
+
     const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
-        return buildTreeLayout(members, spouses);
-    }, [members, spouses]);
+        return buildTreeLayout(filteredMembers, filteredSpouses);
+    }, [filteredMembers, filteredSpouses]);
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+    // Dynamic update when visibleGenerations changes
+    useEffect(() => {
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+    }, [initialNodes, initialEdges, setNodes, setEdges]);
+
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+    // Expose a way to load more
+    const loadMore = useCallback(() => {
+        setVisibleGenerations(prev => prev + 1);
+    }, []);
 
     return (
         <div className="w-full h-full relative">
@@ -141,6 +182,8 @@ export function TreeDesktop({
                     edges={edges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
+                    onLoadMore={loadMore}
+                    canLoadMore={visibleGenerations < 10} // Limit to 10 generations for now
                     isMobile={isMobile}
                 />
             </ReactFlowProvider>
