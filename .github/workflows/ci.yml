@@ -52,7 +52,7 @@ jobs:
       - name: Run Lighthouse CI
         run: lhci autorun
         env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ─── Bundle Size Check ──────────────────────────────────────────────
       - name: Check bundle size
