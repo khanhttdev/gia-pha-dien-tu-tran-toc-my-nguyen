@@ -57,7 +57,6 @@ function FamilyNodeComponent({ data }: NodeProps) {
                     }}
                 >
                     {d.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={d.avatarUrl}
                             alt={d.name}

@@ -63,7 +63,6 @@ export function MemberModal({ member, spouses, isOpen, onClose }: MemberModalPro
                         }}
                     >
                         {meta.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                                 src={meta.avatar_url}
                                 alt={member.full_name}
