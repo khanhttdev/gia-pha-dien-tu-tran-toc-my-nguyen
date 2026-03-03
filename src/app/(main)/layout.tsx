@@ -20,7 +20,7 @@ export default async function MainLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, avatar_url, role")
+    .select("id, full_name, avatar_url, role, status")
     .eq("id", user.id)
     .single();
 
@@ -30,7 +30,7 @@ export default async function MainLayout({
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0 flex flex-col">
         <div className="page-enter flex-1 h-full min-h-0">{children}</div>
       </main>
-      <MeiChatWidget />
+      {profile?.status === "approved" && <MeiChatWidget />}
       <PwaInstallPrompt />
       <PushNotificationPrompt />
       <PendingUserPopup />
