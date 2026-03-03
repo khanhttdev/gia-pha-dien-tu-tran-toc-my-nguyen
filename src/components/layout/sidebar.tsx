@@ -86,7 +86,7 @@ export function Sidebar({ profile }: SidebarProps) {
           >
             <div className="w-9 h-9 flex items-center justify-center p-0.5">
               <img
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />
@@ -264,7 +264,7 @@ export function Sidebar({ profile }: SidebarProps) {
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 flex items-center justify-center p-[1px]">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="Logo"
               className="w-full h-full object-contain"
             />

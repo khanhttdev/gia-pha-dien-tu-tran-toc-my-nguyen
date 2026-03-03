@@ -48,7 +48,7 @@ export default function SettingsPage() {
           });
         }
       } catch (err) {
-        console.log("Profile not found or error:", err);
+        console.error("SettingsPage: Profile load failed:", err);
       } finally {
         setLoading(false);
       }

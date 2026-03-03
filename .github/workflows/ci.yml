@@ -1,0 +1,64 @@
+name: CI - Lint, Test & Lighthouse
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality-gate:
+    name: Build, Test & Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── Lint ────────────────────────────────────────────────────────────
+      - name: Lint
+        run: npx eslint . --max-warnings=0
+
+      # ─── Unit Tests ──────────────────────────────────────────────────────
+      - name: Run unit tests
+        run: npx vitest run --reporter=verbose
+
+      # ─── Build ───────────────────────────────────────────────────────────
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # ─── Lighthouse CI ──────────────────────────────────────────────────
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      # ─── Bundle Size Check ──────────────────────────────────────────────
+      - name: Check bundle size
+        run: |
+          TOTAL=$(du -sb .next | cut -f1)
+          MAX_SIZE=$((50 * 1024 * 1024))  # 50MB threshold
+          echo "Bundle size: $(($TOTAL / 1024 / 1024))MB"
+          if [ "$TOTAL" -gt "$MAX_SIZE" ]; then
+            echo "::warning::Bundle size exceeds 50MB threshold!"
+          fi

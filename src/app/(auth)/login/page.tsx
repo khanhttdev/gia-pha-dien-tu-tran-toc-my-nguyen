@@ -70,7 +70,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center h-full w-full">
           <div className="w-24 h-24 mb-6 flex items-center justify-center p-1 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="Logo"
               className="w-full h-full object-contain"
             />
@@ -123,7 +123,7 @@ export default function LoginPage() {
           <div className="lg:hidden text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center p-1">
               <img
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />

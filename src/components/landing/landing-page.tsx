@@ -170,7 +170,7 @@ export function LandingPage({
           {/* Logo */}
           <div className="w-20 h-20 sm:w-24 sm:h-24 mb-8 flex items-center justify-center hero-logo p-1 drop-shadow-2xl">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="Trần Tộc Logo"
               className="w-full h-full object-contain"
             />
