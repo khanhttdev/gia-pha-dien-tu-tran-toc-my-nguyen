@@ -135,8 +135,10 @@ const features = [
 
 export function LandingPage({
   authState = "unauthenticated",
+  stats = { generations: 6, totalMembers: 420, yearsOfHistory: 180 },
 }: {
   authState?: "unauthenticated" | "pending" | "approved";
+  stats?: { generations: number; totalMembers: number; yearsOfHistory: number };
 }) {
   return (
     <div className="min-h-screen overflow-x-hidden font-sans">
@@ -357,9 +359,9 @@ export function LandingPage({
           </RevealSection>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <AnimatedCounter target="7+" label="Thế hệ" />
-            <AnimatedCounter target="1300+" label="Thành viên" />
-            <AnimatedCounter target="200+" label="Năm lịch sử" />
+            <AnimatedCounter target={String(stats.generations)} label="Thế hệ" />
+            <AnimatedCounter target={`${stats.totalMembers}+`} label="Thành viên" />
+            <AnimatedCounter target={`${stats.yearsOfHistory}+`} label="Năm lịch sử" />
           </div>
         </div>
       </section>
