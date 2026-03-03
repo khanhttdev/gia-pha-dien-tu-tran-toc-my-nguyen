@@ -1,140 +1,149 @@
 import { Edge } from "@xyflow/react";
 import { Member, Spouse, MemberMetadata } from "@/lib/types";
-import { PersonNodeType } from "@/components/tree/person-node";
 import dagre from "dagre";
 
-const nodeWidth = 280;
-const nodeHeight = 120;
+export interface FamilyNodeData {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+    birthYear?: string;
+    deathYear?: string;
+    role?: string;
+    hasChildren?: boolean;
+    isSpouse?: boolean;
+    generationLevel?: number;
+    [key: string]: unknown;
+}
 
-export function buildTreeLayout(
-  members: Member[],
-  spouses: Spouse[] = [],
-): { nodes: PersonNodeType[]; edges: Edge[] } {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
+export interface FamilyNodeType {
+    id: string;
+    type: string;
+    position: { x: number; y: number };
+    data: FamilyNodeData;
+}
 
-  // Ranksep increased to give more space for marriage lines
-  dagreGraph.setGraph({ rankdir: "TB", ranksep: 100, nodesep: 100 });
+const NODE_W = 240;
+const NODE_H = 100;
 
-  const nodes: PersonNodeType[] = [];
-  const edges: Edge[] = [];
+export function buildFamilyTree(
+    members: Member[] = [],
+    spouses: Spouse[] = [],
+): { nodes: FamilyNodeType[]; edges: Edge[] } {
+    if (members.length === 0) return { nodes: [], edges: [] };
 
-  // 1. Tạo Node cho Member (Huyết thống)
-  members.forEach((m) => {
-    const hasChildren = members.some((child) => child.father_id === m.id || child.mother_id === m.id);
-    const meta = (m.metadata as MemberMetadata) || {};
+    const g = new dagre.graphlib.Graph();
+    g.setDefaultEdgeLabel(() => ({}));
+    g.setGraph({ rankdir: "BT", ranksep: 180, nodesep: 80 });
 
-    nodes.push({
-      id: m.id,
-      type: "person",
-      position: { x: 0, y: 0 },
-      data: {
-        id: m.id,
-        name: m.full_name,
-        avatarUrl: meta.avatar_url,
-        birthYear: meta.birth_year,
-        deathYear: meta.death_year,
-        hasChildren,
-        role: m.generation_level ? `Đời thứ ${m.generation_level}` : "Thành viên",
-        isSpouse: false,
-      },
-    });
-
-    dagreGraph.setNode(m.id, { width: nodeWidth, height: nodeHeight });
-  });
-
-  // 2. Tạo Node cho Spouse (Phu/Thê) và Edge Hôn nhân
-  spouses.forEach((s) => {
-    // Chỉ render spouse nếu Member tương ứng có trong danh sách
-    const partner = members.find(m => m.id === s.member_id);
-    if (!partner) return;
-
-    const spouseId = `spouse-${s.id}`;
-    const sMeta = (s.metadata as MemberMetadata) || {};
-
-    nodes.push({
-      id: spouseId,
-      type: "person",
-      position: { x: 0, y: 0 },
-      data: {
-        id: s.id,
-        name: s.full_name,
-        avatarUrl: sMeta.avatar_url,
-        birthYear: sMeta.birth_year,
-        deathYear: sMeta.death_year,
-        isSpouse: true,
-      },
-    });
-
-    // Trong Dagre, ta đặt Spouse nằm cạnh Member bằng cách tạo edge giả với trọng số cao
-    dagreGraph.setNode(spouseId, { width: nodeWidth, height: nodeHeight });
-
-    // Edge hôn nhân hiển thị
-    edges.push({
-      id: `marriage-${partner.id}-${spouseId}`,
-      source: partner.id,
-      target: spouseId,
-      sourceHandle: "marriage-right",
-      targetHandle: "marriage-left",
-      type: "marriage", // Custom edge type
-    });
-
-    // Quan hệ trong Dagre để chúng cùng rank (cùng tầng)
-    // Lưu ý: Dagre graphlib không hỗ trợ cùng rank dễ dàng, nhưng ta có thể ép nó bằng rankdir và nodesep
-    // Một mẹo nhỏ là coi Spouse như con của Member nhưng với rank 'same' (nếu dùng D3) 
-    // Ở đây ta cứ để Dagre tự tính, sau đó sẽ fix tọa độ Y
-  });
-
-  // 3. Xây dựng Edge huyết mạch (Parent -> Child)
-  members.forEach((m) => {
-    const parentId = m.father_id || m.mother_id;
-    if (parentId) {
-      edges.push({
-        id: `e-${parentId}-${m.id}`,
-        source: parentId,
-        target: m.id,
-        type: "smoothstep",
-        animated: true,
-        style: {
-          stroke: "var(--color-heritage-gold)",
-          strokeWidth: 2,
-          filter: "drop-shadow(0 0 3px rgba(230,200,117,0.4))"
-        },
-      });
-      dagreGraph.setEdge(parentId, m.id);
-    }
-  });
-
-  // Chạy thuật toán Dagre
-  dagre.layout(dagreGraph);
-
-  // 4. Map lại tọa độ và Fix Spouse Position
-  const mappedNodes = nodes.map((node) => {
-    const dagreNode = dagreGraph.node(node.id);
-    if (!dagreNode) return node;
-
-    let x = dagreNode.x - nodeWidth / 2;
-    let y = dagreNode.y - nodeHeight / 2;
-
-    // Nếu là Spouse, ta cố gắng đẩy nó sang phải Member
-    if (node.data.isSpouse) {
-      // Tìm partner của spouse này
-      const spouseObj = spouses.find(s => `spouse-${s.id}` === node.id);
-      if (spouseObj) {
-        const partnerDagre = dagreGraph.node(spouseObj.member_id);
-        if (partnerDagre) {
-          // Ép Y bằng nhau và X cách nhau một khoảng nodeWidth + gap
-          y = partnerDagre.y - nodeHeight / 2;
-          x = partnerDagre.x + nodeWidth / 2 + 40;
+    const sorted = [...members].sort((a, b) => {
+        if (a.generation_level !== b.generation_level) {
+            return (a.generation_level || 0) - (b.generation_level || 0);
         }
-      }
-    }
+        return (a.birth_order || 0) - (b.birth_order || 0);
+    });
 
-    return {
-      ...node,
-      position: { x, y },
-    };
-  });
+    const nodes: FamilyNodeType[] = [];
+    const edges: Edge[] = [];
 
-  return { nodes: mappedNodes, edges };
+    // Member nodes
+    sorted.forEach((m) => {
+        const hasChildren = sorted.some((c) => c.father_id === m.id || c.mother_id === m.id);
+        const meta = (m.metadata as MemberMetadata) || {};
+
+        nodes.push({
+            id: m.id,
+            type: "family",
+            position: { x: 0, y: 0 },
+            data: {
+                id: m.id,
+                name: m.full_name,
+                avatarUrl: meta.avatar_url ?? undefined,
+                birthYear: meta.birth_year?.toString(),
+                deathYear: meta.death_year?.toString(),
+                hasChildren,
+                role: m.generation_level ? `Đời ${m.generation_level}` : "",
+                isSpouse: false,
+                generationLevel: m.generation_level || undefined,
+            },
+        });
+
+        g.setNode(m.id, { width: NODE_W, height: NODE_H });
+    });
+
+    // Spouse nodes
+    spouses.forEach((s) => {
+        const partner = sorted.find((m) => m.id === s.member_id);
+        if (!partner) return;
+
+        const spouseId = `spouse-${s.id}`;
+        const meta = (s.metadata as MemberMetadata) || {};
+
+        nodes.push({
+            id: spouseId,
+            type: "family",
+            position: { x: 0, y: 0 },
+            data: {
+                id: s.id,
+                name: s.full_name,
+                avatarUrl: meta.avatar_url ?? undefined,
+                birthYear: meta.birth_year?.toString(),
+                deathYear: meta.death_year?.toString(),
+                isSpouse: true,
+            },
+        });
+
+        g.setNode(spouseId, { width: NODE_W, height: NODE_H });
+
+        // Marriage edge
+        edges.push({
+            id: `marriage-${partner.id}-${spouseId}`,
+            source: partner.id,
+            target: spouseId,
+            type: "family",
+            data: { isMarriage: true },
+        });
+    });
+
+    // Parent-child edges
+    sorted.forEach((m) => {
+        const parentId = m.father_id || m.mother_id;
+        if (parentId && sorted.some((p) => p.id === parentId)) {
+            edges.push({
+                id: `e-${parentId}-${m.id}`,
+                source: parentId,
+                target: m.id,
+                type: "family",
+                data: { isMarriage: false },
+            });
+            g.setEdge(parentId, m.id);
+        }
+    });
+
+    // Run dagre layout
+    dagre.layout(g);
+
+    // Map coordinates
+    const mapped = nodes.map((node) => {
+        const d = g.node(node.id);
+        if (!d) return node;
+
+        let x = d.x - NODE_W / 2;
+        let y = d.y - NODE_H / 2;
+
+        // Fix spouse position (always right of partner)
+        if (node.data.isSpouse) {
+            const sp = spouses.find((s) => `spouse-${s.id}` === node.id);
+            if (sp) {
+                const partnerNode = g.node(sp.member_id);
+                if (partnerNode) {
+                    y = partnerNode.y - NODE_H / 2;
+                    x = partnerNode.x + NODE_W / 2 + 20;
+                }
+            }
+        }
+
+        return { ...node, position: { x, y } };
+    });
+
+    return { nodes: mapped, edges };
 }

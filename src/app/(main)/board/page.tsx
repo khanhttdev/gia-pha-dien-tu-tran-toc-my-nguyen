@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getBoardFeed, submitContribution, deleteContribution } from "@/lib/board-actions";
-import { createClient } from "@/lib/supabase-client";
+import { submitContribution, deleteContribution } from "@/lib/board-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -26,7 +25,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useConfirmModal } from "@/hooks/use-confirm-modal";
 import { BOARD_TYPES, APP_STATUS } from "@/lib/constants";
-import { BoardFeedItem } from "@/lib/types";
+import { useBoardStore } from "@/lib/stores";
 
 // Helper to safely extract media URL
 const getFeedMediaUrl = (proposed_data: any) => {
@@ -50,11 +49,16 @@ const isVideoUrl = (url: string | null) => {
 };
 
 export default function BoardPage() {
-  const [feed, setFeed] = useState<BoardFeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [page, setPage] = useState(0);
+  // ─── Board Store ────────────────────────────────────────────────────────────
+  const feedItems = useBoardStore((s) => s.feedItems);
+  const boardStatus = useBoardStore((s) => s.status);
+  const hasMore = useBoardStore((s) => s.hasMore);
+  const expandedComments = useBoardStore((s) => s.expandedComments);
+  const fetchFeed = useBoardStore((s) => s.fetchFeed);
+  const loadMore = useBoardStore((s) => s.loadMore);
+  const toggleComments = useBoardStore((s) => s.toggleComments);
+
+  // ─── Local form state ──────────────────────────────────────────────────────
   const [content, setContent] = useState("");
   const [type, setType] = useState<string>(BOARD_TYPES.NEWS);
   const [submitting, setSubmitting] = useState(false);
@@ -62,45 +66,13 @@ export default function BoardPage() {
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
 
   const { currentUserId, isAdmin } = useAuth();
-  const [expandedComments, setExpandedComments] = useState<
-    Record<string, boolean>
-  >({});
 
-  const toggleComments = (id: string) => {
-    setExpandedComments((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const loadFeed = useCallback(
-    async (reset = true) => {
-      if (reset) {
-        setLoading(true);
-        setPage(0);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const currentPage = reset ? 0 : page + 1;
-      const res = await getBoardFeed(currentPage, 20);
-
-      if (res.data) {
-        const { items, hasMore } = res.data;
-        setFeed((prev) => (reset ? items : [...prev, ...items]));
-        setHasMore(hasMore);
-        if (!reset) setPage(currentPage);
-      }
-
-      if (reset) setLoading(false);
-      else setLoadingMore(false);
-    },
-    [page],
-  );
+  const loading = boardStatus === "idle" || boardStatus === "loading";
+  const loadingMore = boardStatus === "loading_more";
 
   useEffect(() => {
-    loadFeed(true);
-  }, []);
+    fetchFeed();
+  }, [fetchFeed]);
 
   const {
     open: deleteConfirmOpen,
@@ -111,11 +83,9 @@ export default function BoardPage() {
     handleConfirm: confirmDeletePost,
   } = useConfirmModal<string>({
     onConfirm: async (id) => {
-      // Optimistic UI: Ẩn ngay lập tức
-      setFeed((prev) => prev.filter((item) => item.id !== id));
       return deleteContribution(id);
     },
-    onSuccess: () => loadFeed(true),
+    onSuccess: () => fetchFeed(),
     successMessage: "Đã xóa bài đăng thành công",
   });
 
@@ -139,7 +109,7 @@ export default function BoardPage() {
       toast.success("Gửi đóng góp thành công! Đang chờ BQT duyệt.");
       setContent("");
       setImageUrl("");
-      await loadFeed(true); // Reset về trang 1
+      await fetchFeed();
     }
     setSubmitting(false);
   };
@@ -231,12 +201,12 @@ export default function BoardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-serif font-bold flex items-center gap-2">
             Dòng Thời Gian
-            {feed.length > 0 && (
+            {feedItems.length > 0 && (
               <Badge
                 variant="secondary"
                 className="bg-amber-500/10 text-amber-600 border-amber-500/20 px-2 py-0 h-5 text-[10px]"
               >
-                {feed.length}
+                {feedItems.length}
                 {hasMore ? "+" : ""} bài đăng
               </Badge>
             )}
@@ -244,7 +214,7 @@ export default function BoardPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => loadFeed(true)}
+            onClick={() => fetchFeed()}
             disabled={loading}
             className="text-muted-foreground"
           >
@@ -256,7 +226,7 @@ export default function BoardPage() {
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
           </div>
-        ) : feed.length === 0 ? (
+        ) : feedItems.length === 0 ? (
           <div className="glass rounded-2xl p-12 text-center border border-border/40">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
               <Info className="w-8 h-8 text-muted-foreground" />
@@ -268,7 +238,7 @@ export default function BoardPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {feed.map((item) => (
+            {feedItems.map((item) => (
               <div
                 key={item.id}
                 className={cn(
@@ -452,7 +422,7 @@ export default function BoardPage() {
               <div className="flex justify-center pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => loadFeed(false)}
+                  onClick={() => loadMore()}
                   disabled={loadingMore}
                   className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50 rounded-full px-8"
                 >
@@ -480,6 +450,6 @@ export default function BoardPage() {
         loading={deleting}
         onConfirm={confirmDeletePost}
       />
-    </div>
+    </div >
   );
 }

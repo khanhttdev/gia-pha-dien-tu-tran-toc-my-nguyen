@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 (2026-03-02)
+
+### Features
+
+* **tree:** implement Concept 5 (Organic Tree) with glowing Bezier curves, glassmorphism nodes, and atmospheric lighting
+* **tree:** implement interactive 3D intro animation and progressive 2D ReactFlow layout with performance optimizations
+* **tree:** implement Heritage Organic Tree visualization with "fruit" member nodes, organic growth animations, and generation-based lazy loading (Sprint 11)
+
 ## 1.3.0 (2026-02-27)
 
 ### Features

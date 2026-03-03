@@ -24,10 +24,10 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useState } from "react";
 import { Profile } from "@/lib/types";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { NotificationMenu } from "@/components/layout/notification-menu";
+import { useUIStore } from "@/lib/stores";
 
 const HeritageOverlay = () => (
   <>
@@ -64,7 +64,8 @@ export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const [open, setOpen] = useState(false);
+  const open = useUIStore((s) => s.sidebarOpen);
+  const setOpen = useUIStore((s) => s.setSidebarOpen);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -85,7 +86,7 @@ export function Sidebar({ profile }: SidebarProps) {
           >
             <div className="w-9 h-9 flex items-center justify-center p-0.5">
               <img
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />
@@ -263,7 +264,7 @@ export function Sidebar({ profile }: SidebarProps) {
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 flex items-center justify-center p-[1px]">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="Logo"
               className="w-full h-full object-contain"
             />
