@@ -24,10 +24,10 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useState } from "react";
 import { Profile } from "@/lib/types";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { NotificationMenu } from "@/components/layout/notification-menu";
+import { useUIStore } from "@/lib/stores";
 
 const HeritageOverlay = () => (
   <>
@@ -64,7 +64,8 @@ export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const [open, setOpen] = useState(false);
+  const open = useUIStore((s) => s.sidebarOpen);
+  const setOpen = useUIStore((s) => s.setSidebarOpen);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

@@ -1,20 +1,42 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase-client";
-import { Wallet, Loader2, Download, FileText } from "lucide-react";
+import { Wallet, Loader2, FileText } from "lucide-react";
 import { FundManagerTab } from "@/components/admin/fund-manager-tab";
 import { FundDashboard } from "@/components/fund/fund-dashboard";
-import { getFundSummary, getTopContributors, getAllTransactions } from "@/lib/fund-actions";
+import { getAllTransactions } from "@/lib/fund-actions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuthStore, useFundStore } from "@/lib/stores";
 
 export default function FundPage() {
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [summary, setSummary] = useState<any>(null);
-  const [topContributors, setTopContributors] = useState<any[]>([]);
+  // ─── Stores ──────────────────────────────────────────────────────────────────
+  const authStatus = useAuthStore((s) => s.status);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const isAccountant = useAuthStore((s) => s.isAccountant);
+  const initializeAuth = useAuthStore((s) => s.initialize);
+
+  const fundStatus = useFundStore((s) => s.status);
+  const summary = useFundStore((s) => s.summary);
+  const topContributors = useFundStore((s) => s.topContributors);
+  const fetchDashboard = useFundStore((s) => s.fetchDashboard);
+
+  // ─── Local state ──────────────────────────────────────────────────────────────
   const [exportingPDF, setExportingPDF] = useState(false);
+
+  const hasAccess = isAdmin || isAccountant;
+  const loading = authStatus === "idle" || authStatus === "loading" || fundStatus === "loading";
+
+  // Initialize auth & fund data
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    if (authStatus === "authenticated" && hasAccess) {
+      fetchDashboard();
+    }
+  }, [authStatus, hasAccess, fetchDashboard]);
 
   const handleExportPDF = useCallback(async () => {
     if (!summary) return;
@@ -39,36 +61,6 @@ export default function FundPage() {
       setExportingPDF(false);
     }
   }, [summary]);
-
-  useEffect(() => {
-    const sb = createClient();
-    sb.auth.getUser().then(({ data }) => {
-      if (!data.user) return setLoading(false);
-      sb.from("profiles")
-        .select("role, status")
-        .eq("id", data.user.id)
-        .single()
-        .then(async ({ data: profile }) => {
-          if (
-            profile &&
-            (profile.role === "accountant" || profile.role === "admin") &&
-            profile.status === "approved"
-          ) {
-            setHasAccess(true);
-            // Fetch Dashboard Data
-            const [sumRes, topRes] = await Promise.all([
-              getFundSummary(),
-              getTopContributors(5),
-            ]);
-            if (sumRes.error) toast.error("Lỗi tải tổng quan quỹ: " + sumRes.error);
-            if (topRes.error) toast.error("Lỗi tải top đóng góp: " + topRes.error);
-            setSummary(sumRes.data);
-            setTopContributors(topRes.data || []);
-          }
-          setLoading(false);
-        });
-    });
-  }, []);
 
   if (loading) {
     return (

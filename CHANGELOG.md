@@ -4,6 +4,7 @@
 
 ### Features
 
+* **tree:** implement Concept 5 (Organic Tree) with glowing Bezier curves, glassmorphism nodes, and atmospheric lighting
 * **tree:** implement interactive 3D intro animation and progressive 2D ReactFlow layout with performance optimizations
 * **tree:** implement Heritage Organic Tree visualization with "fruit" member nodes, organic growth animations, and generation-based lazy loading (Sprint 11)
 

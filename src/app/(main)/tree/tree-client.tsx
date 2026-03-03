@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import TreeCanvas from "@/components/tree/tree-canvas";
 import { MemberModal } from "@/components/tree/member-modal";
 import { Member, Spouse } from "@/lib/types";
+import { useTreeStore } from "@/lib/stores";
 
 // Lazy load Three.js intro scene — keeps initial bundle small
 const TreeIntroScene = dynamic(
@@ -24,10 +25,26 @@ export default function TreeClient({
     initialMembers,
     initialSpouses,
 }: TreeClientProps) {
+    // ─── Tree Store ──────────────────────────────────────────────────────────────
+    const members = useTreeStore((s) => s.members);
+    const spouses = useTreeStore((s) => s.spouses);
+    const selectedMember = useTreeStore((s) => s.selectedMember);
+    const isModalOpen = useTreeStore((s) => s.isModalOpen);
+    const treeStatus = useTreeStore((s) => s.status);
+    const hydrateTree = useTreeStore((s) => s.hydrateTree);
+    const selectMember = useTreeStore((s) => s.selectMember);
+    const closeModal = useTreeStore((s) => s.closeModal);
+
+    // ─── Local intro state (UI-only, not in store) ──────────────────────────────
     const [showIntro, setShowIntro] = useState<boolean | null>(null);
-    const [treeReady, setTreeReady] = useState(false); // Defer tree mount
-    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [treeReady, setTreeReady] = useState(false);
+
+    // Hydrate store with SSR data
+    useEffect(() => {
+        if (treeStatus === "idle") {
+            hydrateTree(initialMembers, initialSpouses);
+        }
+    }, [treeStatus, hydrateTree, initialMembers, initialSpouses]);
 
     // Check localStorage on mount
     useEffect(() => {
@@ -36,7 +53,6 @@ export default function TreeClient({
         const shouldShowIntro = !seen && !prefersReduced;
         setShowIntro(shouldShowIntro);
 
-        // If skipping intro, mount tree immediately
         if (!shouldShowIntro) {
             setTreeReady(true);
         }
@@ -45,14 +61,20 @@ export default function TreeClient({
     const handleIntroComplete = useCallback(() => {
         localStorage.setItem(INTRO_SEEN_KEY, "true");
         setShowIntro(false);
-        // Small delay before mounting the heavy ReactFlow tree
         setTimeout(() => setTreeReady(true), 100);
     }, []);
 
     const handleNodeClick = useCallback((member: Member) => {
-        setSelectedMember(member);
-        setIsModalOpen(true);
-    }, []);
+        selectMember(member);
+    }, [selectMember]);
+
+    const handleModalClose = useCallback((_open: boolean) => {
+        if (!_open) closeModal();
+    }, [closeModal]);
+
+    // Use store data (hydrated from SSR) or fallback to initial
+    const activeMembers = members.length > 0 ? members : initialMembers;
+    const activeSpouses = spouses.length > 0 ? spouses : initialSpouses;
 
     // Loading state while checking localStorage
     if (showIntro === null) {
@@ -76,7 +98,7 @@ export default function TreeClient({
             {showIntro && (
                 <TreeIntroScene
                     onComplete={handleIntroComplete}
-                    memberCount={initialMembers.length}
+                    memberCount={activeMembers.length}
                 />
             )}
 
@@ -86,19 +108,19 @@ export default function TreeClient({
             >
                 {treeReady && (
                     <TreeCanvas
-                        members={initialMembers}
-                        spouses={initialSpouses}
+                        members={activeMembers}
+                        spouses={activeSpouses}
                         onNodeClick={handleNodeClick}
                     />
                 )}
             </div>
 
-            {/* Member Detail Modal */}
+            {/* Member Detail Modal — driven by TreeStore */}
             <MemberModal
                 member={selectedMember}
-                spouses={initialSpouses}
+                spouses={activeSpouses}
                 isOpen={isModalOpen}
-                onClose={setIsModalOpen}
+                onClose={handleModalClose}
             />
         </div>
     );

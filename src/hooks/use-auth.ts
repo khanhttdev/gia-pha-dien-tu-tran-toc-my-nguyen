@@ -1,39 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase-client";
-import { APP_ROLES } from "@/lib/constants";
+import { useEffect } from "react";
+import { useAuthStore } from "@/lib/stores";
 
+/**
+ * Backward-compatible auth hook that delegates to the AuthStore state machine.
+ * Components using `useAuth()` continue to work with the same API.
+ */
 export function useAuth() {
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const status = useAuthStore((s) => s.status);
+    const userId = useAuthStore((s) => s.userId);
+    const isAdmin = useAuthStore((s) => s.isAdmin);
+    const initialize = useAuthStore((s) => s.initialize);
 
     useEffect(() => {
-        const fetchUser = async () => {
-            const sb = createClient();
-            try {
-                const {
-                    data: { user },
-                } = await sb.auth.getUser();
+        initialize();
+    }, [initialize]);
 
-                if (user) {
-                    setCurrentUserId(user.id);
-                    const { data: profile } = await sb
-                        .from("profiles")
-                        .select("role")
-                        .eq("id", user.id)
-                        .single();
-                    setIsAdmin(profile?.role === APP_ROLES.ADMIN);
-                }
-            } catch (error) {
-                console.error("Error in useAuth:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUser();
-    }, []);
-
-    return { currentUserId, isAdmin, loading };
+    return {
+        currentUserId: userId,
+        isAdmin,
+        loading: status === "idle" || status === "loading",
+    };
 }
