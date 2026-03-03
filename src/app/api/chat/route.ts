@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase-server";
 import { toolDeclarations, executeTool } from "@/lib/chat-tools";
 import { MEI_SYSTEM_PROMPT } from "@/lib/mei-system-prompt";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Allow longer execution time for LLM logic
 
 interface ChatMessage {
   role: "user" | "model";
@@ -13,6 +14,8 @@ interface ChatMessage {
 
 export async function POST(req: NextRequest) {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
     // 1. Auth check
     const supabase = await createClient();
     const {
