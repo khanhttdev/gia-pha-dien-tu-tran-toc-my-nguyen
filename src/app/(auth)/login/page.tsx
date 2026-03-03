@@ -190,6 +190,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPass ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
                   onClick={() => setShowPass(!showPass)}
                 >
