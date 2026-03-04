@@ -4,8 +4,6 @@
 export { useAuthStore } from "./auth-store";
 export type { AuthStatus, AppRole } from "./auth-store";
 
-export { useTreeStore } from "./tree-store";
-export type { TreeStatus } from "./tree-store";
 
 export { useBoardStore } from "./board-store";
 export type { BoardStatus } from "./board-store";
