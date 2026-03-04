@@ -1,52 +1,72 @@
-import { createClient } from "@/lib/supabase-server";
-import TreeClient from "./tree-client";
-import { getAllMembers, getAllSpouses } from "@/lib/supabase-data";
+import { OrganicTreeCanvas } from "@/components/tree/organic-tree-canvas";
+import { RecursiveFamily } from "@/app/types/treeType";
 
-export const metadata = {
-  title: "Cây Gia Phả | Trần Tộc Mỹ Nguyên",
+// Mock data matching the design reference image
+const familyData: RecursiveFamily = {
+    id: "1",
+    name: "Thomas Reid",
+    born: "1928",
+    avatar: "/assets/profile/patriarch.jpg", // Assuming assets exist or will be mocked
+    children: [
+        {
+            id: "2",
+            name: "Eleanor Finch",
+            born: "1931",
+            children: [
+                {
+                    id: "3",
+                    name: "Arthur Reed",
+                    born: "1956",
+                    died: "2021",
+                    children: [
+                        {
+                            id: "6",
+                            name: "Margot Davis",
+                            born: "1958",
+                        },
+                        {
+                            id: "7",
+                            name: "Oliver Reed",
+                            born: "1984",
+                        },
+                        {
+                            id: "8",
+                            name: "Chloe Reed",
+                            born: "2018",
+                        }
+                    ]
+                },
+                {
+                    id: "4",
+                    name: "Sarah Jenkins",
+                    born: "1961",
+                    children: [
+                        {
+                            id: "9",
+                            name: "Clara Vance",
+                            born: "1986",
+                        },
+                        {
+                            id: "10",
+                            name: "Julian Reed",
+                            born: "1991",
+                        },
+                        {
+                            id: "11",
+                            name: "Chloe Reed",
+                            born: "2018",
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 };
 
-export default async function TreePage() {
-  const supabase = await createClient();
-
-  let defaultRootId: string | null = null;
-
-  // 1. Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    // 2. Lấy link_member từ profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("linked_member")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.linked_member) {
-      // 3. Truy xuất id ông nội qua Supabase RPC Function (ép kiểu do type db chưa sync)
-      const { data: grandfatherId } = await (supabase.rpc as any)(
-        "get_grandfather_id",
-        {
-          p_member_id: profile.linked_member,
-        },
-      );
-      // Nếu không có kết quả từ RPC, lùi về lấy chính người đó làm Root
-      defaultRootId = (grandfatherId as string) || profile.linked_member;
-    }
-  }
-
-  const [members, spouses] = await Promise.all([
-    getAllMembers(),
-    getAllSpouses(),
-  ]);
-
-  return (
-    <TreeClient
-      defaultRootId={defaultRootId}
-      initialMembers={members}
-      initialSpouses={spouses}
-    />
-  );
+export default function TreePage() {
+    return (
+        <main className="w-full h-full bg-zinc-950 overflow-hidden">
+            <OrganicTreeCanvas data={familyData} />
+        </main>
+    );
 }

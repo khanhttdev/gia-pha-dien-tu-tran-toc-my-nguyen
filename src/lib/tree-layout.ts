@@ -22,32 +22,81 @@ export interface FamilyNodeType {
     data: FamilyNodeData;
 }
 
-const NODE_W = 240;
-const NODE_H = 100;
+const NODE_W = 130;
+const NODE_H = 120;
+
+/**
+ * Get all descendants of a given root member (including root).
+ * This allows us to show a compact subtree instead of the entire 400+ node tree.
+ */
+function getDescendants(rootId: string, members: Member[]): Set<string> {
+    const descendants = new Set<string>();
+    const queue = [rootId];
+
+    while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (descendants.has(current)) continue;
+        descendants.add(current);
+
+        // Find children: members whose father_id or mother_id (via spouse) is current
+        for (const m of members) {
+            if (m.father_id === current && !descendants.has(m.id)) {
+                queue.push(m.id);
+            }
+        }
+    }
+
+    return descendants;
+}
+
+/**
+ * Find the root ancestor (Gen 1) or the member with no father.
+ */
+export function findRootMember(members: Member[]): string | null {
+    // Prefer Gen 1 member with no father
+    const gen1 = members
+        .filter((m) => (m.generation_level || 99) === 1)
+        .sort((a, b) => (a.birth_order || 0) - (b.birth_order || 0));
+
+    if (gen1.length > 0) return gen1[0].id;
+
+    // Fallback: member with no father_id
+    const roots = members.filter((m) => !m.father_id);
+    return roots.length > 0 ? roots[0].id : members[0]?.id || null;
+}
 
 export function buildFamilyTree(
     members: Member[] = [],
     spouses: Spouse[] = [],
+    rootId?: string | null,
 ): { nodes: FamilyNodeType[]; edges: Edge[] } {
     if (members.length === 0) return { nodes: [], edges: [] };
 
+    // If rootId is provided, only show descendants of that root
+    let visibleMembers = members;
+    if (rootId) {
+        const descendantIds = getDescendants(rootId, members);
+        visibleMembers = members.filter((m) => descendantIds.has(m.id));
+    }
+
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: "BT", ranksep: 180, nodesep: 80 });
+    g.setGraph({ rankdir: "BT", ranksep: 200, nodesep: 40 });
 
-    const sorted = [...members].sort((a, b) => {
+    const sorted = [...visibleMembers].sort((a, b) => {
         if (a.generation_level !== b.generation_level) {
             return (a.generation_level || 0) - (b.generation_level || 0);
         }
         return (a.birth_order || 0) - (b.birth_order || 0);
     });
 
+    const visibleIds = new Set(sorted.map((m) => m.id));
     const nodes: FamilyNodeType[] = [];
     const edges: Edge[] = [];
 
     // Member nodes
     sorted.forEach((m) => {
-        const hasChildren = sorted.some((c) => c.father_id === m.id || c.mother_id === m.id);
+        const hasChildren = sorted.some((c) => c.father_id === m.id);
         const meta = (m.metadata as MemberMetadata) || {};
 
         nodes.push({
@@ -70,8 +119,9 @@ export function buildFamilyTree(
         g.setNode(m.id, { width: NODE_W, height: NODE_H });
     });
 
-    // Spouse nodes
-    spouses.forEach((s) => {
+    // Spouse nodes (only for visible members)
+    const visibleSpouses = spouses.filter((s) => visibleIds.has(s.member_id));
+    visibleSpouses.forEach((s) => {
         const partner = sorted.find((m) => m.id === s.member_id);
         if (!partner) return;
 
@@ -104,18 +154,17 @@ export function buildFamilyTree(
         });
     });
 
-    // Parent-child edges
+    // Parent-child edges (only within visible set)
     sorted.forEach((m) => {
-        const parentId = m.father_id || m.mother_id;
-        if (parentId && sorted.some((p) => p.id === parentId)) {
+        if (m.father_id && visibleIds.has(m.father_id)) {
             edges.push({
-                id: `e-${parentId}-${m.id}`,
-                source: parentId,
+                id: `e-${m.father_id}-${m.id}`,
+                source: m.father_id,
                 target: m.id,
                 type: "family",
                 data: { isMarriage: false },
             });
-            g.setEdge(parentId, m.id);
+            g.setEdge(m.father_id, m.id);
         }
     });
 
@@ -132,12 +181,12 @@ export function buildFamilyTree(
 
         // Fix spouse position (always right of partner)
         if (node.data.isSpouse) {
-            const sp = spouses.find((s) => `spouse-${s.id}` === node.id);
+            const sp = visibleSpouses.find((s) => `spouse-${s.id}` === node.id);
             if (sp) {
                 const partnerNode = g.node(sp.member_id);
                 if (partnerNode) {
                     y = partnerNode.y - NODE_H / 2;
-                    x = partnerNode.x + NODE_W / 2 + 20;
+                    x = partnerNode.x + NODE_W / 2 + 10;
                 }
             }
         }
