@@ -3,10 +3,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { getAllMembers, getAllSpouses } from "@/lib/supabase-data";
 import { Member, Spouse, MemberMetadata } from "@/lib/types";
-import { BookOpen, ChevronDown, ChevronRight, Loader2, Download } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Loader2, Download, Scroll, Medal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 
 type FamilyBranch = {
   member: Member;
@@ -65,19 +66,19 @@ function BranchSection({
   return (
     <div
       className={cn(
-        "border-l-2 pl-4 mb-4",
+        "border-l-2 pl-6 mb-6 transition-all duration-300",
         depth === 0
-          ? "border-amber-500/60"
+          ? "border-heritage-gold shadow-[inset_4px_0_10px_rgba(230,200,117,0.1)]"
           : depth === 1
-            ? "border-amber-400/30"
-            : "border-border/40",
+            ? "border-heritage-gold/40"
+            : "border-heritage-gold/10",
       )}
     >
-      <div className="flex items-start gap-3 mb-2">
+      <div className="flex items-start gap-4 mb-3 group">
         <button
-          className="mt-0.5 text-muted-foreground hover:text-foreground"
+          className="mt-1.5 text-heritage-gold-dim hover:text-heritage-gold transition-colors"
           onClick={() => setOpen(!open)}
-          aria-label={open ? "Thu g\u1ECDn" : "M\u1EDF r\u1ED9ng"}
+          aria-label={open ? "Thu gọn" : "Mở rộng"}
         >
           {children.length > 0 ? (
             open ? (
@@ -86,30 +87,30 @@ function BranchSection({
               <ChevronRight className="w-4 h-4" />
             )
           ) : (
-            <span className="w-4 h-4 block" />
+            <span className="w-4 h-4 block opacity-20">—</span>
           )}
         </button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <span
               className={cn(
-                "font-bold",
+                "font-serif font-bold transition-all duration-300 group-hover:tracking-wide",
                 depth === 0
-                  ? "text-base text-amber-600"
+                  ? "text-xl royal-text-gradient"
                   : depth === 1
-                    ? "text-sm text-amber-700/80"
-                    : "text-sm text-foreground/90",
+                    ? "text-base text-heritage-gold/90"
+                    : "text-sm text-heritage-gold/70",
               )}
             >
               {member.full_name}
             </span>
             {yearRange && (
-              <span className="text-xs text-muted-foreground">
-                ({yearRange})
+              <span className="text-[10px] font-mono text-heritage-gold-dim/60 bg-heritage-gold/5 px-2 py-0.5 rounded-full border border-heritage-gold/10">
+                {yearRange}
               </span>
             )}
             {meta.is_alive === false && (
-              <span className="text-xs text-muted-foreground/60 italic">
+              <span className="text-xs text-heritage-gold-dim/40 italic">
                 {"\u271D"}
               </span>
             )}
@@ -117,10 +118,10 @@ function BranchSection({
           {spouses.map((s) => {
             const sMeta = (s.metadata as MemberMetadata) || {};
             return (
-              <p key={s.id} className="text-xs text-muted-foreground mt-0.5">
-                {"\u2665"} <span className="font-medium">{s.full_name}</span>
+              <p key={s.id} className="text-[11px] text-rose-400/60 mt-1 font-medium italic">
+                {"\u2665"} <span className="opacity-80">{s.full_name}</span>
                 {sMeta.birth_year && (
-                  <span className="ml-1">
+                  <span className="ml-1 opacity-50">
                     (
                     {[sMeta.birth_year, sMeta.death_year]
                       .filter(Boolean)
@@ -134,11 +135,10 @@ function BranchSection({
         </div>
         <div
           className={cn(
-            "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5",
-            "border",
+            "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-1 shadow-lg",
             member.gender === "male"
-              ? "bg-blue-500/10 border-blue-500/30 text-blue-500"
-              : "bg-rose-400/10 border-rose-400/30 text-rose-400",
+              ? "royal-halo bg-heritage-gold/10 text-heritage-gold"
+              : "royal-halo-pink bg-rose-500/10 text-rose-400",
           )}
         >
           {member.generation_level}
@@ -146,7 +146,7 @@ function BranchSection({
       </div>
 
       {open && children.length > 0 && (
-        <div className="pl-4 space-y-0">
+        <div className="pl-4 space-y-2 animate-in fade-in slide-in-from-left-2 duration-500">
           {children.map((child) => (
             <BranchSection
               key={child.member.id}
@@ -210,207 +210,207 @@ export default function BookPage() {
   }, [members, spouses]);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 px-6 py-4 border-b border-border glass">
+    <div className="h-full flex flex-col page-enter">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-heritage-gold/10 glass">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-amber-900" />
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 royal-halo bg-heritage-gold/10 flex items-center justify-center shadow-xl">
+              <BookOpen className="w-5 h-5 text-heritage-gold" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-none">
-                S&aacute;ch Gia Ph&#7843;
+              <h1 className="text-2xl font-serif font-bold royal-text-gradient leading-none">
+                Sách Gia Phả
               </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Tr&#7847;n T&#7897;c M&#7929; Nguy&ecirc;n &mdash; t&#7921;
-                &#273;&#7897;ng t&#7841;o t&#7915; d&#7919; li&#7879;u
+              <p className="text-xs text-heritage-gold-dim mt-1.5 font-medium italic opacity-70">
+                Văn bản truyền thừa đời đời của dòng tộc Trần Mỹ Nguyên
               </p>
             </div>
           </div>
           {!loading && members.length > 0 && (
             <Button
               size="sm"
-              className="gold-gradient border-0 text-amber-950 font-semibold hover:opacity-90 gap-1.5 shadow-md"
+              className="gold-gradient border-0 text-amber-950 font-bold hover:opacity-90 gap-1.5 shadow-2xl"
               onClick={handleExportPDF}
               disabled={exporting}
             >
               {exporting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-4 h-4" />
               )}
-              Xuất PDF
+              Xuất PDF Di Sản
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 max-w-3xl mx-auto w-full">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="pb-8">
-            {/* Header */}
-            <div className="text-center mb-16 relative">
-              <div className="text-7xl mb-8 opacity-90 hero-logo">
-                {"\uD83D\uDCD6"}
-              </div>
-              <div className="relative inline-block px-12 py-4">
-                <div className="absolute top-0 left-0 w-12 h-0.5 bg-amber-500/40" />
-                <div className="absolute top-0 right-0 w-12 h-0.5 bg-amber-500/40" />
-                <div className="absolute bottom-0 left-0 w-12 h-0.5 bg-amber-500/40" />
-                <div className="absolute bottom-0 right-0 w-12 h-0.5 bg-amber-500/40" />
-                <h2 className="text-4xl font-serif font-extrabold gold-text tracking-[0.15em] uppercase">
-                  GIA PH&#7842;
-                </h2>
-                <h3 className="text-lg font-serif font-medium text-amber-200/60 mt-2 tracking-widest italic">
-                  TR&#7846;N T&#7896;C M&#7928; NGUY&Ecirc;N
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground mt-8 uppercase tracking-[0.3em] opacity-40">
-                L&#432;u gi&#7919; &mdash; Truy&#7873;n th&#7915;a &mdash;
-                Ph&aacute;t tri&#7875;n
-              </p>
-
-              <div className="grid grid-cols-3 gap-12 mt-16 max-w-xl mx-auto">
-                <div className="space-y-1">
-                  <div className="text-2xl font-serif font-bold text-amber-500/80">
-                    {stats.total}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                    Th&agrave;nh vi&ecirc;n
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-serif font-bold text-amber-500/80">
-                    {stats.gens}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                    Th&#7871; h&#7879;
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-serif font-bold text-amber-500/80">
-                    {stats.alive}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                    C&ograve;n s&#7889;ng
-                  </div>
-                </div>
-              </div>
+      <div className="flex-1 overflow-y-auto px-6 py-12 custom-scrollbar">
+        <div className="max-w-4xl mx-auto w-full space-y-24">
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-heritage-gold" />
             </div>
+          ) : (
+            <div className="animate-in fade-in duration-1000">
+              {/* Cover Title */}
+              <div className="text-center space-y-12 relative py-20">
+                <div className="relative inline-block group">
+                  <div className="absolute -inset-10 bg-heritage-gold/5 blur-[80px] rounded-full opacity-50" />
+                  <Scroll className="w-24 h-24 text-heritage-gold/40 mx-auto mb-10 hero-logo" />
 
-            {/* Family Tree Section */}
-            <div className="space-y-6 mt-16">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-border/40" />
-                <h3 className="text-[10px] font-semibold text-amber-500/40 uppercase tracking-[0.4em]">
-                  Ph&#7843; H&#7879; D&ograve;ng T&#7897;c
-                </h3>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-border/40" />
-              </div>
-              {roots.map((branch) => (
-                <BranchSection
-                  key={branch.member.id}
-                  branch={branch}
-                  depth={0}
-                />
-              ))}
-            </div>
+                  <div className="relative space-y-6">
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="h-px w-16 bg-gradient-to-r from-transparent to-heritage-gold/40" />
+                      <Medal className="w-6 h-6 text-heritage-gold/60" />
+                      <div className="h-px w-16 bg-gradient-to-l from-transparent to-heritage-gold/40" />
+                    </div>
+                    <h2 className="text-5xl md:text-7xl font-serif font-extrabold royal-text-gradient tracking-[0.2em] uppercase">
+                      Gia Phả
+                    </h2>
+                    <h3 className="text-xl md:text-2xl font-serif font-medium text-heritage-gold-dim tracking-[0.3em] italic">
+                      TRẦN TỘC MỸ NGUYÊN
+                    </h3>
+                    <p className="text-[10px] text-heritage-gold/40 uppercase tracking-[0.5em] mt-10">
+                      Lưu truyền bách thế · Hưng thịnh ngàn đời
+                    </p>
+                  </div>
+                </div>
 
-            {/* Genealogy Statistics Section */}
-            <div className="mt-24 pt-16 border-t border-border/20">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-border/40" />
-                <h3 className="text-[10px] font-semibold text-amber-500/40 uppercase tracking-[0.4em]">
-                  Th&#7889;ng k&ecirc; Th&#7871; h&#7879;
-                </h3>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-border/40" />
+                {/* Stats Summary Panel */}
+                <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-20 p-8 rounded-[2rem] bg-royal-card/50 border border-heritage-gold/10 royal-gold-glow backdrop-blur-xl">
+                  <div className="space-y-2">
+                    <p className="text-3xl font-serif font-bold royal-text-gradient">{stats.total}</p>
+                    <p className="text-[9px] font-bold text-heritage-gold-dim uppercase tracking-widest">Thành viên</p>
+                  </div>
+                  <div className="space-y-2 border-x border-heritage-gold/5">
+                    <p className="text-3xl font-serif font-bold royal-text-gradient">{stats.gens}</p>
+                    <p className="text-[9px] font-bold text-heritage-gold-dim uppercase tracking-widest">Thế hệ</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-3xl font-serif font-bold royal-text-gradient">{stats.alive}</p>
+                    <p className="text-[9px] font-bold text-heritage-gold-dim uppercase tracking-widest">Hiền diện</p>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-8">
-                {Array.from(new Set(members.map((m) => m.generation_level)))
-                  .sort()
-                  .map((gen) => {
-                    const genMembers = members.filter(
-                      (m) => m.generation_level === gen,
-                    );
-                    return (
-                      <div
-                        key={gen}
-                        className="glass rounded-3xl p-8 border border-border/40 shadow-2xl"
-                      >
-                        <div className="flex justify-between items-end mb-6 border-b border-border/10 pb-4">
-                          <div>
-                            <p className="text-lg font-serif font-semibold text-amber-500">
-                              Th&#7871; h&#7879; th&#7913; {gen}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                              Giai &#273;o&#7841;n l&#432;u danh
-                            </p>
+
+              {/* Main Contents Section */}
+              <section className="space-y-12">
+                <div className="flex items-center gap-4 px-2">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-heritage-gold/30" />
+                  <span className="text-xs font-bold uppercase tracking-[0.4em] text-heritage-gold-dim">
+                    I. Phả Hệ Dòng Tộc
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent to-heritage-gold/30" />
+                </div>
+
+                <Card className="p-10 border-heritage-gold/10 bg-heritage-maroon/10">
+                  {roots.map((branch) => (
+                    <BranchSection
+                      key={branch.member.id}
+                      branch={branch}
+                      depth={0}
+                    />
+                  ))}
+                </Card>
+              </section>
+
+              {/* Statistics by Generation Section */}
+              <section className="space-y-12 py-20">
+                <div className="flex items-center gap-4 px-2">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-heritage-gold/30" />
+                  <span className="text-xs font-bold uppercase tracking-[0.4em] text-heritage-gold-dim">
+                    II. Thống Kê Chi Tiết
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent to-heritage-gold/30" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-10">
+                  {Array.from(new Set(members.map((m) => m.generation_level)))
+                    .sort((a, b) => a - b)
+                    .map((gen) => {
+                      const genMembers = members.filter(
+                        (m) => m.generation_level === gen,
+                      );
+                      return (
+                        <Card
+                          key={gen}
+                          className="p-8 border-heritage-gold/10 hover:royal-gold-glow group transition-all duration-700 overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-gold/5 blur-[60px] rounded-full group-hover:bg-heritage-gold/10 transition-colors" />
+                          <div className="flex justify-between items-end mb-8 border-b border-heritage-gold/10 pb-6">
+                            <div>
+                              <p className="text-2xl font-serif font-bold royal-text-gradient">
+                                Đời thứ {gen}
+                              </p>
+                              <p className="text-[10px] font-bold text-heritage-gold-dim uppercase tracking-[0.2em] mt-1 opacity-60">
+                                Giai đoạn tiếp nối tổ tiên
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-4xl font-serif font-bold text-heritage-gold/10 group-hover:text-heritage-gold/20 transition-colors">
+                                {genMembers.length}
+                              </span>
+                              <span className="text-[9px] font-bold text-heritage-gold-dim ml-3 uppercase tracking-tighter opacity-40">
+                                Nhân khẩu
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-serif font-bold text-foreground/20">
-                              {genMembers.length}
-                            </span>
-                            <span className="text-[8px] text-muted-foreground ml-2 uppercase tracking-tighter">
-                              Nh&acirc;n kh&#7849;u
-                            </span>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
+                            {genMembers.map((m) => {
+                              const mMeta = (m.metadata as MemberMetadata) || {};
+                              return (
+                                <div
+                                  key={m.id}
+                                  className="flex items-center justify-between group/item p-2 rounded-lg hover:bg-heritage-gold/5 transition-all"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className={cn(
+                                      "w-2 h-2 rounded-full",
+                                      m.gender === 'male' ? "bg-heritage-gold/40" : "bg-rose-500/40"
+                                    )} />
+                                    <span className="text-sm font-medium text-heritage-gold/80 truncate group-hover/item:text-heritage-gold transition-colors">
+                                      {m.full_name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {(mMeta.birth_year || mMeta.death_year) && (
+                                      <span className="text-[10px] font-mono text-heritage-gold-dim/40 tabular-nums">
+                                        {[mMeta.birth_year, mMeta.death_year]
+                                          .filter(Boolean)
+                                          .join("-")}
+                                      </span>
+                                    )}
+                                    {mMeta.is_alive === false && (
+                                      <span className="text-[10px] text-heritage-gold/30">
+                                        {"\u271D"}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
-                          {genMembers.map((m) => {
-                            const mMeta = (m.metadata as MemberMetadata) || {};
-                            return (
-                              <div
-                                key={m.id}
-                                className="flex items-center justify-between group"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="text-muted-foreground/30 text-[10px]">
-                                    {m.gender === "male" ? "\u2642" : "\u2640"}
-                                  </span>
-                                  <span className="text-sm font-medium text-foreground/80">
-                                    {m.full_name}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {(mMeta.birth_year || mMeta.death_year) && (
-                                    <span className="text-[9px] font-mono text-muted-foreground/50 tabular-nums">
-                                      {[mMeta.birth_year, mMeta.death_year]
-                                        .filter(Boolean)
-                                        .join("\u2013")}
-                                    </span>
-                                  )}
-                                  {mMeta.is_alive === false && (
-                                    <span className="text-[10px] text-amber-600/40">
-                                      {"\u271D"}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                        </Card>
+                      );
+                    })}
+                </div>
+              </section>
+
+              {/* Footer Script */}
+              <div className="text-center py-20 opacity-20 space-y-4">
+                <div className="h-px w-24 bg-gradient-to-r from-transparent via-heritage-gold to-transparent mx-auto" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-heritage-gold">
+                  GIA PHẢ TỰ ĐỘNG · HỆ THỐNG TRẦN MỸ NGUYÊN
+                </p>
+                <p className="text-[8px] font-medium text-heritage-gold-dim">
+                  Bản cập nhật ngày {new Date().toLocaleDateString("vi-VN")}
+                </p>
               </div>
             </div>
-
-            {/* Footer */}
-            <div className="mt-32 text-center opacity-20">
-              <p className="text-[10px] tracking-[0.5em] uppercase">
-                Gia Ph&#7843; Tr&#7847;n T&#7897;c M&#7929; Nguy&ecirc;n
-              </p>
-              <p className="text-[8px] mt-2">
-                &copy; {new Date().getFullYear()} &mdash; L&#432;u gi&#7919;
-                b&#7903;i con ch&aacute;u &#273;&#7901;i &#273;&#7901;i
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

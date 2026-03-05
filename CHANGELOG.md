@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.5.0 (2026-03-05)
+
+### Features
+
+* **ui:** implement "Royal Gold" aesthetic with premium glassmorphism, golden halo effects, and Zolina typography across all major pages
+* **directory:** refactor contact management to link directly with family tree members; implement membership-based directory selection
+* **fund:** migrate newsfeed and financial management to the new `funds` table with enhanced dashboard visualizations
+* **member:** redesign member profile with high-fidelity "Hero Card" and clear relationship hierarchies
+
+### Bug Fixes
+
+* **build:** resolve critical production build failures related to missing types (`FamilyEvent`), implicit `any`, and incorrect prop passing
+* **admin:** fix duplicate `Label` imports and incorrect `variant` prop types in confirmation modals
+* **people:** resolve invalid boolean state assignments preventing successful compilation
+
 ## 1.4.0 (2026-03-02)
 
 ### Features

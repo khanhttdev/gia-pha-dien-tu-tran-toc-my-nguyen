@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getAllMembers } from "@/lib/supabase-data";
-import { Member } from "@/lib/types";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-client";
-import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -14,342 +12,331 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  Phone,
   Search,
-  Pencil,
-  Loader2,
-  MessageCircle,
+  Plus,
+  Phone,
   Mail,
   MapPin,
+  Pencil,
+  Trash2,
+  Loader2,
+  BookUser,
+  ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Contact } from "@/lib/types";
 
-type MemberWithContact = Member & { contact?: Contact };
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { Card } from "@/components/ui/card";
+
+import { Contact, Member } from "@/lib/types";
+
+type ContactWithMember = Contact & {
+  members: { full_name: string } | null;
+};
+
+const EMPTY_FORM: any = {
+  member_id: "",
+  phone: "",
+  email: "",
+  address: "",
+  facebook: "",
+  zalo: "",
+};
 
 export default function DirectoryPage() {
-  const [people, setPeople] = useState<MemberWithContact[]>([]);
-  const [filtered, setFiltered] = useState<MemberWithContact[]>([]);
-  const [query, setQuery] = useState("");
+  const [contacts, setContacts] = useState<ContactWithMember[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [editMember, setEditMember] = useState<MemberWithContact | null>(null);
-  const [form, setForm] = useState({
-    phone: "",
-    zalo: "",
-    facebook: "",
-    email: "",
-    address: "",
-    notes: "",
-  });
+  const [query, setQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+
+  const { isAdmin } = useAuth();
   const sb = createClient();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const allMembers = await getAllMembers();
-    const { data: contacts } = await sb.from("contacts").select("*");
-    const contactMap = new Map(
-      (contacts ?? []).map((c: any) => [c.member_id, c]),
-    );
-    const merged = allMembers.map((m) => ({
-      ...m,
-      contact: contactMap.get(m.id) as Contact | undefined,
-    }));
-    setPeople(merged);
-    setFiltered(merged);
+    const [{ data: cData }, { data: mData }] = await Promise.all([
+      sb.from("contacts").select("*, members(full_name)").order("created_at", { ascending: false }),
+      sb.from("members").select("id, full_name").order("full_name", { ascending: true })
+    ]);
+    setContacts((cData as any) ?? []);
+    setMembers((mData as any) ?? []);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
-
-  useEffect(() => {
-    sb.auth.getUser().then(({ data }: any) => {
-      if (!data.user) return;
-      sb.from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single()
-        .then(({ data: p }: any) => {
-          setIsAdmin(p?.role === "admin");
-        });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!query.trim()) {
-      setFiltered(people);
-      return;
-    }
-    const q = query.toLowerCase();
-    setFiltered(
-      people.filter(
-        (p) =>
-          p.full_name.toLowerCase().includes(q) ||
-          p.contact?.phone?.includes(q) ||
-          p.contact?.email?.toLowerCase().includes(q),
-      ),
-    );
-  }, [query, people]);
-
-  const openEdit = (p: MemberWithContact) => {
-    setEditMember(p);
-    setForm({
-      phone: p.contact?.phone ?? "",
-      zalo: p.contact?.zalo ?? "",
-      facebook: p.contact?.facebook ?? "",
-      email: p.contact?.email ?? "",
-      address: p.contact?.address ?? "",
-      notes: p.contact?.notes ?? "",
-    });
-  };
+  }, [load]);
 
   const handleSave = async () => {
-    if (!editMember) return;
+    if (!form.member_id) {
+      toast.error("Vui lòng chọn thành viên");
+      return;
+    }
     setSaving(true);
     try {
-      const existing = editMember.contact;
-      if (existing) {
-        await sb
-          .from("contacts")
-          .update({ ...form, updated_at: new Date().toISOString() })
-          .eq("id", existing.id);
+      if (editId) {
+        await sb.from("contacts").update(form).eq("id", editId);
+        toast.success("Đã cập nhật liên hệ");
       } else {
-        await sb.from("contacts").insert({ ...form, member_id: editMember.id });
+        await sb.from("contacts").insert(form);
+        toast.success("Đã thêm liên hệ mới");
       }
-      toast.success("Đã lưu thông tin liên lạc");
-      setEditMember(null);
-      await load();
+      setDialogOpen(false);
+      load();
     } catch (e: any) {
       toast.error(e.message);
     }
     setSaving(false);
   };
 
-  const withContact = filtered.filter((p) => p.contact);
-  const withoutContact = filtered.filter((p) => !p.contact);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Xóa liên hệ này?")) return;
+    try {
+      await sb.from("contacts").delete().eq("id", id);
+      toast.success("Đã xóa");
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
-  const ContactCard = ({ p }: { p: MemberWithContact }) => (
-    <div
-      className={cn(
-        "glass rounded-xl p-4 border border-border/60 hover:border-amber-400/40 transition-all group",
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div
-            className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border",
-              p.gender === "male"
-                ? "bg-blue-500/10 border-blue-500/30"
-                : p.gender === "female"
-                  ? "bg-rose-400/10 border-rose-400/30"
-                  : "bg-muted border-border",
-            )}
-          >
-            {p.gender === "male" ? "👨" : p.gender === "female" ? "👩" : "👤"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{p.full_name}</p>
-            <p className="text-xs text-muted-foreground">
-              Thế hệ {p.generation_level}
-            </p>
-          </div>
-        </div>
-        {isAdmin && (
-          <Button
-            aria-label="Action Button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:text-amber-500 shrink-0"
-            onClick={() => openEdit(p)}
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </Button>
-        )}
-      </div>
-
-      {p.contact ? (
-        <div className="mt-3 space-y-1.5">
-          {p.contact.phone && (
-            <a
-              href={`tel:${p.contact.phone}`}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Phone className="w-3 h-3" /> {p.contact.phone}
-            </a>
-          )}
-          {p.contact.zalo && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MessageCircle className="w-3 h-3 text-blue-400" />
-              <span>Zalo: {p.contact.zalo}</span>
-            </div>
-          )}
-          {p.contact.email && (
-            <a
-              href={`mailto:${p.contact.email}`}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Mail className="w-3 h-3" /> {p.contact.email}
-            </a>
-          )}
-          {p.contact.address && (
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3 mt-0.5 shrink-0" /> {p.contact.address}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-muted-foreground italic">
-            Chưa có thông tin liên lạc
-          </p>
-          {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-[10px] text-amber-500 hover:text-amber-400 px-2"
-              onClick={() => openEdit(p)}
-            >
-              + Thêm
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+  const filtered = contacts.filter(
+    (c) =>
+      c.members?.full_name.toLowerCase().includes(query.toLowerCase()) ||
+      c.phone?.includes(query) ||
+      c.address?.toLowerCase().includes(query.toLowerCase()),
   );
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 px-6 py-4 border-b border-border glass">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-            <Phone className="w-4 h-4 text-amber-900" />
+    <div className="h-full flex flex-col page-enter">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-heritage-gold/10 glass">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 royal-halo bg-heritage-gold/10 flex items-center justify-center shadow-xl">
+              <BookUser className="w-5 h-5 text-heritage-gold" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-serif font-bold royal-text-gradient leading-none">Danh Bạ Liên Lạc</h1>
+              <p className="text-xs text-heritage-gold-dim mt-1.5 font-medium italic opacity-70">
+                Tìm kiếm thông tin liên hệ của bà con trong dòng họ
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-bold leading-none">Danh Bạ</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {withContact.length}/{people.length} thành viên có thông tin
-            </p>
-          </div>
+          {isAdmin && (
+            <Button
+              size="sm"
+              className="gold-gradient border-0 text-amber-950 font-bold hover:opacity-90 gap-1.5 shadow-lg"
+              onClick={() => {
+                setEditId(null);
+                setForm(EMPTY_FORM);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4" /> Thêm mới
+            </Button>
+          )}
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-heritage-gold/40" />
           <Input
-            placeholder="Tìm theo tên, số điện thoại, email..."
+            placeholder="Tìm theo tên, số điện thoại hoặc địa chỉ..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-9 h-8 text-sm"
+            className="pl-10 h-11 bg-royal-card border-heritage-gold/20 focus:border-heritage-gold text-heritage-gold placeholder:text-heritage-gold/30 rounded-xl"
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-heritage-gold" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-heritage-gold/20 rounded-3xl bg-royal-card/50">
+            <p className="text-heritage-gold-dim italic font-medium">Không tìm thấy thông tin liên hệ</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {withContact.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-                  Có thông tin liên lạc ({withContact.length})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {withContact.map((p) => (
-                    <ContactCard key={p.id} p={p} />
-                  ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {filtered.map((c) => (
+              <Card key={c.id} className="group hover:royal-gold-glow border-heritage-gold/10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 royal-halo bg-heritage-maroon/20 flex items-center justify-center shadow-xl group-hover:scale-105 transition-transform duration-500">
+                      <span className="text-xl font-serif font-bold royal-text-gradient">
+                        {c.members?.full_name?.charAt(0) || "?"}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-serif text-lg font-bold royal-text-gradient truncate">{c.members?.full_name || "N/A"}</h3>
+                      <p className="text-[10px] uppercase tracking-widest text-heritage-gold-dim/60 font-medium">Bà con nội tộc</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 flex-1">
+                    {c.phone && (
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-heritage-gold/5 border border-transparent hover:border-heritage-gold/20 transition-all group/item">
+                        <Phone className="w-3.5 h-3.5 text-heritage-gold/60 group-hover/item:text-heritage-gold transition-colors" />
+                        <span className="text-sm font-mono text-heritage-gold/80">{c.phone}</span>
+                      </div>
+                    )}
+                    {c.email && (
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-heritage-gold/5 border border-transparent hover:border-heritage-gold/20 transition-all group/item">
+                        <Mail className="w-3.5 h-3.5 text-heritage-gold/60 group-hover/item:text-heritage-gold transition-colors" />
+                        <span className="text-sm text-heritage-gold/80 truncate">{c.email}</span>
+                      </div>
+                    )}
+                    {c.address && (
+                      <div className="flex items-start gap-3 p-2.5 rounded-xl bg-heritage-gold/5 border border-transparent hover:border-heritage-gold/20 transition-all group/item">
+                        <MapPin className="w-3.5 h-3.5 text-heritage-gold/60 mt-0.5 group-hover/item:text-heritage-gold transition-colors" />
+                        <span className="text-xs text-heritage-gold/70 leading-relaxed line-clamp-2">{c.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-heritage-gold/5">
+                    <div className="flex gap-2">
+                      {c.zalo && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/10">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {c.facebook && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/10">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-heritage-gold/10 text-heritage-gold/60 hover:text-heritage-gold"
+                          onClick={() => {
+                            setEditId(c.id);
+                            setForm({
+                              member_id: c.member_id ?? "",
+                              phone: c.phone ?? "",
+                              email: c.email ?? "",
+                              address: c.address ?? "",
+                              facebook: c.facebook ?? "",
+                              zalo: c.zalo ?? "",
+                            });
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
+                          onClick={() => handleDelete(c.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-            {isAdmin && withoutContact.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-                  Chưa có thông tin ({withoutContact.length})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {withoutContact.map((p) => (
-                    <ContactCard key={p.id} p={p} />
-                  ))}
-                </div>
-              </div>
-            )}
+              </Card>
+            ))}
           </div>
         )}
       </div>
 
-      <Dialog
-        open={!!editMember}
-        onOpenChange={(v) => !v && setEditMember(null)}
-      >
-        <DialogContent className="max-w-md">
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md bg-royal-card border-heritage-gold/30">
           <DialogHeader>
-            <DialogTitle>
-              Thông tin liên lạc — {editMember?.full_name}
+            <DialogTitle className="font-serif text-xl royal-text-gradient">
+              {editId ? "Cập nhật liên hệ" : "Thêm liên hệ mới"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            {[
-              {
-                key: "phone",
-                label: "Số điện thoại",
-                placeholder: "09xxxxxxxx",
-              },
-              {
-                key: "zalo",
-                label: "Zalo",
-                placeholder: "Số Zalo hoặc username",
-              },
-              {
-                key: "facebook",
-                label: "Facebook",
-                placeholder: "Link profile Facebook",
-              },
-              {
-                key: "email",
-                label: "Email",
-                placeholder: "email@example.com",
-              },
-              {
-                key: "address",
-                label: "Địa chỉ",
-                placeholder: "Địa chỉ thường trú",
-              },
-              {
-                key: "notes",
-                label: "Ghi chú",
-                placeholder: "Thông tin khác...",
-              },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key} className="space-y-1">
-                <Label>{label}</Label>
+          <div className="space-y-4 py-4 custom-scrollbar max-h-[70vh] overflow-y-auto px-1">
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Thành viên *</Label>
+              <select
+                value={form.member_id}
+                onChange={(e) => setForm((f: any) => ({ ...f, member_id: e.target.value }))}
+                className="w-full h-11 px-4 rounded-xl border border-heritage-gold/20 bg-black/20 text-heritage-gold text-sm outline-none focus:border-heritage-gold/50"
+              >
+                <option value="" className="bg-royal-maroon-dark">— Chọn thành viên —</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id} className="bg-royal-maroon-dark">
+                    {m.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Số điện thoại</Label>
                 <Input
-                  value={(form as any)[key]}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, [key]: e.target.value }))
-                  }
-                  placeholder={placeholder}
+                  value={form.phone}
+                  onChange={(e) => setForm((f: any) => ({ ...f, phone: e.target.value }))}
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
                 />
               </div>
-            ))}
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Email</Label>
+                <Input
+                  value={form.email}
+                  onChange={(e) => setForm((f: any) => ({ ...f, email: e.target.value }))}
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Địa chỉ thường trú</Label>
+              <Input
+                value={form.address}
+                onChange={(e) => setForm((f: any) => ({ ...f, address: e.target.value }))}
+                className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Link Facebook</Label>
+                <Input
+                  value={form.facebook}
+                  onChange={(e) => setForm((f: any) => ({ ...f, facebook: e.target.value }))}
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Link Zalo</Label>
+                <Input
+                  value={form.zalo}
+                  onChange={(e) => setForm((f: any) => ({ ...f, zalo: e.target.value }))}
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                />
+              </div>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditMember(null)}>
+          <DialogFooter className="pt-4 border-t border-heritage-gold/10">
+            <Button
+              variant="ghost"
+              className="text-heritage-gold hover:bg-heritage-gold/10 font-bold"
+              onClick={() => setDialogOpen(false)}
+            >
               Hủy
             </Button>
             <Button
-              className="gold-gradient border-0 text-amber-950"
+              className="gold-gradient border-0 text-amber-950 font-bold shadow-lg"
               onClick={handleSave}
               disabled={saving}
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Lưu
+              Lưu thông tin
             </Button>
           </DialogFooter>
         </DialogContent>

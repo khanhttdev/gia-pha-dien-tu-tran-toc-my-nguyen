@@ -44,6 +44,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 import Link from "next/link";
+import { Card } from "@/components/ui/card";
 
 type MemberFormData = {
   full_name: string;
@@ -315,17 +316,17 @@ export default function PeoplePage() {
   );
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col page-enter">
       {/* Header */}
-      <div className="shrink-0 px-6 py-4 border-b border-border glass">
+      <div className="shrink-0 px-6 py-4 border-b border-heritage-gold/10 glass">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-              <Users className="w-4 h-4 text-amber-900" />
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 royal-halo bg-heritage-gold/10 flex items-center justify-center shadow-xl">
+              <Users className="w-5 h-5 text-heritage-gold" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-none">Thành Viên</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h1 className="text-2xl font-serif font-bold royal-text-gradient leading-none">Thành Viên</h1>
+              <p className="text-xs text-heritage-gold-dim mt-1.5 font-medium italic opacity-70">
                 {members.length} nội tộc · {spouses.length} phối ngẫu
               </p>
             </div>
@@ -333,97 +334,95 @@ export default function PeoplePage() {
           {isAdmin && (
             <Button
               size="sm"
-              className="gold-gradient border-0 text-amber-950 font-semibold hover:opacity-90 gap-1.5"
+              className="gold-gradient border-0 text-amber-950 font-bold hover:opacity-90 gap-1.5 shadow-lg"
               onClick={tab === "members" ? openAddMember : openAddSpouse}
             >
-              <Plus className="w-3.5 h-3.5" />{" "}
+              <Plus className="w-4 h-4" />{" "}
               {tab === "members" ? "Thêm thành viên" : "Thêm phối ngẫu"}
             </Button>
           )}
         </div>
         {/* Tabs + Search */}
-        <div className="flex items-center gap-3 mt-3">
-          <div className="flex gap-1">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
+          <div className="flex bg-heritage-maroon/40 p-1 rounded-xl border border-heritage-gold/10 self-stretch sm:self-auto">
             <button
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none",
                 tab === "members"
-                  ? "bg-amber-500/20 text-amber-500"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-heritage-gold text-amber-950 shadow-inner"
+                  : "text-heritage-gold-dim hover:text-heritage-gold",
               )}
               onClick={() => setTab("members")}
             >
-              Nội tộc ({members.length})
+              Nội tộc
             </button>
             <button
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none",
                 tab === "spouses"
-                  ? "bg-rose-400/20 text-rose-400"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-rose-500 text-white shadow-inner"
+                  : "text-heritage-gold-dim hover:text-heritage-gold",
               )}
               onClick={() => setTab("spouses")}
             >
-              Phối ngẫu ({spouses.length})
+              Phối ngẫu
             </button>
           </div>
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-heritage-gold/40" />
             <Input
               placeholder="Tìm kiếm theo tên..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9 h-8 text-sm"
+              className="pl-10 h-11 bg-royal-card border-heritage-gold/20 focus:border-heritage-gold text-heritage-gold placeholder:text-heritage-gold/30 rounded-xl"
             />
           </div>
         </div>
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10 custom-scrollbar">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-heritage-gold" />
           </div>
         ) : tab === "members" ? (
           Object.keys(byGen).length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">
-              Không tìm thấy thành viên nào
-            </p>
+            <div className="text-center py-20 border border-dashed border-heritage-gold/20 rounded-3xl bg-royal-card/50">
+              <p className="text-heritage-gold-dim italic font-medium">Không tìm thấy thành viên nào</p>
+            </div>
           ) : (
             Object.entries(byGen)
               .sort(([a], [b]) => parseInt(a) - parseInt(b))
               .map(([gen, genMembers]) => (
-                <div key={gen}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs font-semibold text-muted-foreground px-2">
+                <div key={gen} className="space-y-6">
+                  <div className="flex items-center gap-4 px-2">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent to-heritage-gold/30" />
+                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-heritage-gold-dim">
                       Thế hệ {gen}
                     </span>
-                    <div className="h-px flex-1 bg-border" />
+                    <div className="h-px flex-1 bg-gradient-to-l from-transparent to-heritage-gold/30" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {genMembers.map((m) => {
                       const meta = (m.metadata as MemberMetadata) || {};
                       return (
-                        <div
+                        <Card
                           key={m.id}
                           className={cn(
-                            "glass rounded-xl p-4 border border-border/60 hover:border-amber-400/40 transition-all duration-200 group",
+                            "group hover:royal-gold-glow",
                             meta.is_alive === false && "opacity-60",
                           )}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-4">
                             <Link
                               href={`/people/${m.id}`}
-                              className="flex items-center gap-3 flex-1 min-w-0"
+                              className="flex flex-col items-center text-center flex-1 min-w-0"
                             >
                               <div
                                 className={cn(
-                                  "w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border overflow-hidden",
-                                  m.gender === "male"
-                                    ? "bg-blue-500/10 border-blue-500/30"
-                                    : "bg-rose-400/10 border-rose-400/30",
+                                  "w-16 h-16 mb-4 overflow-hidden shadow-2xl transition-transform duration-500 group-hover:scale-105",
+                                  m.gender === "male" ? "royal-halo" : "royal-halo-pink",
                                 )}
                               >
                                 {meta.avatar_url ? (
@@ -432,28 +431,21 @@ export default function PeoplePage() {
                                     alt={m.full_name}
                                     className="w-full h-full object-cover"
                                   />
-                                ) : m.gender === "male" ? (
-                                  "👨"
                                 ) : (
-                                  "👩"
+                                  <div className="w-full h-full flex items-center justify-center text-2xl bg-heritage-maroon/20">
+                                    {m.gender === "male" ? "♂" : "♀"}
+                                  </div>
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm truncate group-hover:text-amber-500 transition-colors">
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <p className="font-serif text-lg font-bold royal-text-gradient truncate px-4">
                                   {m.full_name}
                                 </p>
-                                <p
-                                  className={cn(
-                                    "text-xs",
-                                    m.gender === "male"
-                                      ? "text-blue-500"
-                                      : "text-rose-400",
-                                  )}
-                                >
-                                  {m.gender === "male" ? "♂ Nam" : "♀ Nữ"}
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-heritage-gold-dim/70">
+                                  Chi Họ Trần · Đời {m.generation_level}
                                 </p>
                                 {(meta.birth_year || meta.death_year) && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-[11px] font-mono text-heritage-gold/60 mt-2 bg-heritage-gold/5 inline-block px-2 py-0.5 rounded-full border border-heritage-gold/10">
                                     {[meta.birth_year, meta.death_year]
                                       .filter(Boolean)
                                       .join(" – ")}
@@ -461,56 +453,51 @@ export default function PeoplePage() {
                                 )}
                               </div>
                             </Link>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                aria-label="Xem hồ sơ"
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 hover:text-amber-500"
-                                asChild
-                              >
-                                <Link href={`/people/${m.id}`}>
-                                  <Eye className="w-3.5 h-3.5" />
-                                </Link>
-                              </Button>
-                              {isAdmin && (
-                                <>
-                                  <Button
-                                    aria-label="Edit member"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 hover:text-amber-500"
-                                    onClick={() => openEditMember(m)}
-                                  >
-                                    <Pencil className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button
-                                    aria-label="Delete member"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 hover:text-red-500"
-                                    onClick={() => handleDeleteMember(m)}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
                           </div>
-                          {meta.is_alive === false && (
-                            <Badge
-                              variant="secondary"
-                              className="mt-2 text-[10px]"
+
+                          {/* Quick Actions at bottom of card */}
+                          <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-heritage-gold/5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 relative z-10">
+                            <Button
+                              aria-label="Xem hồ sơ"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 hover:bg-heritage-gold/10 text-heritage-gold/60 hover:text-heritage-gold rounded-full"
+                              asChild
                             >
-                              Đã mất
-                            </Badge>
+                              <Link href={`/people/${m.id}`}>
+                                <Eye className="w-4 h-4" />
+                              </Link>
+                            </Button>
+                            {isAdmin && (
+                              <>
+                                <Button
+                                  aria-label="Edit member"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 hover:bg-heritage-gold/10 text-heritage-gold/60 hover:text-heritage-gold rounded-full"
+                                  onClick={() => openEditMember(m)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  aria-label="Delete member"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 hover:bg-red-500/10 text-red-500/60 hover:text-red-500 rounded-full"
+                                  onClick={() => handleDeleteMember(m)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+
+                          {meta.is_alive === false && (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none rotate-12">
+                              <span className="text-4xl">🕯️</span>
+                            </div>
                           )}
-                          {meta.notes && (
-                            <p className="text-xs text-muted-foreground mt-2 italic line-clamp-2">
-                              {meta.notes}
-                            </p>
-                          )}
-                        </div>
+                        </Card>
                       );
                     })}
                   </div>
@@ -518,62 +505,66 @@ export default function PeoplePage() {
               ))
           )
         ) : (filtered as Spouse[]).length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">
-            Không tìm thấy phối ngẫu nào
-          </p>
+          <div className="text-center py-20 border border-dashed border-heritage-gold/20 rounded-3xl bg-royal-card/50">
+            <p className="text-heritage-gold-dim italic font-medium">Không tìm thấy phối ngẫu nào</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(filtered as Spouse[]).map((s) => {
               const linkedMember = members.find((m) => m.id === s.member_id);
 
               return (
-                <div
+                <Card
                   key={s.id}
-                  className="glass rounded-xl p-4 border border-border/60 hover:border-rose-400/40 transition-all group"
+                  className="group hover:royal-gold-glow border-rose-500/20 hover:border-rose-500/40"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border bg-rose-400/10 border-rose-400/30">
-                        <Heart className="w-5 h-5 text-rose-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">
-                          {s.full_name}
-                        </p>
-                        <p className="text-xs text-rose-400">
-                          {roleLabel(s.role_type ?? "")}
-                        </p>
-                        {linkedMember && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 mb-4 royal-halo-pink bg-rose-500/10 flex items-center justify-center shadow-xl">
+                      <Heart className="w-8 h-8 text-rose-400 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="space-y-1 w-full">
+                      <p className="font-serif text-lg font-bold text-rose-200 group-hover:text-rose-100 transition-colors px-4">
+                        {s.full_name}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400/70">
+                        {roleLabel(s.role_type ?? "")}
+                      </p>
+                      {linkedMember && (
+                        <div className="mt-3 pt-3 border-t border-rose-500/5">
+                          <p className="text-[11px] text-heritage-gold-dim italic">
+                            Phu nhân/Phu quân của
+                          </p>
+                          <p className="text-xs font-bold text-heritage-gold group-hover:text-heritage-gold-dim transition-colors">
                             💍 {linkedMember.full_name}
                           </p>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
+
                     {isAdmin && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-center gap-1 mt-6 pt-4 border-t border-heritage-gold/5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 w-full relative z-10">
                         <Button
                           aria-label="Edit spouse"
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 hover:text-amber-500"
+                          size="sm"
+                          className="h-8 w-8 hover:bg-heritage-gold/10 text-heritage-gold/60 hover:text-heritage-gold rounded-full"
                           onClick={() => openEditSpouse(s)}
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
                           aria-label="Delete spouse"
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 hover:text-red-500"
+                          size="sm"
+                          className="h-8 w-8 hover:bg-red-500/10 text-red-500/60 hover:text-red-500 rounded-full"
                           onClick={() => handleDeleteSpouse(s)}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     )}
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -582,25 +573,26 @@ export default function PeoplePage() {
 
       {/* Member Add/Edit Dialog */}
       <Dialog open={memberDialogOpen} onOpenChange={setMemberDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-royal-card border-heritage-gold/30">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="font-serif text-xl royal-text-gradient">
               {editMember ? "Chỉnh sửa thành viên" : "Thêm thành viên mới"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <Label>Họ và tên *</Label>
+          <div className="space-y-4 py-4 custom-scrollbar max-h-[70vh] overflow-y-auto px-1">
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Họ và tên *</Label>
               <Input
                 value={memberForm.full_name}
                 onChange={(e) =>
                   setMemberForm((f) => ({ ...f, full_name: e.target.value }))
                 }
                 placeholder="Trần Văn A"
+                className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
               />
             </div>
-            <div className="space-y-1">
-              <Label>Ảnh đại diện</Label>
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Ảnh đại diện</Label>
               <ImageUpload
                 bucket="avatars"
                 value={memberForm.avatar_url}
@@ -609,9 +601,9 @@ export default function PeoplePage() {
                 }
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label>Giới tính</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Giới tính</Label>
                 <select
                   value={memberForm.gender}
                   onChange={(e) =>
@@ -620,14 +612,14 @@ export default function PeoplePage() {
                       gender: e.target.value as any,
                     }))
                   }
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-heritage-gold/20 bg-black/20 text-heritage-gold text-sm outline-none focus:border-heritage-gold/50"
                 >
-                  <option value="male">Nam</option>
-                  <option value="female">Nữ</option>
+                  <option value="male" className="bg-royal-maroon-dark">Nam</option>
+                  <option value="female" className="bg-royal-maroon-dark">Nữ</option>
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label>Thế hệ</Label>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Thế hệ</Label>
                 <Input
                   type="number"
                   min="1"
@@ -638,10 +630,11 @@ export default function PeoplePage() {
                       generation_level: e.target.value,
                     }))
                   }
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Thứ tự sinh</Label>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Thứ tự sinh</Label>
                 <Input
                   type="number"
                   min="1"
@@ -652,50 +645,51 @@ export default function PeoplePage() {
                       birth_order: e.target.value,
                     }))
                   }
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Cha (father_id)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Cha (father_id)</Label>
                 <select
                   value={memberForm.father_id}
                   onChange={(e) =>
                     setMemberForm((f) => ({ ...f, father_id: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-heritage-gold/20 bg-black/20 text-heritage-gold text-sm outline-none focus:border-heritage-gold/50"
                 >
-                  <option value="">— Không —</option>
+                  <option value="" className="bg-royal-maroon-dark">— Không —</option>
                   {members
                     .filter((m) => m.gender === "male")
                     .map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.full_name} (F{m.generation_level})
+                      <option key={m.id} value={m.id} className="bg-royal-maroon-dark">
+                        {m.full_name} (Đời {m.generation_level})
                       </option>
                     ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label>Mẹ (mother_id)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Mẹ (mother_id)</Label>
                 <select
                   value={memberForm.mother_id}
                   onChange={(e) =>
                     setMemberForm((f) => ({ ...f, mother_id: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-heritage-gold/20 bg-black/20 text-heritage-gold text-sm outline-none focus:border-heritage-gold/50"
                 >
-                  <option value="">— Không —</option>
+                  <option value="" className="bg-royal-maroon-dark">— Không —</option>
                   {spouses.map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <option key={s.id} value={s.id} className="bg-royal-maroon-dark">
                       {s.full_name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Năm sinh</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Năm sinh</Label>
                 <Input
                   type="number"
                   placeholder="1950"
@@ -703,10 +697,11 @@ export default function PeoplePage() {
                   onChange={(e) =>
                     setMemberForm((f) => ({ ...f, birth_year: e.target.value }))
                   }
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Năm mất</Label>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Năm mất</Label>
                 <Input
                   type="number"
                   placeholder="2020"
@@ -718,10 +713,11 @@ export default function PeoplePage() {
                       is_alive: !e.target.value,
                     }))
                   }
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-heritage-gold/10">
               <input
                 type="checkbox"
                 id="alive"
@@ -733,32 +729,34 @@ export default function PeoplePage() {
                     death_year: e.target.checked ? "" : f.death_year,
                   }))
                 }
-                className="rounded"
+                className="w-4 h-4 rounded border-heritage-gold/30 bg-black/20 text-heritage-gold accent-heritage-gold"
               />
-              <Label htmlFor="alive" className="cursor-pointer">
+              <Label htmlFor="alive" className="cursor-pointer text-heritage-gold hover:text-heritage-gold-dim transition-colors text-sm font-medium">
                 Còn sống
               </Label>
             </div>
-            <div className="space-y-1">
-              <Label>Ghi chú</Label>
-              <Input
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Ghi chú</Label>
+              <textarea
                 value={memberForm.notes}
                 onChange={(e) =>
                   setMemberForm((f) => ({ ...f, notes: e.target.value }))
                 }
-                placeholder="Thông tin thêm..."
+                placeholder="Thông tin thêm về tiểu sử..."
+                className="w-full min-h-[100px] p-3 rounded-lg border border-heritage-gold/20 bg-black/20 text-heritage-gold text-sm outline-none focus:border-heritage-gold/50 resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="pt-4 border-t border-heritage-gold/10">
             <Button
-              variant="outline"
+              variant="ghost"
+              className="text-heritage-gold hover:bg-heritage-gold/10 font-bold"
               onClick={() => setMemberDialogOpen(false)}
             >
               Hủy
             </Button>
             <Button
-              className="gold-gradient border-0 text-amber-950"
+              className="gold-gradient border-0 text-amber-950 font-bold shadow-lg"
               onClick={handleSaveMember}
               disabled={saving}
             >
@@ -771,110 +769,88 @@ export default function PeoplePage() {
 
       {/* Spouse Add/Edit Dialog */}
       <Dialog open={spouseDialogOpen} onOpenChange={setSpouseDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-royal-card border-heritage-gold/30">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="font-serif text-xl text-rose-200">
               {editSpouse ? "Chỉnh sửa phối ngẫu" : "Thêm phối ngẫu mới"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <Label>Họ và tên *</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label className="text-rose-400 text-xs font-bold uppercase tracking-wider">Họ và tên *</Label>
               <Input
                 value={spouseForm.full_name}
                 onChange={(e) =>
                   setSpouseForm((f) => ({ ...f, full_name: e.target.value }))
                 }
                 placeholder="Nguyễn Thị B"
+                className="bg-black/20 border-rose-500/20 text-rose-100"
               />
             </div>
-            <div className="space-y-1">
-              <Label>Thành viên kết hôn *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-rose-400 text-xs font-bold uppercase tracking-wider">Thành viên kết hôn *</Label>
               <select
                 value={spouseForm.member_id}
                 onChange={(e) =>
                   setSpouseForm((f) => ({ ...f, member_id: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                className="w-full h-10 px-3 rounded-lg border border-rose-500/20 bg-black/20 text-rose-100 text-sm outline-none focus:border-rose-400/50"
               >
-                <option value="">— Chọn —</option>
+                <option value="" className="bg-royal-maroon-dark">— Chọn —</option>
                 {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.full_name} (F{m.generation_level})
+                  <option key={m.id} value={m.id} className="bg-royal-maroon-dark">
+                    {m.full_name} (Đời {m.generation_level})
                   </option>
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Vai vế</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-rose-400 text-xs font-bold uppercase tracking-wider">Vai trò</Label>
                 <select
                   value={spouseForm.role_type}
                   onChange={(e) =>
                     setSpouseForm((f) => ({ ...f, role_type: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-rose-500/20 bg-black/20 text-rose-100 text-sm outline-none"
                 >
-                  <option value="chinh_that">Chính thất</option>
-                  <option value="ke_that">Kế thất</option>
-                  <option value="thu_that">Thứ thất</option>
-                  <option value="chong">Chồng</option>
+                  <option value="chinh_that" className="bg-royal-maroon-dark">Chính thất</option>
+                  <option value="ke_that" className="bg-royal-maroon-dark">Kế thất</option>
+                  <option value="thu_that" className="bg-royal-maroon-dark">Thứ thất</option>
+                  <option value="chong" className="bg-royal-maroon-dark">Chồng</option>
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label>Tình trạng</Label>
+              <div className="space-y-1.5">
+                <Label className="text-rose-400 text-xs font-bold uppercase tracking-wider">Trình trạng</Label>
                 <select
                   value={spouseForm.status}
                   onChange={(e) =>
                     setSpouseForm((f) => ({ ...f, status: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-lg border border-rose-500/20 bg-black/20 text-rose-100 text-sm outline-none"
                 >
-                  <option value="married">Đang kết hôn</option>
-                  <option value="divorced">Đã ly hôn</option>
-                  <option value="deceased">Đã mất</option>
+                  <option value="married" className="bg-royal-maroon-dark">Đang kết hôn</option>
+                  <option value="divorced" className="bg-royal-maroon-dark">Ly hôn</option>
+                  <option value="widowed" className="bg-royal-maroon-dark">Góa</option>
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Năm sinh</Label>
-                <Input
-                  type="number"
-                  placeholder="1950"
-                  value={spouseForm.birth_year}
-                  onChange={(e) =>
-                    setSpouseForm((f) => ({ ...f, birth_year: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Năm mất</Label>
-                <Input
-                  type="number"
-                  placeholder="2020"
-                  value={spouseForm.death_year}
-                  onChange={(e) =>
-                    setSpouseForm((f) => ({ ...f, death_year: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="pt-4 border-t border-rose-500/10">
             <Button
-              variant="outline"
+              variant="ghost"
+              className="text-rose-400 hover:bg-rose-500/10 font-bold"
               onClick={() => setSpouseDialogOpen(false)}
             >
               Hủy
             </Button>
             <Button
-              className="gold-gradient border-0 text-amber-950"
+              className="bg-rose-500 hover:bg-rose-400 text-white font-bold shadow-lg"
               onClick={handleSaveSpouse}
               disabled={saving}
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {editSpouse ? "Lưu thay đổi" : "Thêm mới"}
+              Lưu
             </Button>
           </DialogFooter>
         </DialogContent>

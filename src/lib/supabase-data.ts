@@ -8,7 +8,9 @@ import {
   SpouseUpdate,
 } from "./types";
 
-const db = () => createClient();
+export function db() {
+  return createClient();
+}
 
 // ─── Members ──────────────────────────────────────────────────────────────────
 export async function getAllMembers(): Promise<Member[]> {
@@ -41,7 +43,7 @@ export async function createMember(member: MemberInsert): Promise<Member> {
   const { data, error } = await db()
     .from("members")
     .insert({ ...member, updated_at: new Date().toISOString() })
-    .select()
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .single();
   if (error) throw error;
   return data as Member;
@@ -55,7 +57,7 @@ export async function updateMember(
     .from("members")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .select()
+    .select("id, full_name, gender, generation_level, birth_order, father_id, mother_id, metadata")
     .single();
   if (error) throw error;
   return data as Member;
@@ -93,7 +95,7 @@ export async function createSpouse(spouse: SpouseInsert): Promise<Spouse> {
   const { data, error } = await db()
     .from("spouses")
     .insert({ ...spouse, updated_at: new Date().toISOString() })
-    .select()
+    .select("id, full_name, member_id, role_type, status, metadata")
     .single();
   if (error) throw error;
   return data as Spouse;
@@ -107,7 +109,7 @@ export async function updateSpouse(
     .from("spouses")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .select()
+    .select("id, full_name, member_id, role_type, status, metadata")
     .single();
   if (error) throw error;
   return data as Spouse;

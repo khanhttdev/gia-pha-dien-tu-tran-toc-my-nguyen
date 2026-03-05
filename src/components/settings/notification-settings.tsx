@@ -40,7 +40,7 @@ export function NotificationSettings() {
 
             const { data } = await sb
                 .from("notification_preferences" as any)
-                .select("*")
+                .select("id, user_id, channel, event_types, reminder_days, is_enabled")
                 .eq("user_id", userData.user.id)
                 .eq("channel", "email")
                 .maybeSingle();
@@ -89,7 +89,7 @@ export function NotificationSettings() {
             const { error, data } = await sb
                 .from("notification_preferences" as any)
                 .insert(payload)
-                .select()
+                .select("id, user_id, channel, event_types, reminder_days, is_enabled")
                 .single();
             if (error) toast.error(error.message);
             else {

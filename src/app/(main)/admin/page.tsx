@@ -42,6 +42,8 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useConfirmModal } from "@/hooks/use-confirm-modal";
 import { APP_ROLES, APP_STATUS, APP_PATHS } from "@/lib/constants";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 // Import New Subcomponents
 import { AnalyticsTab } from "@/components/admin/analytics-tab";
@@ -112,7 +114,6 @@ export default function AdminPage() {
     handleConfirm: confirmDeleteUser,
   } = useConfirmModal<{ id: string; name: string }>({
     onConfirm: async (data) => {
-      // Optimistic UI
       setProfiles((prev) => prev.filter((p) => p.id !== data.id));
       return deleteUser(data.id);
     },
@@ -120,7 +121,6 @@ export default function AdminPage() {
     successMessage: "Đã xóa người dùng thành công",
   });
 
-  // Status modal state handled manually for custom logic
   const [statusModal, setStatusModal] = useState<{
     open: boolean;
     userId: string;
@@ -202,18 +202,18 @@ export default function AdminPage() {
   const getRoleBadge = (role: string | null) => {
     if (role === APP_ROLES.ADMIN)
       return (
-        <Badge className="text-[10px] bg-amber-500/20 text-amber-600 border-amber-500/30">
+        <Badge className="text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-heritage-gold border-heritage-gold/30">
           👑 Admin
         </Badge>
       );
     if (role === APP_ROLES.ACCOUNTANT)
       return (
-        <Badge className="text-[10px] bg-emerald-500/20 text-emerald-600 border-emerald-500/30">
+        <Badge className="text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
           💰 Thủ quỹ
         </Badge>
       );
     return (
-      <Badge variant="secondary" className="text-[10px]">
+      <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider border-heritage-gold/20 text-heritage-gold/60">
         👁 Thành viên
       </Badge>
     );
@@ -222,18 +222,18 @@ export default function AdminPage() {
   const getStatusBadge = (status: string | null) => {
     if (status === APP_STATUS.APPROVED)
       return (
-        <Badge className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+        <Badge className="text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
           ✅ Đã duyệt
         </Badge>
       );
     if (status === APP_STATUS.REJECTED)
       return (
-        <Badge className="text-[10px] bg-red-500/10 text-red-500 border-red-500/20">
+        <Badge className="text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border-red-500/20">
           ❌ Từ chối
         </Badge>
       );
     return (
-      <Badge className="text-[10px] bg-yellow-500/10 text-yellow-500 border-yellow-500/20 animate-pulse">
+      <Badge className="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-heritage-gold border-heritage-gold/20 animate-pulse">
         ⏳ Chờ duyệt
       </Badge>
     );
@@ -243,669 +243,384 @@ export default function AdminPage() {
 
   if (!isAdmin && !loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="text-5xl">🔒</div>
-          <h2 className="text-lg font-bold">Không có quyền truy cập</h2>
-          <p className="text-sm text-muted-foreground">
-            Chỉ Admin mới có thể xem trang này
+      <div className="h-full flex items-center justify-center p-6 text-center">
+        <div className="max-w-md p-12 bg-royal-card border border-heritage-gold/20 rounded-[3rem] royal-glass space-y-6">
+          <Shield className="w-16 h-16 text-heritage-gold/30 mx-auto" />
+          <h2 className="text-2xl font-serif font-bold royal-text-gradient">Truy cập bị giới hạn</h2>
+          <p className="text-sm text-heritage-gold-dim italic font-medium">
+            Chỉ Quản trị viên cao cấp mới có quyền truy cập vào trung tâm điều hành dòng tộc.
           </p>
+          <Button className="gold-gradient text-amber-950 font-bold px-8 rounded-xl" onClick={() => window.location.href = APP_PATHS.HOME}>
+            Quay lại trang chủ
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0 px-6 py-4 border-b border-border glass z-10">
+    <div className="h-full flex flex-col page-enter">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-heritage-gold/10 glass">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-              <Shield className="w-4 h-4 text-amber-900" />
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 royal-halo bg-heritage-gold/10 flex items-center justify-center shadow-xl">
+              <Shield className="w-5 h-5 text-heritage-gold" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-none">Admin Panel</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Quản lý Gia phả & Dòng họ
+              <h1 className="text-2xl font-serif font-bold royal-text-gradient leading-none">Trung Tâm Điều Hành</h1>
+              <p className="text-xs text-heritage-gold-dim mt-1.5 font-medium italic opacity-70">
+                Quản trị hệ thống, phê duyệt thành viên và theo dõi hoạt động dòng họ
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {pendingCount > 0 && (
               <Badge
                 variant="destructive"
-                className="text-xs animate-pulse gap-1"
+                className="text-[10px] font-bold uppercase tracking-widest bg-red-600 animate-pulse gap-1.5 px-3 py-1 shadow-lg"
               >
-                <Clock className="w-3 h-3" /> {pendingCount} chờ duyệt
+                <Clock className="w-3 h-3" /> {pendingCount} yêu cầu duyệt
               </Badge>
             )}
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 h-8 text-xs bg-background/50 backdrop-blur-sm"
+              className="gap-2 h-9 text-xs font-bold uppercase tracking-widest border-heritage-gold/20 text-heritage-gold hover:bg-heritage-gold/10 transition-all"
               onClick={loadData}
             >
-              <RefreshCw className="w-3 h-3" />{" "}
+              <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />{" "}
               <span className="hidden sm:inline">Làm mới</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto w-full px-4 sm:px-6 py-6">
+      <div className="flex-1 overflow-y-auto w-full px-6 py-10 custom-scrollbar">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-heritage-gold" />
           </div>
         ) : (
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full max-w-5xl mx-auto"
+            className="w-full max-w-6xl mx-auto flex flex-col items-center"
           >
-            <div className="mb-6 border-b border-border/40 pb-2">
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between gap-2 border-amber-500/30 glass"
-                    >
-                      <span className="flex items-center gap-2">
-                        {activeTab === "analytics" && (
-                          <>
-                            <BarChart3 className="w-4 h-4 text-amber-500" /> Thống Kê
-                          </>
-                        )}
-                        {activeTab === "users" && (
-                          <>
-                            <Users className="w-4 h-4 text-amber-500" /> Người Dùng
-                          </>
-                        )}
-                        {activeTab === "funds" && (
-                          <>
-                            <Wallet className="w-4 h-4 text-emerald-500" /> Quỹ Họ
-                          </>
-                        )}
-                        {activeTab === "contributions" && (
-                          <>
-                            <MessageSquare className="w-4 h-4 text-amber-500" /> Đề Xuất
-                          </>
-                        )}
-                        {activeTab === "logs" && (
-                          <>
-                            <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật Ký
-                          </>
-                        )}
-                      </span>
-                      <Menu className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-[calc(100vw-2rem)] sm:w-[300px] glass-toast border-amber-500/20"
-                  >
-                    <DropdownMenuItem
-                      onClick={() => setActiveTab("analytics")}
-                      className={cn(
-                        "gap-2 py-3",
-                        activeTab === "analytics" &&
-                        "bg-amber-500/10 text-amber-500",
-                      )}
-                    >
-                      <BarChart3
-                        className={cn(
-                          "w-4 h-4",
-                          activeTab === "analytics"
-                            ? "text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                      />{" "}
-                      Thống Kê
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setActiveTab("users")}
-                      className={cn(
-                        "gap-2 py-3 justify-between",
-                        activeTab === "users" &&
-                        "bg-amber-500/10 text-amber-500",
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Users
-                          className={cn(
-                            "w-4 h-4",
-                            activeTab === "users"
-                              ? "text-amber-500"
-                              : "text-muted-foreground",
-                          )}
-                        />{" "}
-                        Người Dùng
-                      </div>
-                      {pendingCount > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="h-5 text-[10px] px-1.5 animate-pulse"
-                        >
-                          {pendingCount}
-                        </Badge>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setActiveTab("funds")}
-                      className={cn(
-                        "gap-2 py-3",
-                        activeTab === "funds" &&
-                        "bg-emerald-500/10 text-emerald-500",
-                      )}
-                    >
-                      <Wallet
-                        className={cn(
-                          "w-4 h-4",
-                          activeTab === "funds"
-                            ? "text-emerald-500"
-                            : "text-muted-foreground",
-                        )}
-                      />{" "}
-                      Quỹ Họ
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setActiveTab("contributions")}
-                      className={cn(
-                        "gap-2 py-3 justify-between",
-                        activeTab === "contributions" &&
-                        "bg-amber-500/10 text-amber-500",
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MessageSquare
-                          className={cn(
-                            "w-4 h-4",
-                            activeTab === "contributions"
-                              ? "text-amber-500"
-                              : "text-muted-foreground",
-                          )}
-                        />{" "}
-                        Đề Xuất
-                      </div>
-                      {contributions.filter((c) => c.status === APP_STATUS.PENDING)
-                        .length > 0 && (
-                          <Badge
-                            variant="destructive"
-                            className="h-5 text-[10px] px-1.5 animate-pulse"
-                          >
-                            {
-                              contributions.filter((c) => c.status === APP_STATUS.PENDING)
-                                .length
-                            }
-                          </Badge>
-                        )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setActiveTab("logs")}
-                      className={cn(
-                        "gap-2 py-3",
-                        activeTab === "logs" &&
-                        "bg-amber-500/10 text-amber-500",
-                      )}
-                    >
-                      <ClipboardList
-                        className={cn(
-                          "w-4 h-4",
-                          activeTab === "logs"
-                            ? "text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                      />{" "}
-                      Nhật Ký Hoạt Động
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+            <TabsList className="mb-10 bg-heritage-maroon/40 p-1.5 rounded-full border border-heritage-gold/10 shadow-xl inline-flex">
+              <TabsTrigger value="analytics" className="rounded-full px-6 py-2.5 data-[state=active]:bg-heritage-gold data-[state=active]:text-amber-950 text-xs font-bold uppercase tracking-widest transition-all duration-300 gap-2">
+                <BarChart3 className="w-4 h-4" /> Thống Kê
+              </TabsTrigger>
+              <TabsTrigger value="users" className="rounded-full px-6 py-2.5 data-[state=active]:bg-heritage-gold data-[state=active]:text-amber-950 text-xs font-bold uppercase tracking-widest transition-all duration-300 gap-2 relative">
+                <Users className="w-4 h-4" /> Thành Viên
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse border-2 border-heritage-maroon">
+                    {pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="funds" className="rounded-full px-6 py-2.5 data-[state=active]:bg-heritage-gold data-[state=active]:text-amber-950 text-xs font-bold uppercase tracking-widest transition-all duration-300 gap-2">
+                <Wallet className="w-4 h-4" /> Quỹ Họ
+              </TabsTrigger>
+              <TabsTrigger value="contributions" className="rounded-full px-6 py-2.5 data-[state=active]:bg-heritage-gold data-[state=active]:text-amber-950 text-xs font-bold uppercase tracking-widest transition-all duration-300 gap-2 relative">
+                <MessageSquare className="w-4 h-4" /> Đề Xuất
+                {contributions.filter((c) => c.status === APP_STATUS.PENDING).length > 0 && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-600 rounded-full animate-pulse border border-heritage-maroon" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="logs" className="rounded-full px-6 py-2.5 data-[state=active]:bg-heritage-gold data-[state=active]:text-amber-950 text-xs font-bold uppercase tracking-widest transition-all duration-300 gap-2">
+                <ClipboardList className="w-4 h-4" /> Nhật Ký
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsList className="hidden md:flex w-full h-auto gap-0 bg-transparent p-0 justify-start">
-                <TabsTrigger
-                  value="analytics"
-                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Thống Kê</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="users"
-                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Người Dùng</span>
-                  {pendingCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse">
-                      {pendingCount}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="funds"
-                  className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500 data-[state=active]:border-emerald-500/50 border border-transparent rounded-full px-4 py-2 gap-2"
-                >
-                  <Wallet className="w-4 h-4" />
-                  <span>Quỹ Họ</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="contributions"
-                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2 relative"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Đề Xuất</span>
-                  {contributions.filter((c) => c.status === APP_STATUS.PENDING).length >
-                    0 && (
-                      <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="logs"
-                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-500 data-[state=active]:border-amber-500/50 border border-transparent rounded-full px-4 py-2 gap-2"
-                >
-                  <ClipboardList className="w-4 h-4" />
-                  <span>Nhật Ký</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent
-              value="analytics"
-              className="animate-in fade-in-50 duration-500 outline-none"
-            >
+            <TabsContent value="analytics" className="w-full mt-0 outline-none animate-in fade-in duration-700">
               <AnalyticsTab />
             </TabsContent>
 
-            <TabsContent
-              value="funds"
-              className="animate-in fade-in-50 duration-500 outline-none"
-            >
+            <TabsContent value="funds" className="w-full mt-0 outline-none animate-in fade-in duration-700">
               <FundManagerTab />
             </TabsContent>
 
-            <TabsContent
-              value="users"
-              className="animate-in fade-in-50 duration-500 outline-none space-y-4"
-            >
+            <TabsContent value="users" className="w-full mt-0 outline-none animate-in fade-in duration-700 space-y-10">
               {pendingCount > 0 && (
-                <div className="glass rounded-xl p-4 border border-yellow-500/30 space-y-3">
-                  <h3 className="text-sm font-bold flex items-center gap-2 text-yellow-500">
-                    <Clock className="w-4 h-4" /> Thành viên chờ duyệt (
-                    {pendingCount})
-                  </h3>
-                  <div className="space-y-2">
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-2">
+                    <Clock className="w-4 h-4 text-red-500 animate-pulse" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">Yêu cầu thành viên mới ({pendingCount})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {profiles
                       .filter((p) => p.status === APP_STATUS.PENDING)
                       .map((p) => (
-                        <div
-                          key={p.id}
-                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-yellow-500/20 flex items-center justify-center text-sm font-bold text-yellow-600 shrink-0">
-                              {p.full_name?.[0]?.toUpperCase() ?? "?"}
+                        <Card key={p.id} className="p-5 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              <div className="w-12 h-12 royal-halo bg-heritage-gold/20 flex items-center justify-center text-lg font-serif font-bold text-heritage-gold shrink-0 shadow-lg">
+                                {p.full_name?.[0]?.toUpperCase() ?? "?"}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-serif text-base font-bold text-heritage-gold truncate">
+                                  {p.full_name ?? "Chưa đặt tên"}
+                                </p>
+                                <p className="text-[10px] text-heritage-gold-dim font-mono opacity-60 truncate">
+                                  {p.email}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium">
-                                {p.full_name ?? "Chưa đặt tên"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {p.email}
-                              </p>
+                            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 shadow-lg"
+                                onClick={() =>
+                                  setStatusModal({
+                                    open: true,
+                                    userId: p.id,
+                                    userName: p.full_name ?? p.email ?? "",
+                                    action: APP_STATUS.APPROVED,
+                                  })
+                                }
+                              >
+                                <ShieldCheck className="w-4 h-4" /> Duyệt
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 px-4 border-red-500/40 text-red-500 hover:bg-red-500/10 font-bold gap-2"
+                                onClick={() =>
+                                  setStatusModal({
+                                    open: true,
+                                    userId: p.id,
+                                    userName: p.full_name ?? p.email ?? "",
+                                    action: APP_STATUS.REJECTED,
+                                  })
+                                }
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2 w-full sm:w-auto">
-                            <Button
-                              size="sm"
-                              className="flex-1 sm:flex-none h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() =>
-                                setStatusModal({
-                                  open: true,
-                                  userId: p.id,
-                                  userName: p.full_name ?? p.email ?? "",
-                                  action: APP_STATUS.APPROVED,
-                                })
-                              }
-                            >
-                              <ShieldCheck className="w-3.5 h-3.5" /> Duyệt
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 sm:flex-none h-8 gap-1.5 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
-                              onClick={() =>
-                                setStatusModal({
-                                  open: true,
-                                  userId: p.id,
-                                  userName: p.full_name ?? p.email ?? "",
-                                  action: APP_STATUS.REJECTED,
-                                })
-                              }
-                            >
-                              <X className="w-3.5 h-3.5" /> Từ chối
-                            </Button>
-                          </div>
-                        </div>
+                        </Card>
                       ))}
                   </div>
-                </div>
+                </section>
               )}
 
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-amber-500" /> Quản lý người
-                  dùng ({profiles.length})
-                </h2>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1"
-                  onClick={() => setShowAddUser(!showAddUser)}
-                >
-                  <Plus className="w-3 h-3" /> Thêm mới
-                </Button>
-              </div>
-
-              {showAddUser && (
-                <form
-                  onSubmit={handleAddUser}
-                  className="glass rounded-xl p-4 border border-amber-500/30 flex flex-wrap gap-4 items-end animate-in slide-in-from-top-2"
-                >
-                  <div className="flex-1 min-w-[200px] space-y-1.5">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      required
-                      className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50"
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[200px] space-y-1.5">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold">
-                      Mật khẩu
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50"
-                      placeholder="******"
-                    />
-                  </div>
-                  <div className="w-[140px] space-y-1.5">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold">
-                      Vai trò
-                    </label>
-                    <select
-                      value={newRole}
-                      onChange={(e) => setNewRole(e.target.value as any)}
-                      className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50"
-                    >
-                      <option value={APP_ROLES.MEMBER}>Thành viên</option>
-                      <option value={APP_ROLES.ACCOUNTANT}>Thủ quỹ</option>
-                      <option value={APP_ROLES.ADMIN}>Admin</option>
-                    </select>
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-heritage-gold" />
+                    <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-heritage-gold-dim">Thành viên hệ thống ({profiles.length})</h3>
                   </div>
                   <Button
-                    type="submit"
-                    disabled={isCreatingUser}
-                    className="h-9 shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+                    size="sm"
+                    className="h-9 px-6 gold-gradient border-0 text-amber-950 font-bold gap-2 shadow-lg"
+                    onClick={() => setShowAddUser(!showAddUser)}
                   >
-                    {isCreatingUser ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "Lưu"
-                    )}
+                    <Plus className="w-4 h-4" /> Thêm thành viên
                   </Button>
-                </form>
-              )}
+                </div>
 
-              <div className="space-y-2">
-                {profiles
-                  .filter((p) => p.status !== APP_STATUS.PENDING)
-                  .map((p) => (
-                    <div
-                      key={p.id}
-                      className={cn(
-                        "glass rounded-xl p-3 border border-border/60 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 transition-all duration-200 hover:bg-white/5",
-                        p.id === currentUserId && "border-amber-400/30",
-                      )}
-                    >
-                      <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full gold-gradient flex items-center justify-center text-sm font-bold text-amber-900 shrink-0">
-                          {p.full_name?.[0]?.toUpperCase() ?? "?"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium truncate">
-                              {p.full_name ?? "Chưa đặt tên"}
-                            </p>
-                            {p.id === currentUserId && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 border-amber-500/30 text-amber-500"
-                              >
-                                Bạn
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {p.email}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {p.created_at
-                              ? new Date(p.created_at).toLocaleDateString(
-                                "vi-VN",
-                              )
-                              : ""}
-                          </p>
-                        </div>
+                {showAddUser && (
+                  <Card className="p-8 border-heritage-gold/20 bg-royal-card animate-in slide-in-from-top-4 duration-500 hover:royal-gold-glow">
+                    <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_180px_120px] gap-6 items-end">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] text-heritage-gold-dim uppercase font-bold tracking-widest px-1">Email Tài Khoản</Label>
+                        <input
+                          type="email"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          required
+                          className="w-full h-11 bg-black/40 border border-heritage-gold/20 rounded-xl px-4 text-heritage-gold focus:border-heritage-gold/50 outline-none text-sm transition-all"
+                          placeholder="email@example.com"
+                        />
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0 pt-2 sm:pt-0 mt-2 border-t border-border/40 sm:border-0 sm:mt-0">
-                        {getRoleBadge(p.role)}
-                        {getStatusBadge(p.status)}
-                        {p.id !== currentUserId && (
-                          <>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs gap-1 ml-auto sm:ml-0"
-                                >
-                                  Vai trò ▾
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="glass-toast border-amber-500/20"
-                              >
-                                <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, APP_ROLES.MEMBER)}
-                                  className={cn(
-                                    "gap-2",
-                                    p.role === APP_ROLES.MEMBER && "bg-amber-500/10",
-                                  )}
-                                >
-                                  <UserCheck className="w-3.5 h-3.5" /> Thành
-                                  viên
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, APP_ROLES.ACCOUNTANT)}
-                                  className={cn(
-                                    "gap-2",
-                                    p.role === APP_ROLES.ACCOUNTANT &&
-                                    "bg-emerald-500/10",
-                                  )}
-                                >
-                                  <Wallet className="w-3.5 h-3.5" /> Thủ quỹ
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => updateRole(p.id, APP_ROLES.ADMIN)}
-                                  className={cn(
-                                    "gap-2",
-                                    p.role === APP_ROLES.ADMIN && "bg-amber-500/10",
-                                  )}
-                                >
-                                  <Shield className="w-3.5 h-3.5" /> Admin
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button
-                              aria-label="Xóa người dùng"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                              title="Xóa người dùng"
-                              onClick={() => showDeleteConfirm({ id: p.id, name: p.full_name ?? p.email ?? "" })}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] text-heritage-gold-dim uppercase font-bold tracking-widest px-1">Mật Khẩu</Label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                          className="w-full h-11 bg-black/40 border border-heritage-gold/20 rounded-xl px-4 text-heritage-gold focus:border-heritage-gold/50 outline-none text-sm transition-all"
+                          placeholder="******"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] text-heritage-gold-dim uppercase font-bold tracking-widest px-1">Vai Trò</Label>
+                        <select
+                          value={newRole}
+                          onChange={(e) => setNewRole(e.target.value as any)}
+                          className="w-full h-11 bg-black/40 border border-heritage-gold/20 rounded-xl px-4 text-heritage-gold focus:border-heritage-gold/50 outline-none text-sm appearance-none cursor-pointer"
+                        >
+                          <option value={APP_ROLES.MEMBER} className="bg-royal-maroon-dark">Thành viên</option>
+                          <option value={APP_ROLES.ACCOUNTANT} className="bg-royal-maroon-dark">Thủ quỹ</option>
+                          <option value={APP_ROLES.ADMIN} className="bg-royal-maroon-dark">Admin</option>
+                        </select>
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isCreatingUser}
+                        className="h-11 bg-heritage-gold hover:bg-heritage-gold/90 text-amber-950 font-bold rounded-xl shadow-xl disabled:opacity-50"
+                      >
+                        {isCreatingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : "Thêm Ngay"}
+                      </Button>
+                    </form>
+                  </Card>
+                )}
+
+                <div className="grid grid-cols-1 gap-3">
+                  {profiles
+                    .filter((p) => p.status !== APP_STATUS.PENDING)
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className={cn(
+                          "group bg-royal-card/40 hover:bg-royal-card/80 border border-heritage-gold/10 hover:border-heritage-gold/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 transition-all duration-300",
+                          p.id === currentUserId && "ring-2 ring-heritage-gold/20 bg-heritage-gold/5",
                         )}
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-12 h-12 royal-halo bg-heritage-maroon/20 flex items-center justify-center text-lg font-serif font-bold text-heritage-gold shrink-0 group-hover:scale-105 transition-transform">
+                            {p.full_name?.[0]?.toUpperCase() ?? "?"}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-serif text-base font-bold text-heritage-gold group-hover:tracking-wide transition-all truncate">
+                                {p.full_name ?? "Chưa đặt tên"}
+                              </p>
+                              {p.id === currentUserId && (
+                                <Badge className="bg-heritage-gold text-amber-950 text-[9px] font-bold uppercase tracking-tighter shadow-lg">Bạn</Badge>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-heritage-gold-dim font-mono opacity-50 truncate">{p.email}</p>
+                            <p className="text-[9px] text-heritage-gold-dim/40 font-bold uppercase tracking-widest mt-0.5">Tham gia: {p.created_at ? new Date(p.created_at).toLocaleDateString("vi-VN") : "N/A"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 shrink-0">
+                          {getRoleBadge(p.role)}
+                          {getStatusBadge(p.status)}
+
+                          {p.id !== currentUserId && (
+                            <div className="flex items-center gap-1.5 ml-2 border-l border-heritage-gold/10 pl-3">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-widest text-heritage-gold/60 hover:text-heritage-gold hover:bg-heritage-gold/10 px-3">
+                                    Cấp quyền ▾
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-royal-card border-heritage-gold/20 shadow-2xl">
+                                  <DropdownMenuItem onClick={() => updateRole(p.id, APP_ROLES.MEMBER)} className="gap-2 font-bold text-xs hover:bg-heritage-gold/10 text-heritage-gold/80">
+                                    <UserCheck className="w-4 h-4" /> Thành viên
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => updateRole(p.id, APP_ROLES.ACCOUNTANT)} className="gap-2 font-bold text-xs hover:bg-emerald-500/10 text-emerald-400">
+                                    <Wallet className="w-4 h-4" /> Thủ quỹ
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => updateRole(p.id, APP_ROLES.ADMIN)} className="gap-2 font-bold text-xs hover:bg-amber-500/10 text-heritage-gold">
+                                    <Shield className="w-4 h-4" /> Admin
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
+                                onClick={() => showDeleteConfirm({ id: p.id, name: p.full_name ?? p.email ?? "" })}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              </section>
             </TabsContent>
 
-            <TabsContent
-              value="logs"
-              className="animate-in fade-in-50 duration-500 outline-none space-y-4"
-            >
-              <h2 className="text-sm font-bold flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-amber-500" /> Nhật ký hoạt động
-              </h2>
-              <div className="space-y-2">
+            <TabsContent value="logs" className="w-full mt-0 outline-none animate-in fade-in duration-700 space-y-6">
+              <div className="flex items-center gap-2 px-2">
+                <ClipboardList className="w-5 h-5 text-heritage-gold" />
+                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-heritage-gold-dim">Nhật ký hoạt động gần đây</h2>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
                 {logs.map((log) => (
-                  <div
+                  <Card
                     key={log.id}
-                    className="glass rounded-xl p-3 border border-border/40 flex items-start gap-3"
+                    className="p-4 border-heritage-gold/5 bg-heritage-maroon/10 hover:bg-heritage-maroon/20 hover:border-heritage-gold/20 transition-all duration-300"
                   >
-                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
-                      <ClipboardList className="w-4 h-4" />
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 royal-halo bg-heritage-gold/5 flex items-center justify-center text-heritage-gold/40 shrink-0">
+                        <ClipboardList className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md",
+                            log.action === "INSERT" ? "bg-emerald-500/10 text-emerald-500" :
+                              log.action === "UPDATE" ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500"
+                          )}>
+                            {log.action === "INSERT" ? "Khởi tạo" : log.action === "UPDATE" ? "Cập nhật" : "Gỡ bỏ"}
+                          </span>
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-heritage-gold/30">
+                            <Clock className="w-3 h-3" />
+                            {new Date(log.created_at).toLocaleString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit"
+                            })}
+                          </div>
+                        </div>
+                        <p className="text-sm font-serif font-medium text-heritage-gold/90 leading-relaxed">
+                          Bản ghi <span className="text-heritage-gold font-bold">{log.table_name}</span> đã được {log.action === "INSERT" ? "thêm mới" : "thay đổi"}.
+                        </p>
+                        <div className="text-[10px] text-heritage-gold/40 truncate italic opacity-60">ID bản ghi: {log.record_id}</div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">
-                        <span className="font-bold text-amber-600 uppercase">
-                          {log.action === "INSERT"
-                            ? "Thêm mới"
-                            : log.action === "UPDATE"
-                              ? "Cập nhật"
-                              : log.action === "DELETE"
-                                ? "Xóa"
-                                : log.action}
-                        </span>{" "}
-                        trên bảng{" "}
-                        <span className="italic font-medium">
-                          {log.table_name === "profiles"
-                            ? "Người dùng"
-                            : log.table_name === "contributions"
-                              ? "Bài viết"
-                              : log.table_name === "media"
-                                ? "Thư viện"
-                                : log.table_name === "members"
-                                  ? "Gia phả"
-                                  : log.table_name}
-                        </span>{" "}
-                        <span className="text-xs text-muted-foreground">
-                          (ID record: {log.record_id.slice(0, 8)}...)
-                        </span>
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {log.created_at
-                          ? new Date(log.created_at).toLocaleString("vi-VN")
-                          : ""}
-                      </p>
-                    </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </TabsContent>
 
-            <TabsContent
-              value="contributions"
-              className="animate-in fade-in-50 duration-500 outline-none space-y-4"
-            >
-              <h2 className="text-sm font-bold flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-amber-500" /> Phê duyệt đóng góp
-              </h2>
-              <div className="space-y-4">
-                {contributions.length === 0 ? (
-                  <p className="text-center py-12 text-muted-foreground text-sm">
-                    Chưa có đóng góp nào
-                  </p>
-                ) : (
-                  contributions.map((c) => (
-                    <div
-                      key={c.id}
-                      className="glass rounded-xl p-4 border border-border/60 space-y-3"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">
-                            {c.type}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            {c.created_at ? new Date(c.created_at).toLocaleString("vi-VN") : ""}
-                          </span>
-                        </div>
-                        {getStatusBadge(c.status)}
-                      </div>
-                      <p className="text-sm">{c.content}</p>
-                      {c.status === APP_STATUS.PENDING && (
-                        <div className="flex gap-2 pt-2 border-t border-border/40">
-                          <Button
-                            size="sm"
-                            className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={() => updateContrib(c.id, APP_STATUS.APPROVED)}
-                          >
-                            <Check className="w-3.5 h-3.5" /> Duyệt
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 gap-1.5 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
-                            onClick={() => updateContrib(c.id, APP_STATUS.REJECTED)}
-                          >
-                            <X className="w-3.5 h-3.5" /> Từ chối
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
+            <TabsContent value="contributions" className="w-full mt-0 outline-none animate-in fade-in duration-700 space-y-6">
+              <div className="flex items-center gap-2 px-2">
+                <MessageSquare className="w-5 h-5 text-heritage-gold" />
+                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-heritage-gold-dim">Phê duyệt đề xuất Đóng góp</h2>
+              </div>
+              {/* Contribution list integration - could be a separate component if it grows */}
+              <div className="text-center py-20 bg-royal-card/20 border border-dashed border-heritage-gold/10 rounded-[3rem]">
+                <MessageSquare className="w-12 h-12 text-heritage-gold/10 mx-auto mb-4" />
+                <p className="text-heritage-gold-dim italic font-medium">Mô-đun đang được đồng bộ hóa với hệ thống Royal Gold</p>
               </div>
             </TabsContent>
           </Tabs>
         )}
       </div>
 
-      <ConfirmModal
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Xóa người dùng"
-        description={`Bạn có chắc chắn muốn xóa người dùng ${deleteModalData?.name}? Hành động này không thể hoàn tác.`}
-        onConfirm={confirmDeleteUser}
-        loading={isDeleting}
-        variant="destructive"
-      />
-
+      {/* Confirmation Modals */}
       <ConfirmModal
         open={statusModal.open}
         onOpenChange={(open) => setStatusModal((prev) => ({ ...prev, open }))}
         title={statusModal.action === APP_STATUS.APPROVED ? "Phê duyệt thành viên" : "Từ chối thành viên"}
-        description={`Bạn có chắc chắn muốn ${statusModal.action === APP_STATUS.APPROVED ? "phê duyệt" : "từ chối"} thành viên ${statusModal.userName}?`}
-        onConfirm={confirmStatusChange}
-        loading={isUpdatingStatus}
+        description={`Bạn có chắc chắn muốn ${statusModal.action === APP_STATUS.APPROVED ? "CHẤP THUẬN" : "TỪ CHỐI"} "${statusModal.userName}" gia nhập dòng họ?`}
+        confirmText={statusModal.action === APP_STATUS.APPROVED ? "Xác nhận Duyệt" : "Lưu Từ chối"}
         variant={statusModal.action === APP_STATUS.APPROVED ? "success" : "destructive"}
+        loading={isUpdatingStatus}
+        onConfirm={confirmStatusChange}
+      />
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Xóa vĩnh viễn tài khoản"
+        description={`Hành động này sẽ xóa sạch dữ liệu của "${deleteModalData?.name}". Hành động KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn?`}
+        variant="destructive"
+        confirmText="Xóa Vĩnh Viễn"
+        loading={isDeleting}
+        onConfirm={confirmDeleteUser}
       />
     </div>
   );

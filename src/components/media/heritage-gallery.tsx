@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Clock, Play, Trash2, ZoomIn, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 interface HeritageGalleryProps {
     items: Media[];
@@ -13,41 +14,45 @@ interface HeritageGalleryProps {
     onSelect: (m: Media) => void;
 }
 
-export function HeritageGallery({ items, isAdmin, onDelete, onSelect }: HeritageGalleryProps) {
+export function HeritageGallery({
+    items,
+    isAdmin,
+    onDelete,
+    onSelect,
+}: HeritageGalleryProps) {
     const images = items.filter((m) => m.type === "image");
     const videos = items.filter((m) => m.type === "video");
 
     return (
-        <div className="space-y-12 pb-10">
+        <div className="space-y-16 pb-10">
             {images.length > 0 && (
-                <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="h-10 w-1.5 bg-amber-600 rounded-full shadow-[0_0_15px_rgba(180,83,9,0.4)]" />
+                <section className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="flex items-center gap-4 mb-10 px-2">
+                        <div className="h-10 w-1.5 bg-heritage-gold rounded-full shadow-[0_0_20px_rgba(252,211,77,0.5)]" />
                         <div>
-                            <h2 className="text-2xl font-serif font-bold text-foreground/90 uppercase tracking-widest">Kho Lưu Trữ Hình Ảnh</h2>
-                            <p className="text-sm text-muted-foreground italic">Ghi lại những khoảnh khắc trường tồn của tộc ta</p>
+                            <h2 className="text-3xl font-serif font-bold royal-text-gradient uppercase tracking-widest">
+                                Kho Lưu Trữ Hình Ảnh
+                            </h2>
+                            <p className="text-sm text-heritage-gold-dim italic font-medium opacity-70">
+                                Ghi lại những khoảnh khắc trường tồn của tộc ta
+                            </p>
                         </div>
                     </div>
 
-                    <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+                    <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8">
                         {images.map((m) => (
-                            <div
+                            <Card
                                 key={m.id}
                                 className={cn(
-                                    "break-inside-avoid relative group rounded-2xl overflow-hidden border transition-all duration-500 cursor-pointer bg-muted/20",
+                                    "break-inside-avoid relative group overflow-hidden cursor-pointer transition-all duration-700 hover:royal-gold-glow",
                                     m.category === "sac_phong"
-                                        ? "border-amber-500/40 shadow-[0_0_20px_rgba(180,83,9,0.1)] bg-amber-50/5 dark:bg-amber-950/10"
-                                        : "border-amber-900/10 shadow-sm hover:shadow-2xl hover:border-amber-500/30"
+                                        ? "border-heritage-gold/40 shadow-2xl bg-amber-950/20"
+                                        : "border-heritage-gold/10 hover:border-heritage-gold/30",
                                 )}
                                 onClick={() => onSelect(m)}
                             >
-                                {/* Luxury Frame for Sac Phong */}
-                                {m.category === "sac_phong" && (
-                                    <div className="absolute inset-0 border-[6px] border-double border-amber-600/20 pointer-events-none z-10" />
-                                )}
-
                                 {/* Image Container */}
-                                <div className="relative w-full overflow-hidden">
+                                <div className="relative w-full overflow-hidden rounded-xl">
                                     <Image
                                         src={m.url}
                                         alt={m.title}
@@ -59,99 +64,119 @@ export function HeritageGallery({ items, isAdmin, onDelete, onSelect }: Heritage
 
                                     {/* Category Badge */}
                                     {m.category === "sac_phong" && (
-                                        <Badge className="absolute top-4 left-4 bg-amber-700 text-white border-0 shadow-lg backdrop-blur-md flex gap-1.5 items-center px-3 py-1 scale-110">
-                                            <FileText className="w-3.5 h-3.5" /> Sắc phong
+                                        <Badge className="absolute top-4 left-4 bg-heritage-gold text-amber-950 border-0 shadow-2xl backdrop-blur-md flex gap-1.5 items-center px-4 py-1.5 font-bold uppercase tracking-tighter scale-105 z-20">
+                                            <FileText className="w-4 h-4" /> Sắc phong
                                         </Badge>
                                     )}
 
                                     {/* Transcription Preview for Sac Phong */}
                                     {m.category === "sac_phong" && m.transcription && (
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-6 z-20">
-                                            <div className="text-center">
-                                                <p className="text-amber-100 text-xs font-serif leading-relaxed line-clamp-6">
+                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center p-8 z-10 backdrop-blur-sm">
+                                            <div className="text-center space-y-4">
+                                                <p className="text-heritage-gold/90 text-sm font-serif leading-relaxed line-clamp-6 italic">
                                                     &quot;{m.transcription}&quot;
                                                 </p>
-                                                <div className="mt-4 h-px w-12 bg-amber-500/50 mx-auto" />
-                                                <span className="text-[10px] text-amber-400/80 mt-2 block uppercase tracking-tighter">Bản dịch thư tịch</span>
+                                                <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-heritage-gold/50 to-transparent mx-auto" />
+                                                <span className="text-[10px] text-heritage-gold-dim font-bold uppercase tracking-[0.2em] block">
+                                                    Bản dịch thư tịch
+                                                </span>
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hover Overlay for normal images */}
+                                    {m.category !== "sac_phong" && (
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                                            <ZoomIn className="w-8 h-8 text-heritage-gold/60 mx-auto" />
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Overlay Info */}
-                                <div className={cn(
-                                    "p-4 transition-colors duration-500",
-                                    m.category === "sac_phong"
-                                        ? "bg-amber-900/90 text-amber-50"
-                                        : "bg-gradient-to-b from-transparent to-black/80 text-white"
-                                )}>
-                                    <h3 className="text-sm font-bold truncate group-hover:text-amber-400 transition-colors uppercase tracking-wider font-serif">
+                                {/* Info Area */}
+                                <div className="pt-4 space-y-2 relative z-10">
+                                    <h3 className="text-base font-serif font-bold royal-text-gradient truncate group-hover:tracking-wide transition-all duration-300">
                                         {m.title}
                                     </h3>
-                                    <div className="flex items-center justify-between mt-2">
-                                        <div className="flex items-center gap-1.5 text-[10px] opacity-70">
-                                            <Clock className="w-3 h-3" />
-                                            {m.year ? `Năm ${m.year}` : (m.created_at ? new Date(m.created_at).getFullYear() : "N/A")}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-heritage-gold-dim uppercase tracking-widest opacity-60">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            {m.year
+                                                ? `Năm ${m.year}`
+                                                : m.created_at
+                                                    ? new Date(m.created_at).getFullYear()
+                                                    : "Cổ xưa"}
                                         </div>
-                                        <ZoomIn className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:text-amber-400 transition-all" />
                                     </div>
                                 </div>
 
                                 {/* Admin Actions */}
                                 {isAdmin && (
                                     <button
-                                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-red-600 z-10 shadow-lg"
+                                        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center hover:bg-red-500 z-30 shadow-2xl scale-90 group-hover:scale-100"
                                         onClick={(ev) => {
                                             ev.stopPropagation();
                                             onDelete(m);
                                         }}
                                     >
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                 )}
-                            </div>
+                            </Card>
                         ))}
                     </div>
                 </section>
             )}
 
             {videos.length > 0 && (
-                <section className="animate-in fade-in slide-in-from-bottom-4 delay-200 duration-700">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="h-10 w-1.5 bg-amber-600 rounded-full shadow-[0_0_15px_rgba(180,83,9,0.4)]" />
+                <section className="animate-in fade-in slide-in-from-bottom-4 delay-300 duration-1000">
+                    <div className="flex items-center gap-4 mb-10 px-2">
+                        <div className="h-10 w-1.5 bg-heritage-gold rounded-full shadow-[0_0_20px_rgba(252,211,77,0.5)]" />
                         <div>
-                            <h2 className="text-2xl font-serif font-bold text-foreground/90">Video Tư Liệu</h2>
-                            <p className="text-sm text-muted-foreground italic">Những thước phim sống động về cội nguồn</p>
+                            <h2 className="text-3xl font-serif font-bold royal-text-gradient uppercase tracking-widest">
+                                Video Tư Liệu
+                            </h2>
+                            <p className="text-sm text-heritage-gold-dim italic font-medium opacity-70">
+                                Những thước phim sống động về cội nguồn
+                            </p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {videos.map((m) => (
-                            <div
+                            <Card
                                 key={m.id}
-                                className="relative group aspect-video rounded-3xl overflow-hidden border border-amber-900/10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-black"
+                                className="relative group aspect-video overflow-hidden cursor-pointer hover:royal-gold-glow border-heritage-gold/10"
                                 onClick={() => onSelect(m)}
                             >
                                 <video
                                     src={m.url}
-                                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                                    className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity duration-700"
                                     preload="metadata"
                                     muted
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-16 h-16 rounded-full border-2 border-amber-500/50 flex items-center justify-center bg-amber-500/20 backdrop-blur-sm group-hover:scale-110 transition-transform">
-                                        <Play className="w-8 h-8 fill-amber-500 text-amber-500 ml-1" />
+
+                                {/* Play Button Halo */}
+                                <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <div className="w-20 h-20 royal-halo bg-heritage-gold/5 backdrop-blur-sm group-hover:scale-110 transition-transform duration-700">
+                                        <Play className="w-10 h-10 fill-heritage-gold text-heritage-gold ml-2 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" />
                                     </div>
                                 </div>
-                                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/90 to-transparent">
-                                    <h3 className="text-lg font-bold text-white mb-2">{m.title}</h3>
-                                    <div className="flex items-center gap-3">
-                                        <Badge variant="outline" className="text-amber-400 border-amber-400/30">
-                                            {m.year ? `Năm ${m.year}` : "Tư liệu"}
+
+                                {/* Video Info Overlay */}
+                                <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10 transition-all duration-500 group-hover:pt-20">
+                                    <h3 className="text-xl font-serif font-bold royal-text-gradient mb-3">
+                                        {m.title}
+                                    </h3>
+                                    <div className="flex items-center gap-4">
+                                        <Badge
+                                            variant="outline"
+                                            className="text-heritage-gold border-heritage-gold/30 bg-heritage-gold/5 px-3 py-1 font-bold uppercase tracking-widest text-[10px]"
+                                        >
+                                            {m.year ? `Năm ${m.year}` : "Tư liệu phim"}
                                         </Badge>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
                         ))}
                     </div>
                 </section>

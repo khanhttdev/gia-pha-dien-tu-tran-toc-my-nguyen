@@ -24,10 +24,24 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
+    // Provide fallback for node core modules
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        buffer: require.resolve("buffer/"),
+      };
+    }
+
+    config.plugins.push(
+      new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+      })
+    );
+
     return config;
   },
-  turbopack: {}, // Suppress "This build is using Turbopack, with a webpack config and no turbopack config" error
+  turbopack: {},
 };
 
 export default withSerwist(nextConfig);

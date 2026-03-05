@@ -132,16 +132,82 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans:
-    var(--font-inter), "Inter", "Be Vietnam Pro", system-ui, sans-serif;
+    "Zolina", var(--font-inter), "Inter", "Be Vietnam Pro", system-ui, sans-serif;
   --font-serif:
     "Zolina", var(--font-playfair), "Playfair Display", Georgia, serif;
 
-  --color-heritage-leaf-sage: #a7c957;
-  /* Brighter sage for contrast */
-  --color-heritage-banner: #bc4749;
-  --color-heritage-banner-text: #f2e8cf;
-  --color-heritage-ba-trau: #4a141b;
+  --color-heritage-gold: #fcd34d;
+  --color-heritage-gold-dim: #b45309;
 
+  /* Royal Gold Utilities */
+  --color-royal-maroon-light: #2d0a0e;
+  --color-royal-maroon-dark: #150507;
+}
+
+@utility bg-royal-card {
+  background-image: linear-gradient(to bottom right, #2d0a0e, #150507);
+  border-color: rgba(252, 211, 77, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+@utility royal-gold-glow {
+  box-shadow: 0 0 30px rgba(252, 211, 77, 0.3), inset 0 0 20px rgba(252, 211, 77, 0.05);
+}
+
+@utility royal-halo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-color: rgba(252, 211, 77, 0.8);
+  box-shadow: 0 0 20px rgba(252, 211, 77, 0.5), inset 0 0 10px rgba(252, 211, 77, 0.2);
+}
+
+@utility royal-halo-pink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-color: rgba(244, 114, 182, 0.8);
+  box-shadow: 0 0 20px rgba(244, 114, 182, 0.5), inset 0 0 10px rgba(244, 114, 182, 0.2);
+}
+
+@utility royal-glass {
+  background-color: rgba(21, 5, 7, 0.85);
+  backdrop-filter: blur(12px);
+  border-width: 1px;
+  border-color: rgba(252, 211, 77, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+@utility royal-text-gradient {
+  background-image: linear-gradient(to bottom, #fef3c7, #fcd34d, #d97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+}
+
+@utility bg-heritage-ba-trau {
+  background-color: #4a141b;
+}
+
+@utility bg-heritage-depth {
+  background-color: hsl(var(--background));
+  background-image:
+    /* Top lighting glow */
+    radial-gradient(circle at 50% -20%, rgba(230, 200, 117, 0.15) 0%, transparent 50%),
+    /* Vignette */
+    radial-gradient(circle at 50% 50%, transparent 20%, rgba(0, 0, 0, 0.4) 100%),
+    /* Noise Texture */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: overlay, multiply, soft-light;
+  position: relative;
 }
 
 @utility bg-parchment {
@@ -188,12 +254,12 @@
 }
 
 body {
-  @apply bg-parchment;
-  background-color: hsl(var(--background));
+  background-color: #0a0404;
   background-image:
-    radial-gradient(ellipse at 50% 100%,
-      hsl(351 69% 8% / 0.4) 0%,
-      transparent 50%);
+    linear-gradient(to bottom, rgba(13, 4, 4, 0.5), rgba(10, 4, 4, 0.85)),
+    url("/images/bg-starscape.png");
+  background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   color: hsl(var(--foreground));
   font-family: var(--font-sans);

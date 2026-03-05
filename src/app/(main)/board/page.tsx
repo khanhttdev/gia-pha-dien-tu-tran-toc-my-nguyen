@@ -1,455 +1,366 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { submitContribution, deleteContribution } from "@/lib/board-actions";
+import { useEffect, useState, useMemo } from "react";
+import { createClient } from "@/lib/supabase-client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  MessageSquare,
-  Send,
+  Bell,
+  Plus,
   Loader2,
-  Info,
-  Clock,
-  CheckCircle2,
-  UserCircle2,
-  MessageCircle,
-  ChevronDown,
-  Trash2,
+  Search,
+  MessageSquare,
+  ThumbsUp,
+  Share2,
+  Calendar,
+  Image as ImageIcon,
+  MoreVertical,
 } from "lucide-react";
+
+import { FundTransaction, FundStats } from "@/lib/types";
+import { FundDashboard } from "@/components/fund/fund-dashboard";
 import { cn } from "@/lib/utils";
-import { CommentSection } from "@/components/board/comment-section";
 import { ImageUpload } from "@/components/ui/image-upload";
-import Image from "next/image";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { addTransaction } from "@/lib/fund-actions";
 import { useAuth } from "@/hooks/use-auth";
-import { useConfirmModal } from "@/hooks/use-confirm-modal";
-import { BOARD_TYPES, APP_STATUS } from "@/lib/constants";
-import { useBoardStore } from "@/lib/stores";
-
-// Helper to safely extract media URL
-const getFeedMediaUrl = (proposed_data: any) => {
-  if (!proposed_data) return null;
-  if (typeof proposed_data === "string") {
-    try {
-      const parsed = JSON.parse(proposed_data);
-      return parsed.image_url || null;
-    } catch {
-      return null;
-    }
-  }
-  return proposed_data.image_url || null;
-};
-
-// Helper to check if URL is a video
-const isVideoUrl = (url: string | null) => {
-  if (!url) return false;
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
-  return videoExtensions.some(ext => url.toLowerCase().endsWith(ext)) || url.includes('/video/');
-};
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 
 export default function BoardPage() {
-  // ─── Board Store ────────────────────────────────────────────────────────────
-  const feedItems = useBoardStore((s) => s.feedItems);
-  const boardStatus = useBoardStore((s) => s.status);
-  const hasMore = useBoardStore((s) => s.hasMore);
-  const expandedComments = useBoardStore((s) => s.expandedComments);
-  const fetchFeed = useBoardStore((s) => s.fetchFeed);
-  const loadMore = useBoardStore((s) => s.loadMore);
-  const toggleComments = useBoardStore((s) => s.toggleComments);
-
-  // ─── Local form state ──────────────────────────────────────────────────────
-  const [content, setContent] = useState("");
-  const [type, setType] = useState<string>(BOARD_TYPES.NEWS);
-  const [submitting, setSubmitting] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [mediaType, setMediaType] = useState<"image" | "video">("image");
-
-  const { currentUserId, isAdmin } = useAuth();
-
-  const loading = boardStatus === "idle" || boardStatus === "loading";
-  const loadingMore = boardStatus === "loading_more";
-
-  useEffect(() => {
-    fetchFeed();
-  }, [fetchFeed]);
-
-  const {
-    open: deleteConfirmOpen,
-    setOpen: setDeleteConfirmOpen,
-    data: postIdToDelete,
-    loading: deleting,
-    showConfirm: handleDeletePost,
-    handleConfirm: confirmDeletePost,
-  } = useConfirmModal<string>({
-    onConfirm: async (id) => {
-      return deleteContribution(id);
-    },
-    onSuccess: () => fetchFeed(),
-    successMessage: "Đã xóa bài đăng thành công",
+  const [contributions, setContributions] = useState<FundTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
+  const [form, setForm] = useState({
+    member_id: "",
+    amount: "",
+    purpose: "",
+    notes: "",
+    date: new Date().toISOString().split("T")[0],
+    receipt_url: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim() && !imageUrl) return toast.error("Vui lòng nhập nội dung hoặc đính kèm ảnh");
+  const { isAdmin } = useAuth();
+  const sb = createClient();
 
-    setSubmitting(true);
-    const formData = new FormData();
-    formData.append("content", content);
-    formData.append("type", type);
-    if (imageUrl) {
-      formData.append("imageUrl", imageUrl);
-      formData.append("mediaType", mediaType);
-    }
-
-    const res = await submitContribution(formData);
-    if (res.error) {
-      toast.error(res.error);
-    } else {
-      toast.success("Gửi đóng góp thành công! Đang chờ BQT duyệt.");
-      setContent("");
-      setImageUrl("");
-      await fetchFeed();
-    }
-    setSubmitting(false);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await sb
+      .from("funds")
+      .select("*, members(full_name)")
+      .order("transaction_date", { ascending: false });
+    setContributions((data as any) ?? []);
+    setLoading(false);
   };
 
+  useEffect(() => {
+    load();
+  }, []);
+
+  const stats = useMemo(() => {
+    const total_in = contributions.reduce((acc, curr) => acc + curr.amount, 0);
+    return {
+      balance: total_in,
+      totalIncome: total_in,
+      totalExpense: 0,
+      chartData: [],
+    };
+  }, [contributions]);
+
+  const handleSave = async () => {
+    if (!form.member_id || !form.amount) {
+      toast.error("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("member_id", form.member_id);
+      formData.append("amount", form.amount);
+      formData.append("purpose", form.purpose);
+      formData.append("notes", form.notes);
+      formData.append("transaction_date", form.date);
+      formData.append("transaction_type", "thu");
+
+      const res = await addTransaction(formData);
+      if (res.error) throw new Error(res.error);
+      toast.success("Cảm ơn sự đóng góp của bạn!");
+      setDialogOpen(false);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setSaving(false);
+  };
+
+  const filtered = contributions.filter((c) =>
+    (c as any).members?.full_name?.toLowerCase().includes(query.toLowerCase()) ||
+    c.description.toLowerCase().includes(query.toLowerCase())
+  );
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8 animate-in fade-in-50 duration-500">
+    <div className="h-full flex flex-col page-enter">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-foreground flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-amber-900 shadow-lg shadow-amber-500/20">
-            <MessageSquare className="w-5 h-5" />
+      <div className="shrink-0 px-6 py-4 border-b border-heritage-gold/10 glass">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 royal-halo bg-heritage-gold/10 flex items-center justify-center shadow-xl">
+              <Bell className="w-5 h-5 text-heritage-gold" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-serif font-bold royal-text-gradient leading-none">Bảng Tin Dòng Họ</h1>
+              <p className="text-xs text-heritage-gold-dim mt-1.5 font-medium italic opacity-70">
+                Thông tin, thông báo và đóng góp từ cộng đồng
+              </p>
+            </div>
           </div>
-          Bảng Tin & Đóng Góp
-        </h1>
-        <p className="text-muted-foreground mt-2 ml-14">
-          Nơi thông báo các tin tức công khai và gửi ý kiến đóng góp cho đại gia
-          đình Trần Tộc.
-        </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-heritage-gold/60 hover:text-heritage-gold hover:bg-heritage-gold/10"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+            {isAdmin && (
+              <Button
+                size="sm"
+                className="gold-gradient border-0 text-amber-950 font-bold hover:opacity-90 gap-1.5 shadow-lg"
+                onClick={() => setDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4" /> Đóng góp
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Submit Form */}
-      <div className="glass rounded-2xl p-5 sm:p-6 border border-amber-500/20 shadow-lg shadow-amber-500/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-          <Send className="w-24 h-24" />
-        </div>
-        <h2 className="text-lg font-bold mb-4">Gửi đóng góp mới</h2>
-        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/3 space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">
-                Loại thông tin
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="flex h-10 w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="news">Tin tức / Thông báo</option>
-                <option value="correction">Báo lỗi / Sửa gia phả</option>
-                <option value="suggestion">Đề xuất ý kiến</option>
-                <option value="event">Sự kiện họ tộc</option>
-              </select>
+      <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar">
+        <div className="max-w-6xl mx-auto space-y-10">
+          {/* Fund Dashboard Integration */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 px-2">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-heritage-gold/30" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-heritage-gold-dim">
+                Quỹ Khuyến Học & Xây Dựng
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-heritage-gold/30" />
             </div>
-            <div className="flex-1 space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">
-                Nội dung
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Nhập nội dung bạn muốn chia sẻ..."
-                className="flex min-h-[100px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+            <FundDashboard summary={stats as any} topContributors={[]} />
+          </section>
+
+          {/* Social Feed Concept */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 px-2">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-heritage-gold/30" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-heritage-gold-dim">
+                Tin Tức & Hoạt Động
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-heritage-gold/30" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Feed Column */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Dummy Posts to demonstrate style */}
+                {[1, 2].map((i) => (
+                  <Card key={i} className="group hover:royal-gold-glow border-heritage-gold/10">
+                    <CardHeader className="flex-row items-center gap-4 pb-4">
+                      <div className="w-12 h-12 royal-halo overflow-hidden">
+                        <img src={`https://i.pravatar.cc/150?u=${i}`} alt="User" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-serif text-lg font-bold royal-text-gradient">Nguyễn Văn {i === 1 ? "Khoa" : "Dũng"}</h3>
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-heritage-gold-dim/40 italic">
+                          <Calendar className="w-3 h-3" /> {i === 1 ? "Hôm qua lúc 14:30" : "2 ngày trước"} · Công đức xây nhà thờ
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="text-heritage-gold/40 hover:text-heritage-gold">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-heritage-gold/80 leading-relaxed font-sans">
+                        {i === 1
+                          ? "Hôm nay gia đình tôi có dịp về thăm lại từ đường dòng họ Trần tại làng Mỹ Nguyên. Rất xúc động khi thấy con cháu tề tựu đông đủ để chuẩn bị cho lễ giỗ tổ sắp tới."
+                          : "Đã hoàn thành việc tu bổ lại cổng chính của nhà thờ họ. Xin gửi hình ảnh để bà con ở xa cùng theo dõi tiến độ công trình ý nghĩa này của dòng họ chúng ta."}
+                      </p>
+                      <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-heritage-gold/20 shadow-2xl group/img">
+                        <img
+                          src={i === 1 ? "/images/concept-3.png" : "/images/concept_3_starscape_1772696923905.png"}
+                          alt="Post content"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500" />
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-4 border-t border-heritage-gold/5 flex justify-between">
+                      <div className="flex gap-4">
+                        <Button variant="ghost" size="sm" className="gap-2 text-heritage-gold/60 hover:text-heritage-gold hover:bg-heritage-gold/10">
+                          <ThumbsUp className="w-4 h-4" /> <span className="text-xs font-bold">12</span>
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-2 text-heritage-gold/60 hover:text-heritage-gold hover:bg-heritage-gold/10">
+                          <MessageSquare className="w-4 h-4" /> <span className="text-xs font-bold">5</span>
+                        </Button>
+                      </div>
+                      <Button variant="ghost" size="sm" className="gap-2 text-heritage-gold/60 hover:text-heritage-gold hover:bg-heritage-gold/10">
+                        <Share2 className="w-4 h-4" /> <span className="text-xs font-bold font-serif italic">Chia sẻ</span>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Sidebar Column */}
+              <div className="space-y-8">
+                <Card className="bg-heritage-maroon/20 border-heritage-gold/10 backdrop-blur-3xl overflow-visible">
+                  <div className="absolute -top-3 -left-3 royal-halo w-10 h-10 bg-heritage-maroon border-heritage-gold flex items-center justify-center shadow-xl rotate-[-12deg]">
+                    <Plus className="w-5 h-5 text-heritage-gold" />
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Đóng góp mới</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {contributions.slice(0, 5).map((c, i) => (
+                      <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-heritage-gold/5 transition-colors group cursor-pointer border border-transparent hover:border-heritage-gold/10">
+                        <div className="w-9 h-9 royal-halo bg-heritage-gold/5 flex items-center justify-center shrink-0 group-hover:royal-gold-glow">
+                          <span className="text-[10px] font-bold text-heritage-gold">#{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-heritage-gold truncate">{(c as any).members?.full_name}</p>
+                          <p className="text-[10px] text-heritage-gold-dim truncate opacity-60 italic">{c.description}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-bold text-heritage-gold font-mono">+{c.amount.toLocaleString()}đ</p>
+                          <p className="text-[9px] text-heritage-gold-dim opacity-40">{new Date(c.transaction_date).toLocaleDateString("vi-VN")}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-heritage-gold-dim hover:text-heritage-gold py-6">
+                      Xem tất cả đóng góp
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Community Stats */}
+                <Card className="overflow-hidden border-orange-500/20">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-[50px] rounded-full" />
+                  <CardHeader>
+                    <CardTitle className="text-lg">Thống kê Quỹ</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-1">
+                      <p className="text-[10px] uppercase tracking-tighter text-heritage-gold-dim">Tổng thu</p>
+                      <p className="text-lg font-serif font-bold text-heritage-gold">{stats.totalIncome.toLocaleString()}đ</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-1">
+                      <p className="text-[10px] uppercase tracking-tighter text-heritage-gold-dim">Dư quỹ</p>
+                      <p className="text-lg font-serif font-bold text-green-500">{stats.balance.toLocaleString()}đ</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Contribution Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md bg-royal-card border-heritage-gold/30">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl royal-text-gradient">Biểu mẫu công đức</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 custom-scrollbar max-h-[70vh] overflow-y-auto px-1">
+            <div className="space-y-1.5 text-xs text-heritage-gold-dim italic mb-4 p-3 bg-heritage-gold/5 rounded-xl border border-heritage-gold/10">
+              "Uống nước nhớ nguồn, ăn quả nhớ kẻ trồng cây. Công đức của quý vị góp phần hưng thịnh dòng tộc."
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Thành viên đóng góp *</Label>
+              <Input
+                placeholder="Tìm tên thành viên hoặc nhập mã..."
+                className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                value={form.member_id}
+                onChange={(e) => setForm((f) => ({ ...f, member_id: e.target.value }))}
               />
-              <div className="pt-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground block mb-2">
-                  Đính kèm hình ảnh
-                </label>
-                <ImageUpload
-                  bucket="media"
-                  value={imageUrl}
-                  onChange={(url, mType) => {
-                    setImageUrl(url);
-                    setMediaType(mType);
-                  }}
-                  accept="image/*,video/*"
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Số tiền (VNĐ) *</Label>
+                <Input
+                  type="number"
+                  placeholder="500000"
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                  value={form.amount}
+                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Ngày đóng góp</Label>
+                <Input
+                  type="date"
+                  className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                  value={form.date}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 />
               </div>
             </div>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="gold-gradient text-amber-950 font-bold gap-2"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              Gửi cho Ban Quản Trị
-            </Button>
-          </div>
-        </form>
-      </div>
-
-      {/* Feed List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-serif font-bold flex items-center gap-2">
-            Dòng Thời Gian
-            {feedItems.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="bg-amber-500/10 text-amber-600 border-amber-500/20 px-2 py-0 h-5 text-[10px]"
-              >
-                {feedItems.length}
-                {hasMore ? "+" : ""} bài đăng
-              </Badge>
-            )}
-          </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchFeed()}
-            disabled={loading}
-            className="text-muted-foreground"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Làm mới"}
-          </Button>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-          </div>
-        ) : feedItems.length === 0 ? (
-          <div className="glass rounded-2xl p-12 text-center border border-border/40">
-            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-              <Info className="w-8 h-8 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Mục đích</Label>
+              <Input
+                placeholder="Xây nhà thờ, khuyến học, v.v."
+                className="bg-black/20 border-heritage-gold/20 text-heritage-gold"
+                value={form.purpose}
+                onChange={(e) => setForm((f) => ({ ...f, purpose: e.target.value }))}
+              />
             </div>
-            <h3 className="text-lg font-bold mb-1">Chưa có bảng tin nào</h3>
-            <p className="text-sm text-muted-foreground">
-              Hãy là người đầu tiên gửi đóng góp cho gia phả!
-            </p>
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Ghi chú</Label>
+              <Textarea
+                placeholder="Lời gắm gửi..."
+                className="bg-black/20 border-heritage-gold/20 text-heritage-gold min-h-[80px]"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-heritage-gold-dim text-xs font-bold uppercase tracking-wider">Biên lai / Hình ảnh</Label>
+              <ImageUpload
+                bucket="media"
+                value={form.receipt_url}
+                onChange={(url) => setForm((f) => ({ ...f, receipt_url: url }))}
+              />
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {feedItems.map((item) => (
-              <div
-                key={item.id}
-                className={cn(
-                  "glass p-5 rounded-2xl border transition-all duration-300",
-                  item.status === "pending"
-                    ? "border-amber-500/30 bg-amber-500/5"
-                    : item.status === "rejected"
-                      ? "border-red-500/30 bg-red-500/5 opacity-70 cursor-not-allowed"
-                      : "border-border/40 hover:border-amber-500/20 hover:bg-white/5",
-                )}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="shrink-0 pt-1">
-                    {item.author?.avatar_url ? (
-                      <img
-                        src={item.author.avatar_url}
-                        alt="avatar"
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground ring-2 ring-background">
-                        <UserCircle2 className="w-6 h-6" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-sm text-foreground">
-                          {item.author?.full_name || "Thành viên ẩn danh"}
-                        </span>
-                        {item.author_id === currentUserId && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] h-5 px-1.5 border-amber-500/30 text-amber-500"
-                          >
-                            Bạn
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground px-1 hidden sm:inline">
-                          •
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.created_at ? new Date(item.created_at).toLocaleString("vi-VN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          }) : ""}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] uppercase font-medium bg-background/50"
-                        >
-                          {item.type === BOARD_TYPES.NEWS
-                            ? "Tin tức"
-                            : item.type === BOARD_TYPES.EVENT
-                              ? "Sự kiện"
-                              : item.type === BOARD_TYPES.CORRECTION
-                                ? "Báo lỗi"
-                                : "Tư vấn"}
-                        </Badge>
-                        {item.status === APP_STATUS.PENDING && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] border-amber-500/50 text-amber-500 gap-1"
-                          >
-                            <Clock className="w-3 h-3" /> Chờ duyệt
-                          </Badge>
-                        )}
-                        {item.status === APP_STATUS.APPROVED && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] border-emerald-500/50 text-emerald-500 gap-1"
-                          >
-                            <CheckCircle2 className="w-3 h-3" /> Đã công khai
-                          </Badge>
-                        )}
-                        {item.status === APP_STATUS.REJECTED && (
-                          <Badge
-                            variant="destructive"
-                            className="text-[10px] gap-1"
-                          >
-                            Từ chối
-                          </Badge>
-                        )}
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={(ev) => {
-                              ev.stopPropagation();
-                              handleDeletePost(item.id);
-                            }}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                      {item.content}
-                    </p>
-
-                    {(() => {
-                      const mediaUrl = getFeedMediaUrl(item.proposed_data);
-                      if (!mediaUrl) return null;
-
-                      if (isVideoUrl(mediaUrl)) {
-                        return (
-                          <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
-                            <video
-                              src={mediaUrl}
-                              controls
-                              className="w-full h-full object-contain"
-                              preload="metadata"
-                            />
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="mt-3 relative w-full sm:max-w-md aspect-video rounded-xl overflow-hidden border border-border/50 bg-black/5">
-                          <Image
-                            src={mediaUrl}
-                            alt="Ảnh đính kèm từ người dùng"
-                            fill
-                            className="object-contain"
-                            sizes="(max-width: 768px) 100vw, 400px"
-                          />
-                        </div>
-                      );
-                    })()}
-
-                    {/* Action: Toggle Comments */}
-                    {item.status === APP_STATUS.APPROVED && (
-                      <div className="mt-3 pt-3 border-t border-border/20">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "h-8 text-[11px] gap-1.5 px-3 rounded-full transition-all",
-                            expandedComments[item.id]
-                              ? "bg-amber-500/10 text-amber-500"
-                              : "text-muted-foreground hover:bg-white/5",
-                          )}
-                          onClick={() => toggleComments(item.id)}
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          {expandedComments[item.id]
-                            ? "Đóng bình luận"
-                            : "Xem bình luận"}
-                          {!expandedComments[item.id] &&
-                            (item.comments?.[0] as any)?.count > 0 && (
-                              <span className="ml-1 opacity-60">
-                                ({(item.comments?.[0] as any)?.count})
-                              </span>
-                            )}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Comment Section Content */}
-                    {expandedComments[item.id] && (
-                      <CommentSection
-                        contributionId={item.id}
-                        currentUserId={currentUserId}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Load More Button */}
-            {hasMore && (
-              <div className="flex justify-center pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => loadMore()}
-                  disabled={loadingMore}
-                  className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50 rounded-full px-8"
-                >
-                  {loadingMore ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                  {loadingMore ? "Đang tải..." : "Tải thêm bài"}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {/* Confirm Delete Modal */}
-      <ConfirmModal
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Xác nhận xóa bài đăng"
-        description="Bạn có chắc chắn muốn xóa bài đăng này? Mọi bình luận liên quan cũng sẽ bị gỡ bỏ."
-        variant="destructive"
-        confirmText="Xác nhận xóa"
-        cancelText="Hủy"
-        loading={deleting}
-        onConfirm={confirmDeletePost}
-      />
-    </div >
+          <DialogFooter className="pt-4 border-t border-heritage-gold/10">
+            <Button
+              variant="ghost"
+              className="text-heritage-gold hover:bg-heritage-gold/10 font-bold"
+              onClick={() => setDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              className="gold-gradient border-0 text-amber-950 font-bold shadow-lg"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Hoàn tất
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

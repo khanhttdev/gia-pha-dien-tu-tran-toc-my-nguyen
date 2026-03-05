@@ -58,6 +58,22 @@ export type Media = Database["public"]["Tables"]["media"]["Row"];
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
 export type ActivityLog = Database["public"]["Tables"]["activity_logs"]["Row"];
 
+// ─── Financial Types ──────────────────────────────────────────────────────────
+
+export type FundTransaction = Database["public"]["Tables"]["funds"]["Row"];
+
+export type FundStats = {
+  total_balance: number;
+  total_in: number;
+  total_out: number;
+  recent_contributions: FundTransaction[];
+  monthly_summary: Array<{
+    month: string;
+    income: number;
+    expense: number;
+  }>;
+};
+
 // ─── Legacy aliases (deprecated — do not use in new code) ────────────────────
 
 /** @deprecated Use Member instead */
