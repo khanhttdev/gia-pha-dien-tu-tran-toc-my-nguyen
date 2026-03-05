@@ -78,6 +78,13 @@ Hệ thống được thiết kế theo tư duy Module hóa, Full-Stack TypeScri
 ### Nhánh Phiên bản Chính
 Dưới đây là một số cập nhật nổi bật của nhánh phát triển.
 
+#### 🏷️ v1.5.0 - Royal Gold & Khắc phục Toàn diện (Build Pass)
+- `feat(ui)`: Thiết lập phong cách **"Royal Gold"** - bộ nhận diện thương hiệu cao cấp mới với Glassmorphism, hiệu ứng Halo vàng kim và font chữ Zolina sang trọng.
+- `feat(directory)`: Cải tiến danh bạ liên kết trực tiếp với Cây gia phả; hỗ trợ chọn thành viên từ dữ liệu gốc thay vì nhập thủ công.
+- `feat(fund)`: Chuyển đổi hệ thống quản lý Quỹ họ sang bảng dữ liệu `funds` mới, tích hợp Dashboard trực quan và chi tiết hơn.
+- `feat(member)`: Nâng cấp Hồ sơ thành viên với **"Hero Card"** thế hệ mới và luồng hiển thị Quan hệ gia đình tương tác.
+- `fix(build)`: Khắc phục triệt để lỗi Build Production (`FamilyEvent`, `any` type, `variant` props) đảm bảo hệ thống vận hành 100% trên Vercel.
+
 #### 🏷️ v1.1.0 - Sách Gia Phả & PWA Mở Rộng
 - `feat(book)`: Bổ sung xuất file PDF từ trình duyệt (Client-side pdf export). Hỗ trợ chuẩn layout in Sách gia phả.
 - `feat(pwa)`: Cập nhật Service Worker (`sw.ts`) với chiến lược *CacheFirst* (ảnh, js) và *NetworkFirst* (Supabase query), kích hoạt tính năng chạy App không cần mạng (Offline Mode). Đóng gói API Web Push Notifications.
